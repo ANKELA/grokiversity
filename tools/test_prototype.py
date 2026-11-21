@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Headless test of the static site (served over local HTTP). Desktop 1280x800 + mobile 390x844.
 Checks: no console/page errors or failed requests, KaTeX renders, drag interactions, quiz grading,
-mastery unlocks, localStorage persistence across reload, copy-prompt to clipboard, OG tags."""
+mastery unlocks, localStorage persistence across reload, copy-prompt to clipboard, OG tags,
+multi-track landing, and the Intro to AI Unit 1 lesson (regression, GD, attention)."""
 import http.server, pathlib, socketserver, sys, threading, functools
 from playwright.sync_api import sync_playwright
 ROOT = pathlib.Path(__file__).resolve().parents[1]; SITE = ROOT / "prototype"; SHOTS = SITE / "screenshots"; SHOTS.mkdir(exist_ok=True)
@@ -33,6 +34,9 @@ with sync_playwright() as p:
     print("OG/Twitter tags:", len(og)); assert any("og:image=" in t for t in og) and any("summary_large_image" in t for t in og)
     print("KaTeX nodes:", pg.locator(".katex").count()); assert pg.locator(".katex").count() > 15
     pg.screenshot(path=str(SHOTS / "desktop_01_landing.png"))
+    pg.locator("#tracks").scroll_into_view_if_needed(); pg.screenshot(path=str(SHOTS / "desktop_09_track_cards.png"))
+    href = pg.get_attribute("#card-ai", "href"); print("AI card href:", href); assert href and "intro-ai.html" in href
+    assert "Play now" in pg.inner_text("#aiGrid")
     pg.locator("#track").scroll_into_view_if_needed(); pg.screenshot(path=str(SHOTS / "desktop_02_track_map.png"))
     pg.locator("#learn").scroll_into_view_if_needed(); pg.wait_for_timeout(200)
     before = pg.inner_text("#rr"); drag(pg, "#d2", -60, -40); after = pg.inner_text("#rr")
@@ -69,6 +73,57 @@ with sync_playwright() as p:
     m.locator("#learn").scroll_into_view_if_needed(); m.wait_for_timeout(200); m.screenshot(path=str(SHOTS / "mobile_02_lesson.png"))
     m.locator("#quiz1").scroll_into_view_if_needed(); m.screenshot(path=str(SHOTS / "mobile_03_quiz.png"))
     m.locator("footer").scroll_into_view_if_needed(); m.screenshot(path=str(SHOTS / "mobile_04_footer.png"))
+
+    # ----- Intro to AI (desktop) -----
+    pg2 = ctx.new_page(); watch(pg2)
+    pg2.goto(f"http://127.0.0.1:{port}/intro-ai.html"); pg2.wait_for_load_state("networkidle")
+    print("AI KaTeX nodes:", pg2.locator(".katex").count()); assert pg2.locator(".katex").count() > 15
+    pg2.screenshot(path=str(SHOTS / "desktop_10_ai_c1.png"))
+    before = pg2.inner_text("#tTot"); pg2.fill("#dRange", "7"); pg2.locator("#dRange").evaluate("el => { el.value = 7; el.dispatchEvent(new Event('input',{bubbles:true})); }")
+    after = pg2.inner_text("#tTot"); print("Tree nodes:", before, "->", after); assert before != after
+    fb = answer(pg2, "q1.4", ["60", "75"]); print("q1.4 no-units:", fb); assert "units" in fb.lower() or "%" in fb
+    pg2.locator("#Qq1_4 button").nth(1).click()  # not needed, just don't use leftover
+    # reset q1.4 tries by reloading would wipe; just continue with units
+    assert "Correct" in answer(pg2, "q1.1", ["7", "6.8", "6.5"])
+    assert "Correct" in answer(pg2, "q1.2", ["1365"])
+    assert "Correct" in answer(pg2, "q1.3", ["0.1085", "0.08756"])
+    assert "Correct" in answer(pg2, "q1.4", ["60 %", "75 %"])
+    print("AI C1 mastery:", pg2.inner_text("#mpct"))
+    pg2.click('#clist [data-c="2"]'); assert pg2.is_visible("#c2")
+    before = pg2.inner_text("#rmse"); drag(pg2, "#hW", 0, -40); after = pg2.inner_text("#rmse")
+    print("Regression drag MSE:", before, "->", after); assert before != after
+    pg2.click("#olsBtn"); print("OLS snap MSE:", pg2.inner_text("#rmse")); assert "0.450" in pg2.inner_text("#rmse") or "0.45" in pg2.inner_text("#rmse")
+    pg2.locator("#reg").scroll_into_view_if_needed(); pg2.screenshot(path=str(SHOTS / "desktop_11_ai_regression.png"))
+    assert "Correct" in answer(pg2, "q2.1", ["0.75"])
+    assert "Correct" in answer(pg2, "q2.2", ["1.2", "0.5", "0.45"])
+    assert "Correct" in answer(pg2, "q2.3", ["1.3667", "0.49167"])
+    assert "Correct" in answer(pg2, "q2.4", ["-0.5", "0"])
+    pg2.click('#clist [data-c="3"]'); assert pg2.is_visible("#c3")
+    w0 = pg2.inner_text("#gdw"); pg2.click("#gdStep"); w1 = pg2.inner_text("#gdw")
+    print("GD step w:", w0, "->", w1); assert w0 != w1
+    pg2.locator("#gdSurf").scroll_into_view_if_needed(); pg2.screenshot(path=str(SHOTS / "desktop_12_ai_gd.png"))
+    assert "Correct" in answer(pg2, "q3.1", ["1.2", "1.92"])
+    assert "Correct" in answer(pg2, "q3.2", ["-20.5", "-7", "0.205", "0.07"])
+    assert "Correct" in answer(pg2, "q3.3", ["1", "1", "5"])
+    assert "Correct" in answer(pg2, "q3.4", ["1.1", "1", "0.525"])
+    pg2.click('#clist [data-c="4"]'); assert pg2.is_visible("#c4")
+    out0 = pg2.inner_text("#aout")
+    pg2.locator("#s1").evaluate("el => { el.value = 5; el.dispatchEvent(new Event('input',{bubbles:true})); }")
+    out1 = pg2.inner_text("#aout"); print("Attention out:", out0, "->", out1); assert out0 != out1
+    pg2.locator("#attn").scroll_into_view_if_needed(); pg2.screenshot(path=str(SHOTS / "desktop_13_ai_attention.png"))
+    assert "Correct" in answer(pg2, "q4.1", ["-0.5", "0.37754"])
+    pg2.click("#copyPrompt"); clip = pg2.evaluate("navigator.clipboard.readText()"); print("AI clipboard chars:", len(clip)); assert "AI 101" in clip and clip.startswith("# Grokeversity Tutor Prompt")
+    pg2.reload(); pg2.wait_for_load_state("networkidle")
+    print("AI after reload c4 visible:", pg2.is_visible("#c4"), "| q1.1:", pg2.locator("#Qq1_1 .fb").inner_text())
+    assert pg2.is_visible("#c4")
+
+    # mobile AI
+    m2 = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True).new_page(); watch(m2)
+    m2.goto(f"http://127.0.0.1:{port}/intro-ai.html"); m2.wait_for_load_state("networkidle")
+    sw = m2.evaluate("document.documentElement.scrollWidth"); print("AI mobile scrollWidth:", sw); assert sw <= 392, "horizontal overflow on AI mobile"
+    m2.screenshot(path=str(SHOTS / "mobile_05_ai_landing.png"))
+    m2.locator("#learn").scroll_into_view_if_needed(); m2.wait_for_timeout(200); m2.screenshot(path=str(SHOTS / "mobile_06_ai_lesson.png"))
+    m2.locator("footer").scroll_into_view_if_needed(); m2.screenshot(path=str(SHOTS / "mobile_07_ai_footer.png"))
     br.close()
 srv.shutdown()
 print("Errors:", errors or "none"); sys.exit(1 if errors else 0)

@@ -1,0 +1,9 @@
+id: introduction-to-ai
+title: "Introduction to AI — degree-equivalent curriculum (not an accredited degree)"
+total_credits_equivalent: 4
+benchmark: "Stanford CS221 + CS229, MIT 6.034 + 6.036, Berkeley CS188 (see courses/ai-101-intro/course.yaml)"
+sequence:
+  foundations: [ai-101-u01, ai-101-u02, ai-101-u03, ai-101-u04]
+  learning: [ai-101-u05, ai-101-u06, ai-101-u07]
+  modern: [ai-101-u08, ai-101-u09, ai-101-u10]
+  responsibility: [ai-101-u11, ai-101-u12]

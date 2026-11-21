@@ -3,9 +3,9 @@
 Thank you! The goal is **accredited-level rigor**, so correctness beats speed.
 
 ## Ways to help
-- **Write a unit:** follow `schema/unit.schema.json`, using `courses/me-201-statics/units/01-forces-and-equilibrium.yaml` as the model.
+- **Write a unit:** follow `schema/unit.schema.json`, using `courses/me-201-statics/units/01-forces-and-equilibrium.yaml` or `courses/ai-101-intro/units/01-fundamentals.yaml` as the model.
 - **Review a unit:** subject-matter reviewers (engineers, instructors, grad students) are especially welcome.
-- **Build an interactive:** add it to `prototype/app.js`. Examples: a moment calculator, a truss builder, a 3D vector viewer.
+- **Build an interactive:** add it to `prototype/app.js` (Statics) or `prototype/ai.js` (Intro to AI). Examples: a moment calculator, a truss builder, a 3D vector viewer, a bias–variance explorer.
 - **Report errors:** open an issue that names the unit, the item ID and the correct answer, and shows your working.
 
 ## Rules for course content
@@ -19,6 +19,7 @@ Thank you! The goal is **accredited-level rigor**, so correctness beats speed.
 ```bash
 python3 tools/validate.py                 # schema
 python3 tools/verify_statics_unit01.py    # (and your own verify script)
+python3 tools/verify_ai_unit01.py
 python3 tools/build_site.py               # embeds tutor prompt, rebuilds og.png/icons
 python3 tools/test_prototype.py           # headless browser test (needs playwright + Chrome)
 ```

@@ -23,6 +23,18 @@ $('#trackGrid').innerHTML = Object.entries(TRACK).map(([y,cs])=>`<div class="yea
   : `<div class="course"><span>${c}</span><span class="badge">Coming soon</span></div>`).join('')}</div>`).join('');
 $$('[data-go="learn"]').forEach(el=>el.addEventListener('click',()=>$('#learn').scrollIntoView()));
 
+const AI_TRACK = {
+  'Foundations': ['What AI Is (Unit 1)','Search & Problem Solving','Probability & Bayes','Math for ML'],
+  'Learning': ['Supervised Learning I','Supervised Learning II','Neural Nets & Backprop'],
+  'Modern AI': ['Deep Learning','Transformers & LLMs','Reinforcement Learning'],
+  'Responsibility': ['Ethics, Safety & Limits','Capstone Project']
+};
+if($('#aiGrid')){
+  $('#aiGrid').innerHTML = Object.entries(AI_TRACK).map(([y,cs])=>`<div class="year"><h4>${y}</h4>${cs.map(c=> c.includes('Unit 1')
+    ? `<a class="course live" href="intro-ai.html"><span>AI 101 · ${c}</span><span class="badge">Play now</span></a>`
+    : `<div class="course"><span>${c}</span><span class="badge">Coming soon</span></div>`).join('')}</div>`).join('');
+}
+
 /* ---------- copy tutor prompt ---------- */
 async function copyPrompt(){
   let txt = ($('#tutorPromptText').textContent||'').replace(/<!--TUTOR_PROMPT_(START|END)-->/g,'').trim();
@@ -33,7 +45,7 @@ async function copyPrompt(){
   toast('Tutor prompt copied. Paste it into Grok and say “start”.');
   say('Prompt copied ✅. Open Grok, paste it as your first message, then type <b>start</b>. That tutor grades strictly and won\'t give away answers.');
 }
-$('#copyPrompt').addEventListener('click',copyPrompt); $('#copyHero').addEventListener('click',copyPrompt);
+$('#copyPrompt').addEventListener('click',copyPrompt); if($('#copyHero')) $('#copyHero').addEventListener('click',copyPrompt);
 
 /* ---------- concept list ---------- */
 const CONCEPTS = [[1,'Forces as vectors'],[2,'Free-body diagrams'],[3,'Particle equilibrium'],[4,'Moments'],[5,'Rigid-body equilibrium']];

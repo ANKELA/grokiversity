@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grokeversity — learn a full Mechanical Engineering curriculum with an AI tutor</title>
-<meta name="description" content="Free, open-source, mastery-based Mechanical Engineering curriculum. Interactive statics with live diagrams, strict quizzes, and a copy-paste AI tutor prompt for Grok. Community project; not an accredited degree.">
+<title>Grokeversity — university-level curricula, one concept at a time</title>
+<meta name="description" content="Free, open-source, mastery-based curricula in Mechanical Engineering and Introduction to AI. Interactive visuals, strict quizzes, and a copy-paste AI tutor prompt. Community project; not an accredited degree.">
 <meta name="theme-color" content="#0f1220">
 <!-- Open Graph / X card. On deploy, tools/build_site.py --base-url rewrites these to absolute URLs (X requires absolute image URLs). -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Grokeversity">
-<meta property="og:title" content="Grokeversity — a full ME curriculum, one concept at a time">
-<meta property="og:description" content="Drag force vectors, build free-body diagrams, and pass strict mastery quizzes. Free & open source. Try Statics Unit 1 now.">
+<meta property="og:title" content="Grokeversity — university-level curricula, one concept at a time">
+<meta property="og:description" content="Mechanical Engineering and Introduction to AI, with interactive math and strict mastery quizzes. Free and open source.">
 <meta property="og:image" content="https://ankela.github.io/grokeversity/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Grokeversity: Mechanical Engineering, one concept at a time. Interactive statics demo.">
+<meta property="og:image:alt" content="Grokeversity: Mechanical Engineering and Introduction to AI. Interactive, university-level lessons.">
 <meta property="og:url" content="https://ankela.github.io/grokeversity/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Grokeversity — a full ME curriculum, one concept at a time">
-<meta name="twitter:description" content="Interactive statics, strict mastery quizzes, and a copy-paste AI tutor prompt. Free & open source.">
+<meta name="twitter:title" content="Grokeversity — university-level curricula, one concept at a time">
+<meta name="twitter:description" content="Interactive lessons in Statics and Introduction to AI, with strict mastery quizzes and an AI tutor prompt.">
 <meta name="twitter:image" content="https://ankela.github.io/grokeversity/assets/og.png">
-<meta name="twitter:image:alt" content="Grokeversity: Mechanical Engineering, one concept at a time.">
+<meta name="twitter:image:alt" content="Grokeversity: Mechanical Engineering and Introduction to AI.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -32,15 +32,15 @@
 <body>
 <header class="top">
   <a class="logo" href="#top"><img src="assets/favicon.svg" alt=""><span>Grok<b>e</b>versity</span></a>
-  <nav><a href="#how">How it works</a><a href="#track">ME track</a><a href="#learn">Statics demo</a><a class="btn sm" href="#learn">Start learning</a></nav>
+  <nav><a href="#how">How it works</a><a href="#tracks">Tracks</a><a href="#learn">Statics</a><a href="intro-ai.html">Intro to AI</a><a class="btn sm" href="#tracks">Start learning</a></nav>
 </header>
 
 <a id="top"></a>
 <section class="hero">
-  <h1>A full <em>Mechanical Engineering</em> curriculum,<br>one concept at a time.</h1>
-  <p class="lead">Grokeversity is a free, open-source, mastery-based course of study modeled on accredited ME programs. You learn with interactive diagrams and real math, pass strict quizzes at your own pace, and use an AI tutor (like Grok) that gives hints instead of answers.</p>
-  <div class="ctas"><a class="btn" href="#learn">Try Statics, Unit 1 →</a><button class="btn ghost" id="copyHero">Copy the tutor prompt for Grok</button></div>
-  <div class="pills"><span class="pill">≈ 5,400 study hours</span><span class="pill">≥ 80% mastery to advance</span><span class="pill">Textbook-level problems</span><span class="pill">No account needed</span><span class="pill">Progress saved on this device</span></div>
+  <h1>University-level curricula,<br>one concept at a time.</h1>
+  <p class="lead">Grokeversity is a free, open-source, mastery-based course of study. Start with <b>Mechanical Engineering</b> or <b>Introduction to AI</b>. You learn with interactive diagrams and real math, pass strict quizzes at your own pace, and use an AI tutor (like Grok) that gives hints instead of answers.</p>
+  <div class="ctas"><a class="btn" href="#learn">Try Statics, Unit 1 →</a><a class="btn ghost" href="intro-ai.html">Try Intro to AI, Unit 1 →</a></div>
+  <div class="pills"><span class="pill">Two tracks</span><span class="pill">≥ 80% mastery to advance</span><span class="pill">Textbook-level problems</span><span class="pill">No account needed</span><span class="pill">Progress saved on this device</span></div>
 </section>
 
 <div class="wrap">
@@ -52,9 +52,28 @@
     <div class="card"><h3>4 · Your pace</h3><p>Nothing in the lessons is timed. Unit exams and finals are timed, like a real course.</p></div>
   </div>
 
+  <h2 class="sec-title" id="tracks">Choose a track</h2>
+  <p class="sec-sub">Each track is a university-level curriculum, not an accredited degree. Unit 1 of the first course is playable now.</p>
+  <div class="track-cards">
+    <a class="track-card" href="#learn" id="card-me">
+      <span class="badge">Play now</span>
+      <h3>Mechanical Engineering</h3>
+      <p>A degree-equivalent ME curriculum modeled on ABET-style programs. Start with Statics Unit 1: forces, free-body diagrams and equilibrium.</p>
+    </a>
+    <a class="track-card" href="intro-ai.html" id="card-ai">
+      <span class="badge">Play now</span>
+      <h3>Introduction to AI</h3>
+      <p>A university-level intro mapped to Stanford CS221/CS229, MIT 6.034/6.036 and Berkeley CS188. Start with Unit 1: agents, loss, gradient descent and attention.</p>
+    </a>
+  </div>
+
   <h2 class="sec-title" id="track">The Mechanical Engineering track</h2>
   <p class="sec-sub">Modeled on ABET-style ME programs and MIT's Course 2 core. Statics is live; every other course is coming soon, and contributors are welcome.</p>
   <div class="track" id="trackGrid"></div>
+
+  <h2 class="sec-title" id="track-ai">The Introduction to AI track</h2>
+  <p class="sec-sub">Mapped to Stanford CS221 and CS229, MIT 6.034 and 6.036, and Berkeley CS188. Unit 1 is live; later units are coming soon.</p>
+  <div class="track" id="aiGrid"></div>
 </div>
 
 <section class="player" id="learn">
@@ -198,8 +217,8 @@
 </section>
 
 <footer>
-  <div class="disc"><b>Honest disclaimer:</b> Grokeversity is an independent, open-source community project. It is <b>not affiliated with, sponsored by or endorsed by xAI</b> or any university. It is <b>not an accredited institution</b> and does not award degrees or academic credit. The ME track is a degree-equivalent <i>curriculum</i>, and completion certificates are not degrees. Lab and hands-on work can't be fully replaced online.</div>
-  <div>Code: MIT License · Course content: CC BY-SA 4.0 · Equations by KaTeX · Prototype v0.1</div>
+  <div class="disc"><b>Honest disclaimer:</b> Grokeversity is an independent, open-source community project. It is <b>not affiliated with, sponsored by or endorsed by xAI</b> or any university. It is <b>not an accredited institution</b> and does not award degrees or academic credit. The ME and Introduction to AI tracks are degree-equivalent <i>curricula</i>, and completion certificates are not degrees. Lab and hands-on work can't be fully replaced online.</div>
+  <div>Code: MIT License · Course content: CC BY-SA 4.0 · Equations by KaTeX · Prototype v0.2</div>
 </footer>
 <div class="toast" id="toast"></div>
 

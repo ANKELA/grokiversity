@@ -1,0 +1,36 @@
+id: ai-101-intro
+degree: introduction-to-ai
+title: "AI 101 — Introduction to Artificial Intelligence"
+credits_equivalent: 4
+study_hours: 140-160
+prerequisites: []   # high-school algebra required; calculus, probability and intro programming are useful and are reviewed in Units 3–4
+corequisites: []
+benchmark_syllabi:
+  - "Stanford CS221 Artificial Intelligence: Principles and Techniques (Autumn 2025) — https://stanford-cs221.github.io/autumn2025/"
+  - "Stanford CS229 Machine Learning — https://cs229.stanford.edu/"
+  - "MIT 6.034 Artificial Intelligence (OCW, Fall 2010) — https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/"
+  - "MIT 6.036 Introduction to Machine Learning (MITx / Open Learning Library) — https://openlearninglibrary.mit.edu/courses/course-v1:MITx+6.036+1T2019/about"
+  - "UC Berkeley CS188 Introduction to Artificial Intelligence — https://inst.eecs.berkeley.edu/~cs188/"
+textbooks:
+  - "Russell & Norvig, Artificial Intelligence: A Modern Approach, 4th ed. (Pearson) — http://aima.cs.berkeley.edu/"
+  - "James, Witten, Hastie & Tibshirani, An Introduction to Statistical Learning (free) — https://www.statlearning.com/"
+  - "Zhang, Lipton, Li & Smola, Dive into Deep Learning (free) — https://d2l.ai/"
+  - "Sutton & Barto, Reinforcement Learning: An Introduction, 2nd ed. (free) — http://incompleteideas.net/book/the-book-2nd.html"
+units:
+  - {id: ai-101-u01, file: units/01-fundamentals.yaml, hours: 16, status: draft-needs-human-review}
+  - {id: ai-101-u02, title: "Search and problem solving (uninformed, informed, adversarial, CSPs)", hours: 14, status: planned}
+  - {id: ai-101-u03, title: "Probability, Bayes, and graphical models", hours: 14, status: planned}
+  - {id: ai-101-u04, title: "Linear algebra and calculus for machine learning", hours: 10, status: planned}
+  - {id: ai-101-u05, title: "Supervised learning I: regression, classification, loss, and gradient descent", hours: 14, status: planned}
+  - {id: ai-101-u06, title: "Supervised learning II: overfitting, regularization, validation, and evaluation", hours: 12, status: planned}
+  - {id: ai-101-u07, title: "Neural networks and backpropagation", hours: 14, status: planned}
+  - {id: ai-101-u08, title: "Deep learning: convolutional and sequence models", hours: 12, status: planned}
+  - {id: ai-101-u09, title: "Transformers and large language models", hours: 14, status: planned}
+  - {id: ai-101-u10, title: "Reinforcement learning", hours: 12, status: planned}
+  - {id: ai-101-u11, title: "AI ethics, safety, and limits", hours: 8, status: planned}
+  - {id: ai-101-u12, title: "Capstone project", hours: 16, status: planned}
+assessment:
+  problem_sets: "One graded set per unit, 8-15 textbook-level problems, ≥80% to pass."
+  unit_exams: "Timed, closed-book, randomized; ≥80%."
+  final_exam: "Cumulative, 3 h, randomized; ≥80%; identity-checked for a course certificate."
+  design_problem: "Capstone (Unit 12): design, implement and analyze a small AI system (search agent, supervised model, or a mini attention experiment), with a written report, ablations and an honest limits section; human mentor review."

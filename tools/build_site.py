@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Prepare prototype/ for static hosting.
-- copies tutor/TUTOR_PROMPT.md -> prototype/tutor-prompt.md and embeds it in index.html (so Copy works offline)
+- copies tutor prompts into prototype/ and embeds them in index.html and intro-ai.html (so Copy works offline)
 - renders assets: og.png (1200x630), favicon-32.png, apple-touch-icon.png
 - optional: --base-url https://USER.github.io/grokeversity/  rewrites og/twitter URLs to absolute (X needs absolute)."""
 import argparse, html, pathlib, re, shutil
@@ -8,18 +8,24 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = pathlib.Path(__file__).resolve().parents[1]; SITE = ROOT / "prototype"; A = SITE / "assets"
 ap = argparse.ArgumentParser(); ap.add_argument("--base-url", default=""); args = ap.parse_args()
 
-prompt = (ROOT / "tutor/TUTOR_PROMPT.md").read_text()
-shutil.copy(ROOT / "tutor/TUTOR_PROMPT.md", SITE / "tutor-prompt.md")
-idx = (SITE / "index.html").read_text()
-assert "</script" not in prompt.lower()
-idx = re.sub(r"<!--TUTOR_PROMPT_START-->.*?<!--TUTOR_PROMPT_END-->",
-             lambda m: "<!--TUTOR_PROMPT_START-->" + prompt.replace("<!--", "&lt;!--") + "<!--TUTOR_PROMPT_END-->", idx, flags=re.S)
-if args.base_url:
-    b = args.base_url.rstrip("/") + "/"
-    idx = re.sub(r'(property="og:image" content=")[^"]*"', rf'\1{b}assets/og.png"', idx)
-    idx = re.sub(r'(name="twitter:image" content=")[^"]*"', rf'\1{b}assets/og.png"', idx)
-    idx = re.sub(r'(property="og:url" content=")[^"]*"', rf'\1{b}"', idx)
-(SITE / "index.html").write_text(idx)
+def embed(html_path, prompt_src, dest_md):
+    prompt = prompt_src.read_text()
+    shutil.copy(prompt_src, dest_md)
+    assert "</script" not in prompt.lower()
+    html = html_path.read_text()
+    html = re.sub(r"<!--TUTOR_PROMPT_START-->.*?<!--TUTOR_PROMPT_END-->",
+                  lambda m, p=prompt: "<!--TUTOR_PROMPT_START-->" + p.replace("<!--", "&lt;!--") + "<!--TUTOR_PROMPT_END-->", html, flags=re.S)
+    if args.base_url:
+        b = args.base_url.rstrip("/") + "/"
+        html = re.sub(r'(property="og:image" content=")[^"]*"', rf'\1{b}assets/og.png"', html)
+        html = re.sub(r'(name="twitter:image" content=")[^"]*"', rf'\1{b}assets/og.png"', html)
+        url = b if html_path.name == "index.html" else b + html_path.name
+        html = re.sub(r'(property="og:url" content=")[^"]*"', rf'\1{url}"', html)
+    html_path.write_text(html)
+    return len(prompt)
+
+n_me = embed(SITE / "index.html", ROOT / "tutor/TUTOR_PROMPT.md", SITE / "tutor-prompt.md")
+n_ai = embed(SITE / "intro-ai.html", ROOT / "tutor/TUTOR_PROMPT_AI.md", SITE / "tutor-prompt-ai.md")
 
 F = "/usr/share/fonts/truetype/dejavu/"
 f = lambda n, s: ImageFont.truetype(F + n, s)
@@ -36,14 +42,14 @@ for y in range(H):  # soft top glow
     t = max(0, 1 - y / 420); d.line([0, y, W, y], fill=(int(15 + 28 * t), int(18 + 35 * t), int(32 + 78 * t)))
 im.paste(icon(84), (70, 64), icon(84))
 d.text((172, 78), "Grokeversity", font=f("DejaVuSans-Bold.ttf", 50), fill="#e8eaf6")
-d.text((70, 190), "A full Mechanical Engineering", font=f("DejaVuSans-Bold.ttf", 54), fill="#ffffff")
+d.text((70, 190), "University-level curricula,", font=f("DejaVuSans-Bold.ttf", 54), fill="#ffffff")
 d.text((70, 256), "curriculum, one concept at a time.", font=f("DejaVuSans-Bold.ttf", 54), fill="#7c9cff")
-d.text((70, 350), "Interactive statics  ·  strict mastery quizzes  ·  AI tutor prompt", font=f("DejaVuSans.ttf", 28), fill="#c5cae9")
-d.text((70, 392), "Free & open source. Try Statics Unit 1 in your browser.", font=f("DejaVuSans.ttf", 28), fill="#c5cae9")
+d.text((70, 350), "Mechanical Engineering  ·  Introduction to AI  ·  strict quizzes", font=f("DejaVuSans.ttf", 28), fill="#c5cae9")
+d.text((70, 392), "Free & open source. Try Unit 1 of either track in your browser.", font=f("DejaVuSans.ttf", 28), fill="#c5cae9")
 # vector motif
 ox, oy = 1010, 595
 for (dx, dy), c in [((-50, -120), "#ff8a65"), ((130, -50), "#4dd0e1"), ((85, -160), "#ffd54f")]:
     d.line([ox, oy, ox + dx, oy + dy], fill=c, width=9)
 d.ellipse([ox - 10, oy - 10, ox + 10, oy + 10], fill="#e8eaf6")
 d.text((70, 560), "Community project · not affiliated with xAI · not an accredited degree", font=f("DejaVuSans.ttf", 21), fill="#7a83b5")
-im.save(A / "og.png"); print("built:", [p.name for p in A.iterdir()], "| prompt chars:", len(prompt), "| base-url:", args.base_url or "(relative)")
+im.save(A / "og.png"); print("built:", [p.name for p in A.iterdir()], "| prompts:", n_me, n_ai, "| base-url:", args.base_url or "(relative)")
