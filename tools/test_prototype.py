@@ -217,7 +217,7 @@ with sync_playwright() as p:
     assert "ΣF_y" in arrows["text"] and "ΣM_A" in arrows["text"] and "B_y" in arrows["text"]
     a0 = pg.inner_text("#bmAy"); drag(pg, "#bmH", 120, 0); a1 = pg.inner_text("#bmAy")
     print("Beam Ay:", a0, "->", a1); assert a0 != a1
-    pg.screenshot(path=str(SHOTS / "desktop_15_concept5_beam.png"))
+    pg.wait_for_timeout(500); pg.screenshot(path=str(SHOTS / "desktop_15_concept5_beam.png"))
     goto_slide(pg, "check-beam")
     box = pg.locator('[data-check="c5ab"]')
     box.locator("input").nth(0).fill("9 kN"); box.locator("input").nth(1).fill("3 kN"); box.locator("button").click()
@@ -251,7 +251,7 @@ with sync_playwright() as p:
     sw = m.evaluate("document.documentElement.scrollWidth"); print("Mobile lesson scrollWidth:", sw); assert sw <= 392, "horizontal overflow on mobile lesson"
     assert_fits(m, "mobile hook", check_width=392)
     m.screenshot(path=str(SHOTS / "mobile_02_lesson.png"))
-    goto_concept(m, 5); goto_slide(m, "beam")
+    goto_concept(m, 5); goto_slide(m, "beam"); m.wait_for_timeout(500)
     assert_fits(m, "mobile beam", check_width=392)
     m.screenshot(path=str(SHOTS / "mobile_08_beam.png"))
     n_mob = height_tour(m, "mobile", width_limit=392)

@@ -145,6 +145,8 @@ function showSlide(c, i, dir){
   $('#c'+c).dataset.i=i;
   store.slide[c]=i; save();
   writeRoute(c,i);
+  clearTimeout(showSlide.hideT);
+  showSlide.hideT=setTimeout(()=>$$('.slide').forEach(s=>s.classList.remove('exit-left','exit-right')), 450);
   const n=ss.length;
   $('#slidePos').textContent=(i+1)+' / '+n;
   $('#prevSlide').disabled = i===0;
@@ -660,8 +662,10 @@ function drawBeam(){
   const By=beam.P*beam.x/beam.L, Ay=beam.P-By;
   $('#bmAy').textContent=Ay.toFixed(2)+' kN';
   $('#bmBy').textContent=By.toFixed(2)+' kN';
-  const ox=50, oy=130, Lpx=420, xpx=ox+(beam.x/beam.L)*Lpx;
-  const loadLen=18+beam.P*6, rSc=7;
+  const ox=50, oy=120, Lpx=420, xpx=ox+(beam.x/beam.L)*Lpx;
+  const loadLen=18+beam.P*6;
+  const ayLen=Math.min(100, 52+Ay*6), byLen=Math.min(100, 52+By*6);
+  const tip=oy+10;
   const svg=$('#beamSvg');
   svg.innerHTML=`<defs>
       <marker id="barr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker>
@@ -669,14 +673,14 @@ function drawBeam(){
       <marker id="baB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#4dd0e1"/></marker>
     </defs>
     <line x1="${ox}" y1="${oy}" x2="${ox+Lpx}" y2="${oy}" stroke="#7c86c9" stroke-width="10" stroke-linecap="round"/>
-    <polygon points="${ox},${oy+8} ${ox-14},${oy+28} ${ox+14},${oy+28}" fill="#7c9cff"/>
-    <circle cx="${ox+Lpx}" cy="${oy+18}" r="10" fill="none" stroke="#4dd0e1" stroke-width="4"/>
+    <polygon points="${ox},${oy+6} ${ox-12},${oy+22} ${ox+12},${oy+22}" fill="#7c9cff"/>
+    <circle cx="${ox+Lpx}" cy="${oy+14}" r="9" fill="none" stroke="#4dd0e1" stroke-width="3"/>
     <line id="bmLoad" x1="${xpx}" y1="${oy-loadLen}" x2="${xpx}" y2="${oy}" stroke="#ff8a65" stroke-width="4" marker-end="url(#barr)"/>
     <circle id="bmH" class="handle" cx="${xpx}" cy="${oy-loadLen}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>
-    <line id="bmAyArr" x1="${ox}" y1="${oy+Ay*rSc}" x2="${ox}" y2="${oy}" stroke="#7c9cff" stroke-width="3" marker-end="url(#baA)"/>
-    <line id="bmByArr" x1="${ox+Lpx}" y1="${oy+By*rSc}" x2="${ox+Lpx}" y2="${oy}" stroke="#4dd0e1" stroke-width="3" marker-end="url(#baB)"/>
-    <text x="${ox}" y="${oy+Ay*rSc+16}" fill="#7c9cff" font-size="13" text-anchor="middle">A_y</text>
-    <text x="${ox+Lpx}" y="${oy+By*rSc+16}" fill="#4dd0e1" font-size="13" text-anchor="middle">B_y</text>
+    <line id="bmAyArr" x1="${ox}" y1="${tip+ayLen}" x2="${ox}" y2="${tip}" stroke="#7c9cff" stroke-width="3" marker-end="url(#baA)"/>
+    <line id="bmByArr" x1="${ox+Lpx}" y1="${tip+byLen}" x2="${ox+Lpx}" y2="${tip}" stroke="#4dd0e1" stroke-width="3" marker-end="url(#baB)"/>
+    <text x="${ox}" y="${tip+ayLen+16}" fill="#7c9cff" font-size="13" text-anchor="middle">A_y</text>
+    <text x="${ox+Lpx}" y="${tip+byLen+16}" fill="#4dd0e1" font-size="13" text-anchor="middle">B_y</text>
     <text x="${xpx+8}" y="${oy-loadLen}" fill="#ff8a65" font-size="13">${beam.P.toFixed(1)} kN</text>`;
   $('#bmX').textContent=beam.x.toFixed(2)+' m from A';
   const sum=$('#bmSum');
