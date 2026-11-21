@@ -232,25 +232,78 @@ function drawAttn(){
 ['s1','s2','s3','v1','v2','v3'].forEach(id=>$('#'+id).addEventListener('input',drawAttn));
 
 /* ---------- quiz engine ---------- */
+function tidyText(str){
+  return String(str==null?'':str)
+    .replace(/[\u2018\u2019\u201A\u201B\u2032]/g,"'")
+    .replace(/[\u201C\u201D\u201E\u201F\u2033]/g,'"')
+    .replace(/[\u00A0\u202F\u2000-\u200A\uFEFF]/g,' ')
+    .replace(/[\u2212\u2010-\u2015\uFE58\uFE63\uFF0D]/g,'-')
+    .replace(/[\u00B7\u22C5\u2022\u2219]/g,'·')
+    .replace(/^\s+|\s+$/g,'')
+    .replace(/[.,;:]+$/,'');
+}
+function canonUnit(u){
+  const n=tidyText(u).replace(/\s+/g,'').toLowerCase();
+  if(!n) return '';
+  if(n==='%'||n==='percent'||n==='pct') return '%';
+  if(n==='1'||n==='unit1') return '1';
+  return n;
+}
+function unitHint(unit){
+  if(unit==='%') return '%';
+  if(unit==='1') return 'a bare number (unit 1 is optional)';
+  if(unit==='count') return 'a whole number, no unit';
+  return unit;
+}
+function formatAns(a){
+  if(a.u==='count' || a.u==='1') return String(a.v);
+  if(a.u==='%') return a.v+' %';
+  return a.v+' '+a.u;
+}
 function parseQty(str,unit){
-  const m=String(str).trim().replace(',','.').match(/^([-+−]?\d*\.?\d+(?:e[-+]?\d+)?)\s*([a-zA-Z°%]*)/);
-  if(!m) return {err:'Enter a number, optionally followed by a unit.'};
-  const v=parseFloat(m[1].replace('−','-')), u=m[2]||'';
-  if(unit==='count') return {v};
+  const raw=tidyText(str);
+  if(!raw) return {err:'Enter a number'+(unit==='%'?' and include the % unit.':'.')};
+  let s=raw;
+  if(/^[+-]?\d+,\d+/.test(s) && s.indexOf('.')===-1) s=s.replace(',','.');
+  const m=s.match(/^([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*(.*)$/);
+  if(!m) return {err:'Enter a number'+(unit==='%'?' followed by %':'')+'.'};
+  const v=parseFloat(m[1]);
+  if(!isFinite(v)) return {err:'Enter a number'+(unit==='%'?' followed by %':'')+'.'};
+  let u=tidyText(m[2]||'').replace(/[.,;:]+$/,'');
+  if(unit==='count'){
+    if(u && !/^(count|qty|nodes)?$/i.test(u)) return {err:'This is a count — no unit needed.'};
+    return {v};
+  }
   if(unit==='1'){
-    if(!u || u==='1') return {v};
-    if(u==='%') return {v:v/100};
-    return {err:'this quantity is dimensionless (a bare number, or unit 1 or %).'};
+    if(!u || canonUnit(u)==='1') return {v};
+    if(canonUnit(u)==='%') return {v:v/100};
+    return {err:'This quantity is a bare number (no unit, or unit 1).'};
   }
   if(unit==='%'){
-    if(!u) return {err:'include units (%).'};
-    if(u==='%') return {v};
-    if(u==='1') return {v:v*100};
-    return {err:'use % (or the probability followed by unit 1).'};
+    const cu=canonUnit(u);
+    if(!u) return {v:v, missingUnit:true};
+    if(cu==='%') return {v};
+    if(cu==='1') return {v:v*100};
+    return {err:'Use % (for example 60 %).'};
   }
-  if(!u) return {err:`include units (${unit}).`};
-  return {err:`unknown unit “${u}”.`};
+  if(!u) return {v:v, missingUnit:true};
+  return {err:'Unknown unit “'+u+'”. Expected '+unitHint(unit)+'.'};
 }
+function nearly(a,v){
+  if(a.ta!==undefined) return Math.abs(v-a.v)<=a.ta+1e-9;
+  return Math.abs(v-a.v)<=((a.tp||1)/100)*Math.abs(a.v||1) || Math.abs(v-a.v)<1e-6;
+}
+function gradeAns(a, raw){
+  const p=parseQty(raw,a.u);
+  if(p.missingUnit){
+    if(nearly(a,p.v)) return {ok:false, err:'The number is right, but this course requires units. Add “'+unitHint(a.u)+'” (for example '+formatAns(a)+').'};
+    return {ok:false, err:'Please include the unit ('+unitHint(a.u)+').'};
+  }
+  if(p.err) return {ok:false, err:p.err};
+  if(!nearly(a,p.v)) return {ok:false, err:"isn't right yet."};
+  return {ok:true};
+}
+
 const Q={
  1:[{id:'q1.1',diff:'easy',text:'A rational agent chooses among three actions. A: utility 10 with probability 0.7 and utility 0 with probability 0.3. B: utility 20 with probability 0.4 and utility \\(-2\\) with probability 0.6. C: utility 6.5 with certainty. Compute the expected utility of A, of B, and of C.',
      ans:[{q:'EU(A)',v:7.0,u:'1',tp:1},{q:'EU(B)',v:6.8,u:'1',tp:1},{q:'EU(C)',v:6.5,u:'1',tp:1}],
@@ -302,29 +355,59 @@ function buildQuiz(c){
   const box=$('#quiz'+c); box.innerHTML='';
   Q[c].forEach(q=>{
     const d=document.createElement('div'); d.className='q'; d.id='Q'+q.id.replace('.','_');
+    const inpAttrs='type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
     d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>
-      <div class="inrow">${q.ans.map((a,i)=>`<label>${a.q}<br><input data-i="${i}" inputmode="text" autocomplete="off" placeholder="${a.u==='count'?'number':(a.u==='1'?'number (unit 1 optional)':'value '+a.u)}"></label>`).join('')}</div>
-      <button class="btn">Check</button> <button class="btn ghost">Hint</button><div class="fb"></div><div class="hints"></div>`;
-    let hintN=0, tries=0; const [chk,hb]=d.querySelectorAll('button'), fb=d.querySelector('.fb');
+      <div class="inrow">${q.ans.map((a,i)=>`<label>${a.q}<br><input data-i="${i}" ${inpAttrs} placeholder="${a.u==='count'?'number':(a.u==='1'?'number (unit 1 optional)':'value '+a.u)}"></label>`).join('')}</div>
+      <div class="q-actions">
+        <button type="button" class="btn" data-act="check">Check</button>
+        <button type="button" class="btn ghost" data-act="hint">Hint</button>
+        <button type="button" class="btn ghost" data-act="skip">Skip</button>
+        <button type="button" class="btn ghost" data-act="sol">Show solution</button>
+      </div>
+      <div class="fb"></div><div class="hints"></div>`;
+    let hintN=0, tries=0;
+    const chk=d.querySelector('[data-act="check"]'), hb=d.querySelector('[data-act="hint"]');
+    const skip=d.querySelector('[data-act="skip"]'), sol=d.querySelector('[data-act="sol"]');
+    const fb=d.querySelector('.fb');
     if(store.score[c][q.id]!==undefined){ d.classList.add('correct'); fb.className='fb ok'; fb.textContent='✓ Solved earlier (saved on this device).'; }
-    hb.onclick=()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say(`No more hints for ${q.id}. Tell me your first step and I'll check it.`); };
-    chk.onclick=()=>{
+    function blurQuiz(){ const a=document.activeElement; if(a && a.blur) a.blur(); }
+    hb.addEventListener('click',()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say('No more hints for this problem. Tell me your first step and I\'ll check it.'); });
+    sol.addEventListener('click',()=>{
+      const lines=q.ans.map(function(a){ return a.q+': '+formatAns(a); }).join('; ');
+      fb.className='fb';
+      fb.textContent='Solution: '+lines+'  You can keep trying or skip — you are not locked here.';
+    });
+    skip.addEventListener('click',()=>{
+      blurQuiz();
+      fb.className='fb';
+      fb.textContent='Skipped. Scroll on, or open another concept — a correct check is not required to move on.';
+      const next=d.nextElementSibling;
+      if(next && next.scrollIntoView) next.scrollIntoView({block:'start', behavior:'smooth'});
+    });
+    chk.addEventListener('click',()=>{
       tries++; let all=true; const msgs=[];
-      q.ans.forEach((a,i)=>{ const inp=d.querySelector(`input[data-i="${i}"]`), p=parseQty(inp.value,a.u);
-        if(p.err){ all=false; msgs.push(`${a.q}: ${p.err}`); inp.style.borderColor='var(--bad)'; return; }
-        const ok=a.ta!==undefined?Math.abs(p.v-a.v)<=a.ta+1e-9:Math.abs(p.v-a.v)<=a.tp/100*Math.abs(a.v)||Math.abs(p.v-a.v)<1e-6;
-        inp.style.borderColor=ok?'var(--ok)':'var(--bad)'; if(!ok){ all=false; msgs.push(`${a.q} isn't right yet.`); } });
+      q.ans.forEach((a,i)=>{ const inp=d.querySelector('input[data-i="'+i+'"]'), g=gradeAns(a,inp.value);
+        if(g.err){ all=false; msgs.push(a.q+': '+g.err); inp.style.borderColor='var(--bad)'; return; }
+        inp.style.borderColor=g.ok?'var(--ok)':'var(--bad)'; if(!g.ok){ all=false; msgs.push(a.q+" isn't right yet."); } });
       d.classList.toggle('correct',all); d.classList.toggle('wrong',!all); fb.className='fb '+(all?'ok':'no');
-      fb.innerHTML = all ? `✓ Correct${tries>1?` (after ${tries} tries; first-try answers count more toward mastery)`:''}.` : msgs.join(' ')+' Try again or take a hint.';
+      fb.innerHTML = all ? '✓ Correct'+(tries>1?' (after '+tries+' tries; first-try answers count more toward mastery)':'')+'.' : msgs.join(' ')+' Try again, take a hint, skip, or show the solution — you can always move on.';
+      if(all) blurQuiz();
       if(all && store.score[c][q.id]===undefined){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
-        say(tries===1?`Nice: ${q.id} on the first try. Can you explain <i>why</i> the reasoning holds?`:`Good recovery on ${q.id}. We'll revisit this idea in spaced review.`);
-        if(before<80 && mastery(c)>=80) say(c<4?`🎉 Concept ${c} mastered (≥80%). Concept ${c+1} is unlocked. Go on when <b>you</b> are ready.`:'🎉 Concept 4 mastered! You have finished the playable part of Unit 1. Keep going with the tutor prompt in Grok, or start Unit 2 when it lands.'); }
-      if(!all && tries===2) say(`On ${q.id}: write out your first step (the formula, with numbers plugged in) and I'll help you find the slip.`);
-    };
+        say(tries===1?'Nice work on the first try. Can you explain why the reasoning holds?':'Good recovery. We will revisit this idea in spaced review.');
+        if(before<80 && mastery(c)>=80) say(c<4?'Concept '+c+' mastered (80% or better). Concept '+(c+1)+' is unlocked. Go on when you are ready.':'You have finished the playable part of Unit 1. Keep going with the tutor prompt in Grok, or start Unit 2 when it lands.'); }
+      if(!all && tries===2) say('On this problem: write out your first step (the formula, with numbers plugged in) and I\'ll help you find the slip. You can also skip or show the solution.');
+    });
+    d.querySelectorAll('input').forEach(function(inp){
+      inp.addEventListener('keydown',function(e){ if(e.key==='Enter' || e.keyCode===13){ e.preventDefault(); chk.click(); } });
+      inp.addEventListener('focus',function(){
+        requestAnimationFrame(function(){ try{ inp.scrollIntoView({block:'center', behavior:'smooth'}); }catch(err){ inp.scrollIntoView(true);} });
+      });
+    });
     box.appendChild(d);
   });
   renderMath(box);
 }
+
 $('#reset').addEventListener('click',e=>{ e.preventDefault(); if(confirm('Reset saved AI 101 progress on this device?')){ localStorage.removeItem(KEY); location.reload(); } });
 
 /* ---------- scripted tutor ---------- */
@@ -349,4 +432,6 @@ function boot(){
   if(!$('#chat').children.length) say(Object.keys(store.score[1]).length ? 'Welcome back! Your AI 101 progress is restored. Pick up where you left off.' : 'Hi! Unit 1 starts with <b>what AI is</b> — agents, expected utility, a first look at search and Bayes — then the math that later units rest on. Try the sliders, then the quiz. I give hints, not answers.');
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
+
+try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,formatAns:formatAns,tidyText:tidyText}; }catch(e){}
 })();

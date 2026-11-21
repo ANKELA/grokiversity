@@ -41,7 +41,7 @@ def watch(pg):
 def answer(pg, qid, vals):
     loc = pg.locator("#Q" + qid.replace(".", "_"))
     for i, v in enumerate(vals): loc.locator("input").nth(i).fill(v)
-    loc.locator("button").nth(0).click(); return loc.locator(".fb").inner_text()
+    loc.locator('[data-act="check"], button.btn').first.click(); return loc.locator(".fb").inner_text()
 def drag(pg, sel, dx, dy):
     pg.evaluate(f"document.querySelector('{sel}').scrollIntoView({{block:'center',behavior:'instant'}})"); pg.wait_for_timeout(150)
     b = pg.locator(sel).bounding_box(); assert b, f"no box for {sel}"
@@ -253,7 +253,7 @@ with sync_playwright() as p:
 
     goto_slide(pg, "check-fx")
     pg.locator('[data-check="c1fx"] input').fill("86.6 N")
-    pg.locator('[data-check="c1fx"] button').click()
+    pg.locator('[data-check="c1fx"] [data-act="check"], [data-check="c1fx"] button.btn').first.click()
     print("micro Fx:", pg.locator('[data-check="c1fx"] .fb').inner_text())
     assert "Right" in pg.locator('[data-check="c1fx"] .fb').inner_text()
 
@@ -297,7 +297,7 @@ with sync_playwright() as p:
     pg.screenshot(path=str(SHOTS / "desktop_14_concept4_wrench.png"))
     goto_slide(pg, "check-m")
     pg.locator('[data-check="c4m"] input').fill("6 N.m")
-    pg.locator('[data-check="c4m"] button').click()
+    pg.locator('[data-check="c4m"] [data-act="check"], [data-check="c4m"] button.btn').first.click()
     print("micro moment N.m:", pg.locator('[data-check="c4m"] .fb').inner_text())
     assert "Right" in pg.locator('[data-check="c4m"] .fb').inner_text()
     goto_slide(pg, "quiz-q4-1"); assert "Correct" in answer(pg, "q4.1", ["69.28 N·m"])
@@ -328,7 +328,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(500); pg.screenshot(path=str(SHOTS / "desktop_15_concept5_beam.png"))
     goto_slide(pg, "check-beam")
     box = pg.locator('[data-check="c5ab"]')
-    box.locator("input").nth(0).fill("9 kN"); box.locator("input").nth(1).fill("3 kN"); box.locator("button").click()
+    box.locator("input").nth(0).fill("9 kN"); box.locator("input").nth(1).fill("3 kN"); box.locator('[data-act="check"], button.btn').first.click()
     print("micro beam:", box.locator(".fb").inner_text()); assert "Right" in box.locator(".fb").inner_text()
     goto_slide(pg, "quiz-q5-1"); assert "Correct" in answer(pg, "q5.1", ["6.667 kN", "3.333 kN"])
     goto_slide(pg, "quiz-q5-2"); assert "Correct" in answer(pg, "q5.2", ["6.0 kN", "12.0 kN"])

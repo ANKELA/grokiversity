@@ -284,3 +284,18 @@ html.lesson-page, html.lesson-page body{
   .lesson-top .crumb{font-size:12px}
   .lesson-top .logo span{display:none}
 }
+
+.q-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px;align-items:center}
+.q-actions .btn{min-height:44px}
+.check .q-actions, .q .q-actions{position:relative;z-index:2}
+html.kb-open, html.kb-open body{height:auto; max-height:none}
+.lesson-page .slide-nav{z-index:25; padding-bottom:max(8px, env(safe-area-inset-bottom, 0px))}
+html.kb-open .lesson-page .slide-nav, html.kb-open .slide-nav{
+  padding-bottom:max(10px, env(safe-area-inset-bottom, 0px));
+}
+.lesson-page input, .lesson-page textarea, .lesson-page button,
+.lesson input, .lesson textarea, .lesson button{
+  touch-action:manipulation;
+  -webkit-user-select:text;
+}
+.lesson-page button, .lesson button, .choices button{ -webkit-user-select:none; }

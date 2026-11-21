@@ -34,6 +34,7 @@ function hitHandle(id,cx,cy,color){
   let cap=null;
   document.addEventListener('pointerdown',e=>{
     const t=e.target;
+    if(t && t.closest && t.closest('input,button,textarea,select,label,a,.q,.check,.q-actions,.choices')){ cap=null; return; }
     cap = (t && t.closest) ? t.closest('svg.diagram') : null;
   }, true);
   document.addEventListener('pointermove',e=>{
@@ -312,7 +313,10 @@ function onShow(s){
 function guardSvgTouch(svg){
   if(!svg || svg.dataset.touchGuard) return;
   svg.dataset.touchGuard='1';
-  const stop=function(e){ if(e.cancelable) e.preventDefault(); };
+  const stop=function(e){
+    if(e.target && e.target.closest && e.target.closest('input,button,textarea,select,label,a,.q,.check,.q-actions')) return;
+    if(e.cancelable) e.preventDefault();
+  };
   svg.addEventListener('touchstart', stop, {passive:false});
   svg.addEventListener('touchmove', stop, {passive:false});
 }
@@ -872,31 +876,100 @@ $('#bmPsl').addEventListener('input',drawBeam);
 })();
 
 /* ---------- quiz + micro-check engine ---------- */
+function tidyText(str){
+  return String(str==null?'':str)
+    .replace(/[\u2018\u2019\u201A\u201B\u2032]/g,"'")
+    .replace(/[\u201C\u201D\u201E\u201F\u2033]/g,'"')
+    .replace(/[\u00A0\u202F\u2000-\u200A\uFEFF]/g,' ')
+    .replace(/[\u2212\u2010-\u2015\uFE58\uFE63\uFF0D]/g,'-')
+    .replace(/[\u00B7\u22C5\u2022\u2219]/g,'·')
+    .replace(/^\s+|\s+$/g,'')
+    .replace(/[.,;:]+$/,'');
+}
 function normU(u){
-  return String(u||'').trim().replace(/\s+/g,'').replace(/⋅|•/g,'·').replace(/-/g,'·');
+  return tidyText(u).replace(/\s+/g,'').replace(/⋅|•/g,'·').replace(/-/g,'·');
 }
 const UNITS={N:1,kN:1000,m:1,mm:0.001,cm:0.01,'N·m':1,'N.m':1,Nm:1,'kN·m':1000,'kN.m':1000,kNm:1000};
+const UNIT_ALIAS={
+  n:'N', newton:'N', newtons:'N',
+  kn:'kN', kilonewton:'kN', kilonewtons:'kN',
+  m:'m', meter:'m', meters:'m', metre:'m', metres:'m',
+  mm:'mm', millimeter:'mm', millimeters:'mm', millimetre:'mm', millimetres:'mm',
+  cm:'cm', centimeter:'cm', centimeters:'cm', centimetre:'cm', centimetres:'cm',
+  'n·m':'N·m','n.m':'N·m',nm:'N·m',newtonmeter:'N·m',newtonmetre:'N·m',newtonmeters:'N·m',newtonmetres:'N·m',
+  'kn·m':'kN·m','kn.m':'kN·m',knm:'kN·m',kilonewtonmeter:'kN·m',
+  deg:'deg', degree:'deg', degrees:'deg', '°':'deg',
+  '%':'%', percent:'%', pct:'%'
+};
+function canonUnit(u){
+  const n=normU(u);
+  if(!n) return '';
+  if(n in UNITS) return n;
+  const low=n.toLowerCase();
+  if(low in UNIT_ALIAS) return UNIT_ALIAS[low];
+  const compact=low.replace(/[·.]/g,'');
+  if(compact in UNIT_ALIAS) return UNIT_ALIAS[compact];
+  const keys=Object.keys(UNITS);
+  for(let i=0;i<keys.length;i++){
+    if(keys[i].toLowerCase()===low || normU(keys[i]).toLowerCase()===low) return keys[i];
+  }
+  if(low==='deg' || low==='degree' || low==='degrees' || compact==='deg') return 'deg';
+  return n;
+}
 function unitKind(u){
-  u=normU(u);
-  if(/^(deg|°|degree|degrees)$/i.test(u)) return 'A';
+  u=canonUnit(u)||normU(u);
+  if(/^(deg|°|degree|degrees)$/i.test(u) || u==='deg') return 'A';
   if(u==='N'||u==='kN') return 'F';
   if(u==='m'||u==='mm'||u==='cm') return 'L';
-  if(u in {'N·m':1,'N.m':1,Nm:1,'kN·m':1,'kN.m':1,kNm:1}) return 'M';
+  if(u==='N·m'||u==='N.m'||u==='Nm'||u==='kN·m'||u==='kN.m'||u==='kNm') return 'M';
   return '';
 }
+function unitHint(unit){
+  if(unit==='N·m'||unit==='N.m'||unit==='Nm') return 'N·m (you can type Nm, N.m, or N-m)';
+  if(unit==='deg') return 'deg or °';
+  if(unit==='kN') return 'kN';
+  if(unit==='%') return '%';
+  return unit;
+}
+function formatAns(a){
+  if(a.u==='count') return String(a.v);
+  if(a.u==='deg') return a.v+' deg';
+  if(a.u==='1') return String(a.v);
+  return a.v+' '+a.u;
+}
 function parseQty(str,unit){
-  const m=String(str).trim().replace(',','.').match(/^([-+−]?\d*\.?\d+(?:e[-+]?\d+)?)\s*(.*)$/);
-  if(!m) return {err:'Enter a number, optionally followed by a unit.'};
-  const v=parseFloat(m[1].replace('−','-')), u=(m[2]||'').trim();
+  const raw=tidyText(str);
+  if(!raw) return {err:'Enter a number'+(unit && unit!=='count' && unit!=='1'?' and its unit ('+unitHint(unit)+')':'')+'.'};
+  let s=raw;
+  if(/^[+-]?\d+,\d+/.test(s) && s.indexOf('.')===-1) s=s.replace(',','.');
+  const m=s.match(/^([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*(.*)$/);
+  if(!m) return {err:'Enter a number, then the unit (for example 12.5 '+unitHint(unit||'N')+').'};
+  const v=parseFloat(m[1]);
+  if(!isFinite(v)) return {err:'Enter a number, then the unit (for example 12.5 '+unitHint(unit||'N')+').'};
+  let u=tidyText(m[2]||'').replace(/[.,;:]+$/,'');
   if(unit==='count'){
-    if(u && !/^(count|qty)?$/i.test(u)) return {err:'this is a count — no unit needed.'};
+    if(u && !/^(count|qty)?$/i.test(u)) return {err:'This is a count — no unit needed.'};
     return {v};
   }
-  if(!u) return {err:`include units (${unit}).`};
-  if(unit==='deg') return /^(deg|°|degrees?)$/i.test(u) ? {v} : {err:'angle units should be degrees (deg).'};
-  const nu=normU(u), want=normU(unit);
-  if(!(nu in UNITS) || !(want in UNITS)) return {err:`unknown unit “${u||unit}”.`};
-  if(unitKind(nu)!==unitKind(want)) return {err:`wrong kind of unit: expected ${unit}.`};
+  if(unit==='1'){
+    if(!u || u==='1') return {v};
+    if(canonUnit(u)==='%' || u==='%') return {v:v/100};
+    return {err:'This quantity is a bare number (no unit, or unit 1).'};
+  }
+  if(unit==='%'){
+    const cu=canonUnit(u);
+    if(!u) return {v:v, missingUnit:true};
+    if(cu==='%') return {v};
+    if(cu==='1' || u==='1') return {v:v*100};
+    return {err:'Use % (for example 60 %).'};
+  }
+  if(!u) return {v:v, missingUnit:true};
+  const nu=canonUnit(u), want=canonUnit(unit)||normU(unit);
+  if(unit==='deg' || want==='deg'){
+    return (nu==='deg' || /^(deg|°|degrees?)$/i.test(u)) ? {v} : {err:'Angle units should be degrees (deg or °).'};
+  }
+  if(!(nu in UNITS) || !(want in UNITS)) return {err:'Unknown unit “'+(u||unit)+'”. Expected '+unitHint(unit)+'.'};
+  if(unitKind(nu)!==unitKind(want)) return {err:'Wrong kind of unit: expected '+unitHint(unit)+'.'};
   return {v:v*UNITS[nu]/UNITS[want]};
 }
 
@@ -963,11 +1036,19 @@ const Q={
      hints:['CD has length 3.75 m — a 3-4-5 triangle.','Moments about A eliminate A_x and A_y.']}]
 };
 
+function nearly(a,v){
+  if(a.ta!==undefined) return Math.abs(v-a.v)<=a.ta+1e-9;
+  return Math.abs(v-a.v)<=((a.tp||1)/100)*Math.abs(a.v||1) || Math.abs(v-a.v)<1e-6;
+}
 function gradeAns(a, raw){
   const p=parseQty(raw,a.u);
+  if(p.missingUnit){
+    if(nearly(a,p.v)) return {ok:false, err:'The number is right, but this course requires units. Add “'+unitHint(a.u)+'” (for example '+formatAns(a)+').'};
+    return {ok:false, err:'Please include the unit ('+unitHint(a.u)+').'};
+  }
   if(p.err) return {ok:false, err:p.err};
-  const ok=a.ta!==undefined?Math.abs(p.v-a.v)<=a.ta+1e-9:Math.abs(p.v-a.v)<=a.tp/100*Math.abs(a.v||1);
-  return {ok, err:null};
+  if(!nearly(a,p.v)) return {ok:false, err:"isn't right yet."};
+  return {ok:true};
 }
 
 function buildQuiz(q){
@@ -975,26 +1056,55 @@ function buildQuiz(q){
   if(!box) return;
   const c=+q.id[1];
   const d=document.createElement('div'); d.className='q'; d.id='Q'+q.id.replace('.','_');
+  const inpAttrs='type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
   d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>
-    <div class="inrow">${q.ans.map((a,i)=>`<label>${a.q}<br><input data-i="${i}" inputmode="text" autocomplete="off" placeholder="${a.u==='count'?'number':'value '+a.u}"></label>`).join('')}</div>
-    <button type="button" class="btn">Check</button> <button type="button" class="btn ghost">Hint</button><div class="fb"></div><div class="hints"></div>`;
-  let hintN=0, tries=0; const [chk,hb]=d.querySelectorAll('button'), fb=d.querySelector('.fb');
+    <div class="inrow">${q.ans.map((a,i)=>`<label>${a.q}<br><input data-i="${i}" ${inpAttrs} placeholder="${a.u==='count'?'number':'value '+a.u}"></label>`).join('')}</div>
+    <div class="q-actions">
+      <button type="button" class="btn" data-act="check">Check</button>
+      <button type="button" class="btn ghost" data-act="hint">Hint</button>
+      <button type="button" class="btn ghost" data-act="skip">Skip</button>
+      <button type="button" class="btn ghost" data-act="sol">Show solution</button>
+    </div>
+    <div class="fb"></div><div class="hints"></div>`;
+  let hintN=0, tries=0;
+  const chk=d.querySelector('[data-act="check"]'), hb=d.querySelector('[data-act="hint"]');
+  const skip=d.querySelector('[data-act="skip"]'), sol=d.querySelector('[data-act="sol"]');
+  const fb=d.querySelector('.fb');
   if(store.score[c][q.id]!==undefined){ d.classList.add('correct'); fb.className='fb ok'; fb.textContent='✓ Solved earlier (saved on this device).'; }
-  hb.onclick=()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say('Those are all the hints for this problem. Tell me your first step and I’ll check it.'); };
-  chk.onclick=()=>{
+  function blurQuiz(){ const a=document.activeElement; if(a && a.blur) a.blur(); }
+  hb.addEventListener('click',()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say('Those are all the hints for this problem. Tell me your first step and I’ll check it.'); });
+  sol.addEventListener('click',()=>{
+    const lines=q.ans.map(function(a){ return a.q+': '+formatAns(a); }).join('; ');
+    fb.className='fb';
+    fb.textContent='Solution: '+lines+'  You can keep trying, skip, or go to the next problem — you are not locked here.';
+  });
+  skip.addEventListener('click',()=>{
+    blurQuiz();
+    fb.className='fb';
+    fb.textContent='Skipped. Use Back or Next to leave this problem — a correct check is not required to move on.';
+    const nxt=$('#nextSlide');
+    if(nxt && !nxt.disabled) nxt.click();
+    else if($('#prevSlide') && !$('#prevSlide').disabled) say('This is the last slide of the concept. Tap Back, or open Concepts, whenever you want to leave.');
+  });
+  chk.addEventListener('click',()=>{
     tries++; let all=true; const msgs=[];
-    q.ans.forEach((a,i)=>{ const inp=d.querySelector(`input[data-i="${i}"]`), g=gradeAns(a,inp.value);
-      if(g.err){ all=false; msgs.push(`${a.q}: ${g.err}`); inp.style.borderColor='var(--bad)'; return; }
-      inp.style.borderColor=g.ok?'var(--ok)':'var(--bad)'; if(!g.ok){ all=false; msgs.push(`${a.q} isn't right yet.`); } });
+    q.ans.forEach((a,i)=>{ const inp=d.querySelector('input[data-i="'+i+'"]'), g=gradeAns(a,inp.value);
+      if(g.err){ all=false; msgs.push(a.q+': '+g.err); inp.style.borderColor='var(--bad)'; return; }
+      inp.style.borderColor=g.ok?'var(--ok)':'var(--bad)'; if(!g.ok){ all=false; msgs.push(a.q+" isn't right yet."); } });
     d.classList.toggle('correct',all); d.classList.toggle('wrong',!all); fb.className='fb '+(all?'ok':'no');
-    fb.innerHTML = all ? `✓ Correct${tries>1?` (after ${tries} tries; first-try answers count more toward mastery)`:''}.` : msgs.join(' ')+' Try again or take a hint.';
+    fb.innerHTML = all ? '✓ Correct'+(tries>1?' (after '+tries+' tries; first-try answers count more toward mastery)':'')+'.' : msgs.join(' ')+' Try again, take a hint, skip, or show the solution — you can always move on with Next or Back.';
+    if(all) blurQuiz();
     if(all && store.score[c][q.id]===undefined){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
       if(before<80 && mastery(c)>=80){
-        say(c<5?`Nice — this concept is mastered (80% or better). The next one is unlocked. Go on when you are ready.`:'You’ve finished Statics Unit 1 on this device. For a harder review, copy the tutor prompt into Grok.');
+        say(c<5?'Nice — this concept is mastered (80% or better). The next one is unlocked. Go on when you are ready.':'You’ve finished Statics Unit 1 on this device. For a harder review, copy the tutor prompt into Grok.');
       }
     }
-    if(!all && tries===2) say('Not quite yet. Write out your first equation, with signs and units, and I’ll help you find the slip.');
-  };
+    if(!all && tries===2) say('Not quite yet. Write out your first equation, with signs and units, and I’ll help you find the slip. You can also skip or show the solution — Next and Back still work.');
+  });
+  d.querySelectorAll('input').forEach(function(inp){
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter' || e.keyCode===13){ e.preventDefault(); chk.click(); } });
+    inp.addEventListener('focus',function(){ revealQuizControls(inp); });
+  });
   box.innerHTML=''; box.appendChild(d);
 }
 
@@ -1012,9 +1122,38 @@ const MICRO_MC={c2pull:'push', c3tight:'right'};
 function bindChecks(){
   $$('.check').forEach(box=>{
     const key=box.dataset.check;
+    box.querySelectorAll('input').forEach(function(inp){
+      inp.setAttribute('type','text');
+      inp.setAttribute('inputmode','text');
+      inp.setAttribute('enterkeyhint','go');
+      inp.setAttribute('autocomplete','off');
+      inp.setAttribute('autocapitalize','off');
+      inp.setAttribute('autocorrect','off');
+      inp.setAttribute('spellcheck','false');
+    });
     if(MICRO[key]){
-      const btn=box.querySelector('button.btn'), fb=box.querySelector('.fb');
+      let btn=box.querySelector('button.btn');
+      const fb=box.querySelector('.fb');
       if(!btn) return;
+      btn.type='button';
+      if(!box.querySelector('[data-act="sol"]')){
+        const row=document.createElement('div'); row.className='q-actions';
+        btn.replaceWith(row);
+        row.appendChild(btn);
+        btn.setAttribute('data-act','check');
+        const skip=document.createElement('button'); skip.type='button'; skip.className='btn ghost'; skip.dataset.act='skip'; skip.textContent='Skip';
+        const sol=document.createElement('button'); sol.type='button'; sol.className='btn ghost'; sol.dataset.act='sol'; sol.textContent='Show solution';
+        row.appendChild(skip); row.appendChild(sol);
+        skip.addEventListener('click',function(){
+          const a=document.activeElement; if(a&&a.blur) a.blur();
+          fb.className='fb'; fb.textContent='Skipped. This check is practice only — use Next or Back anytime.';
+          if($('#nextSlide') && !$('#nextSlide').disabled) $('#nextSlide').click();
+        });
+        sol.addEventListener('click',function(){
+          const lines=MICRO[key].map(function(a){ return a.q? (a.q+': '+formatAns(a)) : formatAns(a); }).join('; ');
+          fb.className='fb'; fb.textContent='Solution: '+lines+'  You can still try, or move on with Next or Back.';
+        });
+      }
       btn.addEventListener('click',()=>{
         const ins=[...box.querySelectorAll('input')];
         let all=true, msgs=[];
@@ -1024,7 +1163,10 @@ function bindChecks(){
           if(!g.ok){ all=false; msgs.push(g.err||'Not quite.'); }
         });
         fb.className='fb '+(all?'ok':'no');
-        fb.textContent=all?'✓ Right.':'Not quite. '+msgs.join(' ')+' This check is just for practice — it does not count toward mastery.';
+        fb.textContent=all?'✓ Right.':'Not quite. '+msgs.join(' ')+' This check is just for practice — it does not count toward mastery. You can skip, show the solution, or move on.';
+      });
+      box.querySelectorAll('input').forEach(function(inp){
+        inp.addEventListener('keydown',function(e){ if(e.key==='Enter' || e.keyCode===13){ e.preventDefault(); btn.click(); } });
       });
     }
     if(MICRO_MC[key]){
@@ -1057,8 +1199,100 @@ function reply(t){ t=t.toLowerCase();
 $('#csend').onclick=()=>{ const v=$('#cin').value.trim(); if(!v) return; say(v.replace(/[<&]/g,c=>c==='<'?'&lt;':'&amp;'),'s'); $('#cin').value=''; setTimeout(()=>say(reply(v)),250); };
 $('#cin').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#csend').click(); });
 
+function applyKeyboardInset(){
+  const app=$('#lessonApp'); if(!app) return;
+  const vv=window.visualViewport;
+  if(!vv){ app.style.height=''; app.style.maxHeight=''; app.style.transform=''; return; }
+  const kb=Math.max(0, window.innerHeight - vv.height - (vv.offsetTop||0));
+  document.documentElement.style.setProperty('--kb', kb+'px');
+  document.documentElement.style.setProperty('--vvh', vv.height+'px');
+  if(kb>40){
+    document.documentElement.classList.add('kb-open');
+    app.style.height=vv.height+'px';
+    app.style.maxHeight=vv.height+'px';
+    app.style.transform='translateY('+(vv.offsetTop||0)+'px)';
+  } else {
+    document.documentElement.classList.remove('kb-open');
+    app.style.height=''; app.style.maxHeight=''; app.style.transform='';
+  }
+}
+function revealQuizControls(el){
+  applyKeyboardInset();
+  const q=el.closest && el.closest('.q, .check');
+  const btn=q && q.querySelector('button.btn, [data-act="check"]');
+  const slide=el.closest && (el.closest('.slide')||el.closest('.lesson')||document.scrollingElement);
+  requestAnimationFrame(function(){
+    try{ el.scrollIntoView({block:'center', inline:'nearest', behavior:'smooth'}); }catch(e){ if(el.scrollIntoView) el.scrollIntoView(true); }
+    const vv=window.visualViewport;
+    if(btn && vv){
+      const br=btn.getBoundingClientRect();
+      const floor=vv.height+(vv.offsetTop||0)-12;
+      if(br.bottom>floor && slide && slide.scrollBy){
+        slide.scrollBy(0, br.bottom-floor+16);
+      }
+    }
+    const nav=$('.slide-nav');
+    if(nav && vv){
+      const nr=nav.getBoundingClientRect();
+      if(nr.bottom>vv.height+(vv.offsetTop||0)+4) applyKeyboardInset();
+    }
+  });
+}
+function bindLessonSwipe(){
+  const stage=$('.stage-wrap'); if(!stage) return;
+  let x0=0,y0=0,t0=0,on=false;
+  const ignore=function(t){
+    return !!(t && t.closest && t.closest('input,textarea,button,select,a,svg.diagram,.drawer,.trig-panel,.q-actions,.choices,.handle'));
+  };
+  const startAt=function(x,y,t){
+    if(ignore(t)){ on=false; return; }
+    x0=x; y0=y; t0=Date.now(); on=true;
+  };
+  const endAt=function(x,y){
+    if(!on) return; on=false;
+    const dx=x-x0, dy=y-y0;
+    if(Math.abs(dx)<70 || Math.abs(dx)<Math.abs(dy)*1.5) return;
+    if(Date.now()-t0>800) return;
+    const a=document.activeElement; if(a && a.blur) a.blur();
+    if(dx<0){ if($('#nextSlide')) $('#nextSlide').click(); }
+    else { if($('#prevSlide')) $('#prevSlide').click(); }
+  };
+  stage.addEventListener('touchstart',function(e){
+    if(!e.touches || e.touches.length!==1) return;
+    startAt(e.touches[0].clientX, e.touches[0].clientY, e.target);
+  },{passive:true});
+  stage.addEventListener('touchend',function(e){
+    const t=e.changedTouches && e.changedTouches[0]; if(!t){ on=false; return; }
+    endAt(t.clientX, t.clientY);
+  },{passive:true});
+  stage.addEventListener('pointerdown',function(e){
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    startAt(e.clientX, e.clientY, e.target);
+  });
+  stage.addEventListener('pointerup',function(e){ endAt(e.clientX, e.clientY); });
+  stage.addEventListener('pointercancel',function(){ on=false; });
+}
+function wireKeyboard(){
+  applyKeyboardInset();
+  window.addEventListener('resize', applyKeyboardInset);
+  if(window.visualViewport){
+    visualViewport.addEventListener('resize', applyKeyboardInset);
+    visualViewport.addEventListener('scroll', applyKeyboardInset);
+  }
+  document.addEventListener('focusin',function(e){
+    if(e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) revealQuizControls(e.target);
+  });
+  ['#prevSlide','#nextSlide','#conceptsBtn','#trigBtn','#tutorBtn'].forEach(function(sel){
+    const el=$(sel); if(!el) return;
+    el.addEventListener('pointerdown', function(){ const a=document.activeElement; if(a && a.blur) a.blur(); }, true);
+  });
+  bindLessonSwipe();
+}
+
 /* ---------- boot ---------- */
 function boot(){
+  wireKeyboard();
+
   bindChecks();
   Object.values(Q).forEach(list=>list.forEach(buildQuiz));
   const r=readRoute();
@@ -1070,4 +1304,6 @@ function boot(){
     : 'Hi! This unit is a set of interactive slides. Drag the pictures, check yourself as you go, then try the problems. I give hints, not answers — show your work and include units.');
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
+
+try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,tidyText:tidyText}; }catch(e){}
 })();
