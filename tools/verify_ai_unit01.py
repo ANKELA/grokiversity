@@ -10,9 +10,9 @@ calc = {}
 calc["q1.1"] = [0.7*10 + 0.3*0, 0.4*20 + 0.6*(-2), 6.5]
 # q1.2 BFS, goal test on generation, last node at depth 5, b=4
 calc["q1.2"] = [sum(4**k for k in range(0, 6))]
-# q1.3 Bayes
+# q1.3 Bayes — playable quiz asks for percents so a whole-number answer is meaningful
 p_pos = 0.95*0.01 + 0.10*0.99
-calc["q1.3"] = [p_pos, 0.95*0.01 / p_pos]
+calc["q1.3"] = [100*p_pos, 100*0.95*0.01 / p_pos]
 # q1.4 majority baseline and model accuracy, as percents
 calc["q1.4"] = [100*120/200, 100*150/200]
 
@@ -82,4 +82,37 @@ for c in data["concepts"]:
             good = ok(a["value"], float(v), a)
             bad += not good
             print(f"{'PASS' if good else 'FAIL'}  {q['id']:5} {a['quantity']:<22} yaml={a['value']:<12} computed={float(v):.8g} {a['unit']}")
+# Playable-quiz integer-rounding policy (mirrors prototype/ai.js).
+# Large or converted answers (counts, percents, |v|>=10) accept the nearest whole number
+# as well as ±1%. Small-magnitude non-integers (utilities like 6.8, MSE, weights, alphas)
+# stay on the tight tolerance so rounding would not collapse or zero them.
+def half_away(v):
+    if v == 0: return 0
+    return int((1 if v > 0 else -1) * (__import__('math').floor(abs(v) + 0.5)))
+def uses_int_round(a):
+    if a.get("round_int") is False or a.get("unit")=="count":
+        return False
+    if a.get("round_int") is True:
+        return True
+    v=a["value"]
+    if abs(v-half_away(v))<1e-9: return True
+    return abs(v)>=10-1e-12
+print("\nInteger-round policy for playable YAML answers:")
+exempt=[]
+for c in data["concepts"]:
+    for q in c["quiz"]:
+        for a in q["answers"]:
+            v=a["value"]
+            if uses_int_round(a):
+                import math
+                if abs(abs(v)-math.floor(abs(v))-0.5)<=1e-8:
+                    ts=[math.floor(v), math.ceil(v)]
+                else:
+                    ts=[half_away(v)]
+                print(f"  ROUND {q['id']:5} {a['quantity']:<22} exact={v} {a['unit']}  accepts {ts}")
+            elif a.get("unit")!="count":
+                exempt.append((q["id"], a["quantity"], v, a["unit"]))
+                print(f"  EXEMPT {q['id']:5} {a['quantity']:<22} exact={v} {a['unit']}  (small non-integer; keep ±tol)")
+print(f"Exempted ({len(exempt)}): "+", ".join(f"{i} {q}" for i,q,_,_ in exempt))
 print(f"\n{nans-bad}/{nans} answers verified"); sys.exit(1 if bad else 0)
+

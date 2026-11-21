@@ -931,12 +931,59 @@ function unitHint(unit){
   if(unit==='%') return '%';
   return unit;
 }
-function formatAns(a){
-  if(a.u==='count') return String(a.v);
+function formatExact(a){
+  if(a.u==='count' || a.u==='1') return String(a.v);
   if(a.u==='deg') return a.v+' deg';
-  if(a.u==='1') return String(a.v);
+  if(a.u==='%') return a.v+' %';
   return a.v+' '+a.u;
 }
+function isHalfInt(v){
+  const a=Math.abs(v);
+  return Math.abs(a-Math.floor(a)-0.5)<=1e-8;
+}
+function roundHalfAway(v){
+  if(!isFinite(v)) return v;
+  if(v===0) return 0;
+  const s=v<0?-1:1;
+  return s*Math.floor(Math.abs(v)+0.5);
+}
+function intTargets(v){
+  if(isHalfInt(v)) return [Math.floor(v), Math.ceil(v)];
+  return [roundHalfAway(v)];
+}
+function usesIntRound(a){
+  if(!a || a.ri===false || a.u==='count') return false;
+  if(a.ri===true) return true;
+  if(Math.abs(a.v-roundHalfAway(a.v))<1e-9) return true;
+  return Math.abs(a.v)>=10-1e-12;
+}
+function closeInt(user, targets){
+  return targets.some(function(t){ return Math.abs(user-t)<=1e-6*Math.max(1, Math.abs(t)); });
+}
+function formatAns(a, short){
+  if(a.u==='count') return String(a.v);
+  if(!usesIntRound(a)) return formatExact(a);
+  const ts=intTargets(a.v);
+  const body=ts.length===2?(ts[0]+' or '+ts[1]):String(ts[0]);
+  const unit=(a.u==='deg')?' deg':(a.u==='1'?'':(a.u==='%'?' %':(' '+a.u)));
+  const shown=body+unit;
+  if(short || (ts.length===1 && Math.abs(ts[0]-a.v)<1e-9)) return shown;
+  return shown+' (exact '+formatExact(a)+')';
+}
+function ansPlaceholder(a){
+  if(a.u==='count') return 'whole number';
+  if(usesIntRound(a)) return 'whole '+a.u;
+  if(a.u==='1') return 'number (unit 1 optional)';
+  return 'value '+a.u;
+}
+function quizRoundHint(q){
+  const any=(q.ans||[]).some(usesIntRound);
+  const allCount=(q.ans||[]).every(function(a){ return a.u==='count'; });
+  if(allCount) return '<p class="sub q-round-hint">Enter a whole number. No units needed.</p>';
+  if(any) return '<p class="sub q-round-hint">Round to the nearest whole number (in the unit asked — for example 512 N, or 0.512 kN). More precise answers within 1% still count (angles ±0.5°).</p>';
+  return '<p class="sub q-round-hint">Enter a precise value. Small-magnitude answers count within 1% (or the stated tolerance) — do not round these to 0 or 1.</p>';
+}
+
 function parseQty(str,unit){
   const raw=tidyText(str);
   if(!raw) return {err:'Enter a number'+(unit && unit!=='count' && unit!=='1'?' and its unit ('+unitHint(unit)+')':'')+'.'};
@@ -999,7 +1046,7 @@ const Q={
      ans:[{q:'T_AB',v:359.1,u:'N',tp:1},{q:'T_AC',v:439.8,u:'N',tp:1}],
      hints:['W = mg. Draw the FBD of the ring: three forces.','Write \\(\\sum F_x=0\\) and \\(\\sum F_y=0\\), giving two equations in two unknowns.']},
     {id:'q3.2',diff:'medium',text:'An 8 kg lamp hangs at A. A horizontal spring AB (\\(k=800\\) N/m) pulls left; cable AC pulls up-right at 30° above horizontal. Find \\(T_{AC}\\), the spring force, and the spring stretch.',
-     ans:[{q:'T_AC',v:156.96,u:'N',tp:1},{q:'F_spring',v:135.9,u:'N',tp:1},{q:'stretch',v:0.1699,u:'m',tp:1}],
+     ans:[{q:'T_AC',v:156.96,u:'N',tp:1},{q:'F_spring',v:135.9,u:'N',tp:1},{q:'stretch',v:169.9,u:'mm',tp:1}],
      hints:['Only the cable has a vertical component. Start with \\(\\sum F_y\\).','Spring: \\(F=ks\\), so \\(s=F/k\\).']},
     {id:'q3.3',diff:'hard',text:'A 1200 N load hangs from point A at the origin, held by cables to B(−2, −3, 6) m, C(3, −2, 6) m and D(0, 4, 6) m. Find the tension in each cable.',
      ans:[{q:'T_AB',v:509.1,u:'N',tp:1},{q:'T_AC',v:339.4,u:'N',tp:1},{q:'T_AD',v:568.1,u:'N',tp:1}],
@@ -1020,30 +1067,32 @@ const Q={
      ans:[{q:'M_OC',v:391.9,u:'N·m',tp:1}],
      hints:['\\(M_{OC} = \\hat u_{OC}\\cdot\\vec M_O\\) with \\(\\hat u_{OC}=(0.6,\\,0,\\,0.8)\\).']}],
  5:[{id:'q5.1',diff:'easy',text:'A 6.0 m simply supported beam has a pin at A (x = 0) and a roller at B (x = 6.0 m). A 10 kN downward load acts at x = 2.0 m. Find \\(A_y\\) and \\(B_y\\).',
-     ans:[{q:'A_y',v:6.667,u:'kN',tp:1},{q:'B_y',v:3.333,u:'kN',tp:1}],
+     ans:[{q:'A_y',v:6666.7,u:'N',tp:1},{q:'B_y',v:3333.3,u:'N',tp:1}],
      hints:['\\(\\sum M_A=0\\) gives \\(B_y\\) directly.']},
     {id:'q5.2',diff:'medium',text:'A beam has a pin at A (x = 0) and a roller at B (x = 4 m). It carries a uniform load of 4 kN/m from x = 0 to x = 3 m and a 6 kN point load at the free end x = 5 m. Find \\(A_y\\) and \\(B_y\\).',
      ans:[{q:'A_y',v:6.0,u:'kN',tp:1},{q:'B_y',v:12.0,u:'kN',tp:1}],
      hints:['Distributed load resultant: 12 kN at x = 1.5 m.']},
     {id:'q5.3',diff:'medium',text:'Beam AB (5 m) has a pin at A and a roller at B resting on a surface inclined 30° (so the roller reaction is 30° from vertical, leaning toward A). An 8 kN downward load acts 3 m from A. Find \\(N_B\\), \\(A_x\\) and \\(A_y\\).',
-     ans:[{q:'N_B',v:5.543,u:'kN',tp:1},{q:'A_x',v:2.771,u:'kN',tp:1},{q:'A_y',v:3.2,u:'kN',tp:1}],
+     ans:[{q:'N_B',v:5543,u:'N',tp:1},{q:'A_x',v:2771,u:'N',tp:1},{q:'A_y',v:3200,u:'N',tp:1}],
      hints:['\\(N_B=N_B(-\\sin 30^\\circ,\\,\\cos 30^\\circ)\\).','Only \\(N_B\\cos 30^\\circ\\) creates moment about A.']},
     {id:'q5.4',diff:'hard',text:'A boom lies along the x-axis from a ball-and-socket at A(0,0,0) to B(6,0,0) m. A 2 kN load acts downward (−z) at B. Cables run from B to C(0, 2, 3) m and from B to D(0, −4, 3) m. Find \\(T_{BC}\\), \\(T_{BD}\\) and the reaction at A.',
-     ans:[{q:'T_BC',v:3.111,u:'kN',tp:1},{q:'T_BD',v:1.736,u:'kN',tp:1},{q:'A_x',v:4.0,u:'kN',tp:1},{q:'A_y',v:0.0,u:'kN',ta:0.01},{q:'A_z',v:0.0,u:'kN',ta:0.01}],
+     ans:[{q:'T_BC',v:3111,u:'N',tp:1},{q:'T_BD',v:1736,u:'N',tp:1},{q:'A_x',v:4000,u:'N',tp:1},{q:'A_y',v:0,u:'N',ta:10},{q:'A_z',v:0,u:'N',ta:10}],
      hints:['|BC| = 7 m, |BD| = √61 = 7.810 m.','\\(\\sum M_A=\\vec r_{AB}\\times(T_{BC}\\hat u_{BC}+T_{BD}\\hat u_{BD}+\\vec L)=0\\) gives two useful equations.']},
     {id:'q5.5',diff:'exam',text:'EXAM-STYLE (20 min). A horizontal beam AB (4.0 m) is pinned to a wall at A. A straight strut CD connects point C on the beam (3.0 m from A) to point D on the wall, 2.25 m directly below A. A load \\(P=10\\) kN acts downward at B. Neglect weights. Find the strut force \\(F_{CD}\\), the pin reaction at A (\\(A_x\\), \\(A_y\\), and magnitude), and the maximum load \\(P\\) if the strut buckles at 25 kN compression.',
-     ans:[{q:'F_CD',v:22.22,u:'kN',tp:1},{q:'A_x',v:-17.78,u:'kN',tp:1},{q:'A_y',v:-3.333,u:'kN',tp:1},{q:'|A|',v:18.09,u:'kN',tp:1},{q:'P_max',v:11.25,u:'kN',tp:1}],
+     ans:[{q:'F_CD',v:22.22,u:'kN',tp:1},{q:'A_x',v:-17.78,u:'kN',tp:1},{q:'A_y',v:-3333,u:'N',tp:1},{q:'|A|',v:18.09,u:'kN',tp:1},{q:'P_max',v:11.25,u:'kN',tp:1}],
      hints:['CD has length 3.75 m — a 3-4-5 triangle.','Moments about A eliminate A_x and A_y.']}]
 };
 
 function nearly(a,v){
-  if(a.ta!==undefined) return Math.abs(v-a.v)<=a.ta+1e-9;
-  return Math.abs(v-a.v)<=((a.tp||1)/100)*Math.abs(a.v||1) || Math.abs(v-a.v)<1e-6;
+  if(a.ta!==undefined && Math.abs(v-a.v)<=a.ta+1e-9) return true;
+  if(a.ta===undefined && (Math.abs(v-a.v)<=((a.tp||1)/100)*Math.abs(a.v||1) || Math.abs(v-a.v)<1e-6)) return true;
+  if(usesIntRound(a) && closeInt(v, intTargets(a.v))) return true;
+  return false;
 }
 function gradeAns(a, raw){
   const p=parseQty(raw,a.u);
   if(p.missingUnit){
-    if(nearly(a,p.v)) return {ok:false, err:'The number is right, but this course requires units. Add “'+unitHint(a.u)+'” (for example '+formatAns(a)+').'};
+    if(nearly(a,p.v) || (usesIntRound(a) && closeInt(p.v, intTargets(a.v)))) return {ok:false, err:'The number is right, but this course requires units. Add “'+unitHint(a.u)+'” (for example '+formatAns(a,true)+').'};
     return {ok:false, err:'Please include the unit ('+unitHint(a.u)+').'};
   }
   if(p.err) return {ok:false, err:p.err};
@@ -1051,14 +1100,15 @@ function gradeAns(a, raw){
   return {ok:true};
 }
 
+
 function buildQuiz(q){
   const box=document.querySelector('.q-mount[data-q="'+q.id+'"]');
   if(!box) return;
   const c=+q.id[1];
   const d=document.createElement('div'); d.className='q'; d.id='Q'+q.id.replace('.','_');
   const inpAttrs='type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
-  d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>
-    <div class="inrow">${q.ans.map((a,i)=>`<label>${a.q}<br><input data-i="${i}" ${inpAttrs} placeholder="${a.u==='count'?'number':'value '+a.u}"></label>`).join('')}</div>
+  d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>${quizRoundHint(q)}
+    <div class="inrow">${q.ans.map((a,i)=>`<label>${a.q}<br><input data-i="${i}" ${inpAttrs} placeholder="${ansPlaceholder(a)}"></label>`).join('')}</div>
     <div class="q-actions">
       <button type="button" class="btn" data-act="check">Check</button>
       <button type="button" class="btn ghost" data-act="hint">Hint</button>
@@ -1305,5 +1355,5 @@ function boot(){
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
-try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,tidyText:tidyText}; }catch(e){}
+try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly}; }catch(e){}
 })();

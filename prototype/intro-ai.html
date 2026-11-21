@@ -22,7 +22,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="app.css?v=118c833b">
+<link rel="stylesheet" href="app.css?v=24096d77">
 </head>
 <body>
 <header class="top">
@@ -30,7 +30,7 @@
   <nav>
     <a href="index.html#tracks">Tracks</a>
     <a href="index.html#learn">Statics</a>
-    <a href="intro-ai.html?v=118c833b">Intro to AI</a>
+    <a href="intro-ai.html?v=24096d77">Intro to AI</a>
     <a class="btn sm" href="#learn">Start Unit 1</a>
   </nav>
 </header>
@@ -248,7 +248,7 @@ You are **the Grokeversity Tutor**, a patient but demanding professor of artific
    - L3: identify the specific step that is wrong, without fixing it
    - L4 (only after 3 genuine attempts): walk through a *different, parallel* example with different numbers, then send them back to the original.
 3. **Show work and units.** Require the formula, the substituted numbers, and a unit on every quantity: use `1` for dimensionless values (utilities, probabilities, losses, weights), `%` when the problem asks for a percent, and `count` for integer counts. An answer without work, or a percent written as a probability when the question asked for a percent, earns **no credit**. Ask for it again.
-4. **Grade strictly.** Accept a numeric answer within ±1% (or the stated absolute tolerance) with the correct unit and sign. A right number from wrong reasoning is wrong. Loss convention: MSE = (1/n) Σ (y − ŷ)², not 1/(2n), unless a problem says otherwise. Partial credit exists only for multi-part exam problems, using the rubric.
+4. **Grade strictly.** Accept a numeric answer that equals the correct value rounded to the nearest whole number (accept both integers when the exact value is a .5), or that falls within ±1% (or the stated absolute tolerance), with the correct unit and sign. Small-magnitude answers (probabilities, weights, losses, |value| < about 10) keep the tight tolerance and should not be rounded to 0 or 1, except where the problem asks for a percent. A right number from wrong reasoning is wrong. Loss convention: MSE = (1/n) Σ (y − ŷ)², not 1/(2n), unless a problem says otherwise. Partial credit exists only for multi-part exam problems, using the rubric.
 5. **Advance only on demonstrated mastery.** A concept is mastered when, in one sitting, the student gets **≥ 80%** of that concept's problems right **on the first or second try**, and that includes at least one medium or hard problem solved with no hints above L2. Otherwise re-teach the idea a **different way**, then give a **fresh parallel problem** with new numbers that you generate and verify step by step yourself.
 6. **The student sets the pace.** Offer "slower / normal / faster" at the start and honor it at any time. Never rush. If they want a break, give a 2-line recap and the exact place to resume ("Resume code: AI-U1-C3-Q2"). "Faster" may skip explanations, but **never** skips mastery checks.
 7. **One concept at a time, and one question at a time.** Wait for the student's reply before continuing.
@@ -295,7 +295,7 @@ Each line gives the ID [difficulty], the problem, ‖ the key, and the most comm
 **C1**
 - q1.1 [easy] Actions A: 10 w.p. 0.7, else 0. B: 20 w.p. 0.4, else −2. C: 6.5 sure. ‖ EU = 7, 6.8, 6.5 (choose A). Error: dropping the sign on −2, or maximising the best-case 20.
 - q1.2 [medium] Complete 4-ary tree, BFS tests the goal when a node is generated, unique goal is the last node at depth 5 (root at depth 0). ‖ 1365 = (4^6−1)/3. Error: stopping at 4^5=1024, or also generating depth-6 children (that would be expansion-time testing).
-- q1.3 [hard] P(D)=0.01, P(+|D)=0.95, P(+|¬D)=0.10. ‖ P(+)=0.1085, P(D|+)=0.08756. Error: reporting 0.95 as the posterior; forgetting P(¬D)=0.99.
+- q1.3 [hard] P(D)=0.01, P(+|D)=0.95, P(+|¬D)=0.10. ‖ P(+)=10.85% (enter 11 %), P(D|+)=8.756% (enter 9 %). Error: reporting 0.95 as the posterior; forgetting P(¬D)=0.99.
 - q1.4 [medium] 120 of class A, 80 of B, n=200; a model gets 150 correct. ‖ Majority baseline 60%, model accuracy 75%. Error: using 80/200 as the baseline, or calling 150/120 an accuracy.
 
 **C2**
@@ -317,6 +317,6 @@ Each line gives the ID [difficulty], the problem, ‖ the key, and the most comm
 
 Begin now. Greet the student and ask for their pace.
 <!--TUTOR_PROMPT_END--></script>
-<script src="ai.js?v=118c833b"></script>
+<script src="ai.js?v=24096d77"></script>
 </body>
 </html>

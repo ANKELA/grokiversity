@@ -181,9 +181,9 @@ concepts:
         answers:
           - {quantity: T_AC, value: 156.96, unit: N, tolerance_pct: 1}
           - {quantity: F_spring, value: 135.9, unit: N, tolerance_pct: 1}
-          - {quantity: stretch, value: 0.1699, unit: m, tolerance_pct: 1}
+          - {quantity: stretch, value: 169.9, unit: mm, tolerance_pct: 1}
         hints: ["Only the cable has a vertical component — start with ΣFy."]
-        solution: "T_AC sin30° = 78.48 → T_AC = 156.96 N; F_s = T_AC cos30° = 135.9 N; s = F/k = 0.1699 m."
+        solution: "T_AC sin30° = 78.48 → T_AC = 156.96 N; F_s = T_AC cos30° = 135.9 N; s = F/k = 0.1699 m = 169.9 mm (enter 170 mm)."
       - id: q3.3
         difficulty: hard
         prompt: "A 1200 N load hangs from point A at the origin, supported by three cables to B(−2, −3, 6) m, C(3, −2, 6) m and D(0, 4, 6) m. Find the tension in each cable."
@@ -278,10 +278,10 @@ concepts:
         difficulty: easy
         prompt: "A 6.0 m simply supported beam has a pin at A (x = 0) and a roller at B (x = 6.0 m). A 10 kN downward load acts at x = 2.0 m. Find A_y and B_y."
         answers:
-          - {quantity: A_y, value: 6.667, unit: kN, tolerance_pct: 1}
-          - {quantity: B_y, value: 3.333, unit: kN, tolerance_pct: 1}
+          - {quantity: A_y, value: 6666.7, unit: N, tolerance_pct: 1}
+          - {quantity: B_y, value: 3333.3, unit: N, tolerance_pct: 1}
         hints: ["ΣM_A = 0 gives B_y directly."]
-        solution: "ΣM_A: 6 B_y − 10(2) = 0 → B_y = 3.333 kN; ΣFy: A_y = 6.667 kN."
+        solution: "ΣM_A: 6 B_y − 10(2) = 0 → B_y = 3.333 kN = 3333 N; ΣFy: A_y = 6.667 kN = 6667 N (enter whole newtons)."
       - id: q5.2
         difficulty: medium
         prompt: "A beam has a pin at A (x = 0) and a roller at B (x = 4 m). It carries a uniform load of 4 kN/m from x = 0 to x = 3 m and a 6 kN point load at the free end x = 5 m. Find A_y and B_y."
@@ -294,20 +294,20 @@ concepts:
         difficulty: medium
         prompt: "Beam AB (5 m) has a pin at A and a roller at B resting on a surface inclined 30° (so the roller reaction is 30° from vertical, leaning toward A). An 8 kN downward load acts 3 m from A. Find N_B, A_x and A_y."
         answers:
-          - {quantity: N_B, value: 5.543, unit: kN, tolerance_pct: 1}
-          - {quantity: A_x, value: 2.771, unit: kN, tolerance_pct: 1}
-          - {quantity: A_y, value: 3.200, unit: kN, tolerance_pct: 1}
+          - {quantity: N_B, value: 5543, unit: N, tolerance_pct: 1}
+          - {quantity: A_x, value: 2771, unit: N, tolerance_pct: 1}
+          - {quantity: A_y, value: 3200, unit: N, tolerance_pct: 1}
         hints: ["N_B = N_B(−sin30°, cos30°).", "Only N_B cos30° creates moment about A."]
-        solution: "ΣM_A: 5 N_B cos30° = 8(3) → N_B = 5.543 kN. ΣFx: A_x = N_B sin30° = 2.771 kN. ΣFy: A_y = 8 − N_B cos30° = 3.200 kN."
+        solution: "ΣM_A: 5 N_B cos30° = 8(3) → N_B = 5.543 kN = 5543 N. ΣFx: A_x = N_B sin30° = 2.771 kN = 2771 N. ΣFy: A_y = 8 − N_B cos30° = 3.200 kN = 3200 N."
       - id: q5.4
         difficulty: hard
         prompt: "A boom lies along the x-axis from a ball-and-socket at A(0,0,0) to B(6,0,0) m. A 2 kN load acts downward (−z) at B. Cables run from B to C(0, 2, 3) m and from B to D(0, −4, 3) m. Find T_BC, T_BD and the reaction at A. What do you notice about the boom?"
         answers:
-          - {quantity: T_BC, value: 3.111, unit: kN, tolerance_pct: 1}
-          - {quantity: T_BD, value: 1.736, unit: kN, tolerance_pct: 1}
-          - {quantity: A_x, value: 4.000, unit: kN, tolerance_pct: 1}
-          - {quantity: A_y, value: 0.0, unit: kN, tolerance_abs: 0.01}
-          - {quantity: A_z, value: 0.0, unit: kN, tolerance_abs: 0.01}
+          - {quantity: T_BC, value: 3111, unit: N, tolerance_pct: 1}
+          - {quantity: T_BD, value: 1736, unit: N, tolerance_pct: 1}
+          - {quantity: A_x, value: 4000, unit: N, tolerance_pct: 1}
+          - {quantity: A_y, value: 0.0, unit: N, tolerance_abs: 10}
+          - {quantity: A_z, value: 0.0, unit: N, tolerance_abs: 10}
         expected_text: "All loads act at B, so the boom is a two-force member: the reaction at A acts purely along the boom (4 kN compression)."
         hints: ["|BC| = 7 m, |BD| = √61 = 7.810 m.", "ΣM_A = r_AB × (T_BC u_BC + T_BD u_BD + L) = 0 gives two useful equations."]
         solution: "ΣM_A: y-component → 6(3T_BC/7 + 3T_BD/7.810 − 2) = 0; z-component → 6(2T_BC/7 − 4T_BD/7.810) = 0. Solving: T_BC = 3.111 kN, T_BD = 1.736 kN. ΣF = 0 gives A = (4.000, 0, 0) kN — pure compression along the boom."
@@ -323,7 +323,7 @@ concepts:
         answers:
           - {quantity: "F_CD (b)", value: 22.22, unit: kN, tolerance_pct: 1}
           - {quantity: "A_x (c)", value: -17.78, unit: kN, tolerance_pct: 1}
-          - {quantity: "A_y (c)", value: -3.333, unit: kN, tolerance_pct: 1}
+          - {quantity: "A_y (c)", value: -3333, unit: N, tolerance_pct: 1}
           - {quantity: "|A| (c)", value: 18.09, unit: kN, tolerance_pct: 1}
           - {quantity: "P_max (d)", value: 11.25, unit: kN, tolerance_pct: 1}
         expected_text: "(a) CD, along the line D→C with slope 3-4-5 (0.8, 0.6). (b) compression. (c) A_x acts toward the wall, A_y acts downward."

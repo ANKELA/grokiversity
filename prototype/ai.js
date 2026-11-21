@@ -255,11 +255,59 @@ function unitHint(unit){
   if(unit==='count') return 'a whole number, no unit';
   return unit;
 }
-function formatAns(a){
+function formatExact(a){
   if(a.u==='count' || a.u==='1') return String(a.v);
+  if(a.u==='deg') return a.v+' deg';
   if(a.u==='%') return a.v+' %';
   return a.v+' '+a.u;
 }
+function isHalfInt(v){
+  const a=Math.abs(v);
+  return Math.abs(a-Math.floor(a)-0.5)<=1e-8;
+}
+function roundHalfAway(v){
+  if(!isFinite(v)) return v;
+  if(v===0) return 0;
+  const s=v<0?-1:1;
+  return s*Math.floor(Math.abs(v)+0.5);
+}
+function intTargets(v){
+  if(isHalfInt(v)) return [Math.floor(v), Math.ceil(v)];
+  return [roundHalfAway(v)];
+}
+function usesIntRound(a){
+  if(!a || a.ri===false || a.u==='count') return false;
+  if(a.ri===true) return true;
+  if(Math.abs(a.v-roundHalfAway(a.v))<1e-9) return true;
+  return Math.abs(a.v)>=10-1e-12;
+}
+function closeInt(user, targets){
+  return targets.some(function(t){ return Math.abs(user-t)<=1e-6*Math.max(1, Math.abs(t)); });
+}
+function formatAns(a, short){
+  if(a.u==='count') return String(a.v);
+  if(!usesIntRound(a)) return formatExact(a);
+  const ts=intTargets(a.v);
+  const body=ts.length===2?(ts[0]+' or '+ts[1]):String(ts[0]);
+  const unit=(a.u==='deg')?' deg':(a.u==='1'?'':(a.u==='%'?' %':(' '+a.u)));
+  const shown=body+unit;
+  if(short || (ts.length===1 && Math.abs(ts[0]-a.v)<1e-9)) return shown;
+  return shown+' (exact '+formatExact(a)+')';
+}
+function ansPlaceholder(a){
+  if(a.u==='count') return 'whole number';
+  if(usesIntRound(a)) return 'whole '+a.u;
+  if(a.u==='1') return 'number (unit 1 optional)';
+  return 'value '+a.u;
+}
+function quizRoundHint(q){
+  const any=(q.ans||[]).some(usesIntRound);
+  const allCount=(q.ans||[]).every(function(a){ return a.u==='count'; });
+  if(allCount) return '<p class="sub q-round-hint">Enter a whole number. No units needed.</p>';
+  if(any) return '<p class="sub q-round-hint">Round to the nearest whole number (in the unit asked). More precise answers within 1% still count. Small values (less than about 10) should be entered more precisely and are not rounded to 0 or 1.</p>';
+  return '<p class="sub q-round-hint">Enter a precise value. Small-magnitude answers count within 1% (or the stated tolerance) — do not round these to 0 or 1.</p>';
+}
+
 function parseQty(str,unit){
   const raw=tidyText(str);
   if(!raw) return {err:'Enter a number'+(unit==='%'?' and include the % unit.':'.')};
@@ -290,19 +338,22 @@ function parseQty(str,unit){
   return {err:'Unknown unit “'+u+'”. Expected '+unitHint(unit)+'.'};
 }
 function nearly(a,v){
-  if(a.ta!==undefined) return Math.abs(v-a.v)<=a.ta+1e-9;
-  return Math.abs(v-a.v)<=((a.tp||1)/100)*Math.abs(a.v||1) || Math.abs(v-a.v)<1e-6;
+  if(a.ta!==undefined && Math.abs(v-a.v)<=a.ta+1e-9) return true;
+  if(a.ta===undefined && (Math.abs(v-a.v)<=((a.tp||1)/100)*Math.abs(a.v||1) || Math.abs(v-a.v)<1e-6)) return true;
+  if(usesIntRound(a) && closeInt(v, intTargets(a.v))) return true;
+  return false;
 }
 function gradeAns(a, raw){
   const p=parseQty(raw,a.u);
   if(p.missingUnit){
-    if(nearly(a,p.v)) return {ok:false, err:'The number is right, but this course requires units. Add “'+unitHint(a.u)+'” (for example '+formatAns(a)+').'};
+    if(nearly(a,p.v) || (usesIntRound(a) && closeInt(p.v, intTargets(a.v)))) return {ok:false, err:'The number is right, but this course requires units. Add “'+unitHint(a.u)+'” (for example '+formatAns(a,true)+').'};
     return {ok:false, err:'Please include the unit ('+unitHint(a.u)+').'};
   }
   if(p.err) return {ok:false, err:p.err};
   if(!nearly(a,p.v)) return {ok:false, err:"isn't right yet."};
   return {ok:true};
 }
+
 
 const Q={
  1:[{id:'q1.1',diff:'easy',text:'A rational agent chooses among three actions. A: utility 10 with probability 0.7 and utility 0 with probability 0.3. B: utility 20 with probability 0.4 and utility \\(-2\\) with probability 0.6. C: utility 6.5 with certainty. Compute the expected utility of A, of B, and of C.',
@@ -311,8 +362,8 @@ const Q={
     {id:'q1.2',diff:'medium',text:'A complete tree has branching factor \\(b=4\\). The start node is at depth 0. Breadth-first search tests the goal when a node is generated. The unique goal is the last node generated at depth 5. How many nodes does BFS generate?',
      ans:[{q:'nodes generated',v:1365,u:'count',ta:0}],
      hints:['Depth \\(k\\) contains \\(b^k\\) nodes. You generate every node at depths 0 through 5.','The sum is \\((b^{d+1}-1)/(b-1)\\) with \\(d=5\\), \\(b=4\\).']},
-    {id:'q1.3',diff:'hard',text:'A disease has prevalence \\(P(D)=0.01\\). A test has \\(P(+\\mid D)=0.95\\) and false-positive rate \\(P(+\\mid \\neg D)=0.10\\). Compute \\(P(+)\\) and the posterior \\(P(D\\mid +)\\) as probabilities (unit 1), not percents.',
-     ans:[{q:'P(+)',v:0.1085,u:'1',tp:1},{q:'P(D|+)',v:0.08756,u:'1',tp:1}],
+    {id:'q1.3',diff:'hard',text:'A disease has prevalence \\(P(D)=0.01\\). A test has \\(P(+\\mid D)=0.95\\) and false-positive rate \\(P(+\\mid \\neg D)=0.10\\). Compute \\(P(+)\\) and the posterior \\(P(D\\mid +)\\) as percents (for example 11 %), rounded to the nearest whole number.',
+     ans:[{q:'P(+)',v:10.85,u:'%',tp:1},{q:'P(D|+)',v:8.756,u:'%',tp:1,ri:true}],
      hints:['Law of total probability: \\(P(+)=P(+\\mid D)P(D)+P(+\\mid\\neg D)P(\\neg D)\\). What is \\(P(\\neg D)\\)?','Then Bayes: \\(P(D\\mid +)=P(+\\mid D)P(D)/P(+)\\). The posterior should be much closer to 0.09 than to 0.95.']},
     {id:'q1.4',diff:'medium',text:'A data set has 120 examples of class A and 80 of class B (\\(n=200\\)). What is the accuracy, as a percent, of the majority-class baseline? A model predicts 150 of the 200 labels correctly. What is its accuracy, as a percent?',
      ans:[{q:'majority baseline',v:60,u:'%',ta:0.05},{q:'model accuracy',v:75,u:'%',ta:0.05}],
@@ -356,8 +407,8 @@ function buildQuiz(c){
   Q[c].forEach(q=>{
     const d=document.createElement('div'); d.className='q'; d.id='Q'+q.id.replace('.','_');
     const inpAttrs='type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
-    d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>
-      <div class="inrow">${q.ans.map((a,i)=>`<label>${a.q}<br><input data-i="${i}" ${inpAttrs} placeholder="${a.u==='count'?'number':(a.u==='1'?'number (unit 1 optional)':'value '+a.u)}"></label>`).join('')}</div>
+    d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>${quizRoundHint(q)}
+      <div class="inrow">${q.ans.map((a,i)=>`<label>${a.q}<br><input data-i="${i}" ${inpAttrs} placeholder="${ansPlaceholder(a)}"></label>`).join('')}</div>
       <div class="q-actions">
         <button type="button" class="btn" data-act="check">Check</button>
         <button type="button" class="btn ghost" data-act="hint">Hint</button>
@@ -433,5 +484,5 @@ function boot(){
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
-try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,formatAns:formatAns,tidyText:tidyText}; }catch(e){}
+try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly}; }catch(e){}
 })();

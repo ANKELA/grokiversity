@@ -266,6 +266,8 @@ with sync_playwright() as p:
     fb = answer(pg, "q1.1", ["512", "100.5 deg"]); print("no-units:", fb); assert "units" in fb
     pg.locator("#Qq1_1 button").nth(1).click()
     fb = answer(pg, "q1.1", ["0.5122 kN", "100.5 deg"]); print("kN accepted:", fb); assert "Correct" in fb
+    fb = answer(pg, "q1.1", ["512 N", "101 deg"]); print("integer round:", fb); assert "Correct" in fb
+    fb = answer(pg, "q1.1", ["512 N", "100 deg"]); print("half-even other side:", fb); assert "Correct" in fb
     pg.locator("#Qq1_1").scroll_into_view_if_needed(); pg.screenshot(path=str(SHOTS / "desktop_04_quiz_feedback.png"))
     goto_slide(pg, "quiz-q1-4"); assert "Correct" in answer(pg, "q1.4", ["245 N", "65.9 deg"])
     goto_slide(pg, "quiz-q1-3"); assert "Correct" in answer(pg, "q1.3", ["371.8 N", "-27.4 deg"])
@@ -429,7 +431,8 @@ with sync_playwright() as p:
     pg2.locator("#Qq1_4 button").nth(1).click()
     assert "Correct" in answer(pg2, "q1.1", ["7", "6.8", "6.5"])
     assert "Correct" in answer(pg2, "q1.2", ["1365"])
-    assert "Correct" in answer(pg2, "q1.3", ["0.1085", "0.08756"])
+    assert "Correct" in answer(pg2, "q1.3", ["11 %", "9 %"])
+    assert "Correct" in answer(pg2, "q1.3", ["10.85 %", "8.756 %"])
     assert "Correct" in answer(pg2, "q1.4", ["60 %", "75 %"])
     print("AI C1 mastery:", pg2.inner_text("#mpct"))
     pg2.click('#clist [data-c="2"]'); assert pg2.is_visible("#c2")

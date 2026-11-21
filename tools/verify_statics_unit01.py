@@ -28,7 +28,7 @@ W = 50*g
 T = np.linalg.solve([[-np.cos(d(30)), np.cos(d(45))], [np.sin(d(30)), np.sin(d(45))]], [0, W])
 calc["q3.1"] = list(T)
 # q3.2
-Tac = 8*g/np.sin(d(30)); Fs = Tac*np.cos(d(30)); calc["q3.2"] = [Tac, Fs, Fs/800]
+Tac = 8*g/np.sin(d(30)); Fs = Tac*np.cos(d(30)); calc["q3.2"] = [Tac, Fs, 1000*Fs/800]  # stretch in mm so a whole-number entry is meaningful
 # q3.3
 U = np.column_stack([unit(p) for p in ([-2, -3, 6], [3, -2, 6], [0, 4, 6])])
 T3 = np.linalg.solve(U, [0, 0, 1200]); assert (T3 > 0).all(); calc["q3.3"] = list(T3)
@@ -40,11 +40,11 @@ M = np.cross([2, 0, 0], F); calc["q4.3"] = [*M, np.linalg.norm(M)]; calc["q4.4"]
 # q4.5
 calc["q4.5"] = [-400, 3.0*-400]
 # q5.1
-By = 10*2/6; calc["q5.1"] = [10 - By, By]
+By = 10*2/6; calc["q5.1"] = [1000*(10 - By), 1000*By]  # newtons (6.667 kN would round poorly)
 # q5.2
 By = (12*1.5 + 6*5)/4; calc["q5.2"] = [12 + 6 - By, By]
 # q5.3
-NB = 8*3/(5*np.cos(d(30))); calc["q5.3"] = [NB, NB*np.sin(d(30)), 8 - NB*np.cos(d(30))]
+NB = 8*3/(5*np.cos(d(30))); calc["q5.3"] = [1000*NB, 1000*NB*np.sin(d(30)), 1000*(8 - NB*np.cos(d(30)))]
 # q5.4 (solve full 6-equation system by least squares, check residual ~ 0)
 B = np.array([6., 0, 0]); uc, ud = unit(np.array([0, 2, 3]) - B), unit(np.array([0, -4, 3]) - B); L = np.array([0, 0, -2.])
 # unknowns: Tc, Td, Ax, Ay, Az
@@ -52,11 +52,11 @@ A = np.zeros((6, 5)); b = np.zeros(6)
 A[:3, 0], A[:3, 1], A[:3, 2:] = uc, ud, np.eye(3); b[:3] = -L
 A[3:, 0], A[3:, 1] = np.cross(B, uc), np.cross(B, ud); b[3:] = -np.cross(B, L)
 x, *_ = np.linalg.lstsq(A, b, rcond=None); assert np.allclose(A @ x, b, atol=1e-9)
-calc["q5.4"] = list(x)
+calc["q5.4"] = [1000*v for v in x]  # newtons; |value| in kN was < 10
 # q5.5
 e = unit([3.0, 2.25]); Fcd = 10*4.0/(3.0*e[1])
 Ax, Ay = -Fcd*e[0], 10 - Fcd*e[1]
-calc["q5.5"] = [Fcd, Ax, Ay, np.hypot(Ax, Ay), 10*25/Fcd]
+calc["q5.5"] = [Fcd, Ax, 1000*Ay, np.hypot(Ax, Ay), 10*25/Fcd]  # A_y in N; others stay kN
 
 def ok(expected, got, a):
     if "tolerance_abs" in a: return abs(expected - got) <= a["tolerance_abs"]
@@ -96,4 +96,27 @@ for name, got, exp, unit, tp in micro:
     mbad += not good
     print(f"{'PASS' if good else 'FAIL'}  micro {name:<36} expected={exp:<10} computed={got:.4f} {unit}")
 bad += mbad
+# Playable-quiz integer-rounding policy (mirrors prototype/app.js):
+# accept the nearest whole number (both sides of a .5) as well as the stated tolerance.
+# Values with |v|<~10 that are not already integers are converted to a unit where the
+# answer is a meaningful integer, or left precise (none remain in Statics Unit 1 scored Qs).
+def half_away(v):
+    if v == 0: return 0
+    return int((1 if v > 0 else -1) * (__import__('math').floor(abs(v) + 0.5)))
+def int_targets(v):
+    import math
+    if abs(abs(v) - math.floor(abs(v)) - 0.5) <= 1e-8:
+        return [math.floor(v), math.ceil(v)]
+    return [half_away(v)]
+print("\nInteger-round targets for playable YAML answers:")
+for c in data["concepts"]:
+    for q in c["quiz"]:
+        for a in q["answers"]:
+            v=a["value"]; u=a["unit"]
+            if u=="count":
+                continue
+            ts=int_targets(v)
+            print(f"  {q['id']:5} {a['quantity']:<26} exact={v} {u}  accepts {ts} {u} (and ±tol)")
+
 print(f"\n{n-bad}/{n} answers verified (including micro-checks)"); sys.exit(1 if bad else 0)
+

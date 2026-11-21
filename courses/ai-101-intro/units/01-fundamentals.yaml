@@ -73,15 +73,15 @@ concepts:
       - id: q1.3
         difficulty: hard
         type: numeric
-        prompt: "A disease has prevalence P(D)=0.01. A test has P(+|D)=0.95 and false-positive rate P(+|¬D)=0.10. Compute the marginal probability of a positive test, P(+), and the posterior P(D|+). Report both as probabilities (unit 1), not percents."
+        prompt: "A disease has prevalence P(D)=0.01. A test has P(+|D)=0.95 and false-positive rate P(+|¬D)=0.10. Compute the marginal probability of a positive test, P(+), and the posterior P(D|+). Report both as percents, rounded to the nearest whole number."
         answers:
-          - {quantity: "P(+)", value: 0.1085, unit: "1", tolerance_pct: 1}
-          - {quantity: "P(D|+)", value: 0.08756, unit: "1", tolerance_pct: 1}
+          - {quantity: "P(+)", value: 10.85, unit: "%", tolerance_pct: 1}
+          - {quantity: "P(D|+)", value: 8.756, unit: "%", tolerance_pct: 1, round_int: true}
         hints:
           - "Law of total probability: P(+) = P(+|D)P(D) + P(+|¬D)P(¬D). What is P(¬D)?"
           - "Then Bayes: P(D|+) = P(+|D)P(D) / P(+)."
           - "The posterior should be much closer to 10% than to 95%. A rare disease plus a 10% false-positive rate floods the positives with false alarms."
-        solution: "P(¬D)=0.99. P(+)=0.95·0.01 + 0.10·0.99 = 0.0095+0.0990=0.1085. P(D|+)=0.0095/0.1085=0.087557… ≈ 0.08756 (8.756%)."
+        solution: "P(¬D)=0.99. P(+)=0.95·0.01 + 0.10·0.99 = 0.0095+0.0990=0.1085. P(D|+)=0.0095/0.1085=0.087557… ≈ 0.08756 = 8.756% (enter 11% and 9%). P(+) itself is 10.85%."
       - id: q1.4
         difficulty: medium
         type: numeric

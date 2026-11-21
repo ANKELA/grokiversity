@@ -55,7 +55,7 @@ IPHONE = dict(
 PARSE_JS = r"""() => {
   const api = window.GrokeversityQuiz;
   if (!api || !api.gradeAns || !api.Q) return {error: 'GrokeversityQuiz not exported'};
-  const {gradeAns, Q, formatAns} = api;
+  const {gradeAns, Q, formatAns, formatExact, usesIntRound, intTargets} = api;
   const qs = [];
   Object.keys(Q).forEach(k => (Q[k] || []).forEach(q => qs.push(q)));
   function num(v){
@@ -94,7 +94,11 @@ PARSE_JS = r"""() => {
     const isMom = /N·m|N\.m|Nm|kN·m|kNm/i.test(u);
     const isKN = u === 'kN' || u === 'kN·m' || u === 'kN.m' || u === 'kNm';
     const isN = u === 'N' || u === 'N·m' || u === 'N.m' || u === 'Nm';
-    add(formatAns(a), true, 'canonical');
+    add(formatExact ? formatExact(a) : formatAns(a, true), true, 'canonical');
+    if(usesIntRound && usesIntRound(a) && intTargets){
+      const unit=(a.u==='deg')?' deg':(a.u==='1'||a.u==='count'?'':(a.u==='%'?' %':(' '+a.u)));
+      intTargets(a.v).forEach(t => add(String(t)+unit, true, 'rounded'));
+    }
     add(n + ' ' + u);
     add(n + u);
     add(n + ' ' + u.toLowerCase());
@@ -175,6 +179,48 @@ def fill_forms(box, vals):
     for i, v in enumerate(vals):
         box.locator("input").nth(i).fill(v)
 
+
+def rounding_pass(pg, label, course):
+    res = pg.evaluate("""(course) => {
+      const api = window.GrokeversityQuiz;
+      const {gradeAns, Q, usesIntRound, intTargets, formatAns} = api;
+      const qs = Object.values(Q).flat();
+      const fails = [];
+      let n = 0;
+      qs.forEach(q => q.ans.forEach(a => {
+        const unitPart = (a.u==='count'||a.u==='1') ? '' : (a.u==='%'?' %':(a.u==='deg'?' deg':(' '+a.u)));
+        // precise still works
+        n++;
+        const exact = gradeAns(a, String(a.v)+unitPart);
+        if(!exact.ok) fails.push({id:q.id, field:a.q, kind:'precise', s:String(a.v)+unitPart, err:exact.err});
+        if(usesIntRound(a)){
+          const ts = intTargets(a.v);
+          ts.forEach(t => {
+            n++;
+            const s = String(t)+unitPart;
+            const g = gradeAns(a, s);
+            if(!g.ok) fails.push({id:q.id, field:a.q, kind:'rounded', s, err:g.err, format:formatAns(a)});
+          });
+        } else if(a.u!=='count' && Math.abs(a.v-Math.round(a.v))>1e-9){
+          // exempt small non-integers: rounded value must NOT be accepted unless within 1%
+          const t = Math.round(a.v)===0 && a.v<0 ? -1 : Math.round(a.v);
+          // JS Math.round for +ve is fine; skip if that integer is within existing tol
+          const s = String(t)+unitPart;
+          n++;
+          const g = gradeAns(a, s);
+          const within = (a.ta!==undefined) ? Math.abs(t-a.v)<=a.ta+1e-9
+            : Math.abs(t-a.v)<=((a.tp||1)/100)*Math.abs(a.v||1);
+          if(g.ok && !within) fails.push({id:q.id, field:a.q, kind:'exempt-should-reject', s, err:g.err});
+        }
+      }));
+      return {n, fails, course, nq: qs.length};
+    }""", course)
+    print(f"{label} rounding: {res['n']} checks on {res['nq']} problems")
+    if res["fails"]:
+        print("ROUND FAILS:", __import__('json').dumps(res["fails"][:15], ensure_ascii=False, indent=2))
+    assert not res["fails"], f"{label}: {len(res['fails'])} rounding failures"
+    return res
+
 def typography_pass(pg, label):
     res = pg.evaluate(PARSE_JS)
     if res.get("error"):
@@ -188,6 +234,7 @@ def typography_pass(pg, label):
 
 def statics_dom_pass(pg, label, shots=False):
     typography_pass(pg, label)
+    rounding_pass(pg, label, "statics")
     # Controls always present
     goto_concept(pg, 1)
     goto_slide(pg, "quiz-q1-1")
@@ -224,7 +271,7 @@ def statics_dom_pass(pg, label, shots=False):
     # Show solution + still movable
     box.locator('[data-act="sol"]').click()
     fb = box.locator(".fb").inner_text()
-    assert "Solution" in fb and "512.2" in fb, f"{label}: Show solution failed: {fb}"
+    assert "Solution" in fb and "512" in fb and "512.2" in fb, f"{label}: Show solution failed: {fb}"
     assert not pg.is_disabled("#nextSlide")
     # Enter / Go submits an iOS-flavored correct answer
     fill_forms(box, ["512,2 Kn", "100.5°"])  # 512.2 kN would be wrong; 512,2 Kn = 512.2 kN = 512200 N? WAIT
@@ -234,6 +281,14 @@ def statics_dom_pass(pg, label, shots=False):
     pg.wait_for_timeout(150)
     fb = box.locator(".fb").inner_text()
     assert "Correct" in fb, f"{label}: Enter did not accept 512,2 N. / 100.5° : {fb}"
+    fill_forms(box, ["512 N", "100 deg"])
+    check_click(box)
+    fb = box.locator(".fb").inner_text()
+    assert "Correct" in fb, f"{label}: 512 N / 100 deg ( .5 edge ) rejected: {fb}"
+    fill_forms(box, ["512 N", "101 deg"])
+    check_click(box)
+    fb = box.locator(".fb").inner_text()
+    assert "Correct" in fb, f"{label}: 512 N / 101 deg rejected: {fb}"
     if shots:
         pg.screenshot(path=str(SHOTS / "quiz_iphone_q1_1_accepted.png"), full_page=False)
         print("wrote", SHOTS / "quiz_iphone_q1_1_accepted.png")
@@ -278,6 +333,7 @@ def statics_dom_pass(pg, label, shots=False):
         if (a.u === 'N·m' || a.u === 'N.m' || a.u === 'Nm') return (a.v<0?'\u2212':'') + String(Math.abs(a.v)) + ' N-m';
         if (a.u === 'kN·m' || a.u === 'kNm') return n + ' kN-m';
         if (a.u === 'm') return (Math.abs(a.v)>=1 ? n+' m' : String(+(a.v*1000).toPrecision(6)) + ' mm');
+        if (a.u === 'mm') return n.replace('.', ',') + '\u00a0mm.';
         return api.formatAns(a);
       });
       return forms;
@@ -305,6 +361,7 @@ def statics_dom_pass(pg, label, shots=False):
 
 def ai_dom_pass(pg, label, shots=False):
     typography_pass(pg, label)
+    rounding_pass(pg, label, "ai")
     # q1.4 % missing units
     box = qbox(pg, "q1.4")
     box.scroll_into_view_if_needed()
@@ -348,8 +405,20 @@ def ai_dom_pass(pg, label, shots=False):
             assert "Correct" in fb, f"{label} {qid} rejected {forms}: {fb}"
             seen += 1
     assert seen == 15, f"{label}: expected 15 AI quizzes, got {seen}"
+    # q1.3 now asks for percents; 11% / 9% are the rounded values
+    pg.click('#clist [data-c="1"]')
+    pg.wait_for_timeout(200)
+    box = qbox(pg, "q1.3")
+    box.scroll_into_view_if_needed()
+    fill_forms(box, ["11 %", "9 %"])
+    check_click(box)
+    fb = box.locator(".fb").inner_text()
+    assert "Correct" in fb, f"{label} AI q1.3 11%/9%: {fb}"
     # Skip does not trap
+    pg.click('#clist [data-c="4"]')
+    pg.wait_for_timeout(200)
     box = qbox(pg, "q4.3")
+    box.scroll_into_view_if_needed()
     box.locator('[data-act="skip"]').click()
     fb = box.locator(".fb").inner_text()
     assert "Skipped" in fb, f"{label} skip: {fb}"
