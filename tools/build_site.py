@@ -43,12 +43,12 @@ index.write_text(rewrite_meta(index, index.read_text()))
 import hashlib
 def asset_ver():
     h=hashlib.sha256()
-    for p in (SITE/'app.css', SITE/'app.js', SITE/'ai.js'):
+    for p in (SITE/'app.css', SITE/'app.js', SITE/'ai.js', SITE/'fun.js'):
         h.update(p.read_bytes())
     return h.hexdigest()[:8]
 def stamp_assets(html_path, ver):
     html=html_path.read_text()
-    html=re.sub(r'((?:href|src)=")([^"]*(?:app\.(?:css|js)|ai\.js))(?:\?v=[^"]*)?(")', rf'\1\2?v={ver}\3', html)
+    html=re.sub(r'((?:href|src)=")([^"]*(?:app\.(?:css|js)|ai\.js|fun\.js))(?:\?v=[^"]*)?(")', rf'\1\2?v={ver}\3', html)
     html=re.sub(r'(statics/unit-1\.html)\?v=[^"\'&]+', rf'\1?v={ver}', html)
     html=re.sub(r'(href=")(intro-ai\.html)(?:\?v=[^"]*)?(")', rf'\1\2?v={ver}\3', html)
     html_path.write_text(html)

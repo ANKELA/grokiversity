@@ -443,10 +443,14 @@ function buildQuiz(c){
       d.classList.toggle('correct',all); d.classList.toggle('wrong',!all); fb.className='fb '+(all?'ok':'no');
       fb.innerHTML = all ? '✓ Correct'+(tries>1?' (after '+tries+' tries; first-try answers count more toward mastery)':'')+'.' : msgs.join(' ')+' Try again, take a hint, skip, or show the solution — you can always move on.';
       if(all) blurQuiz();
-      if(all && store.score[c][q.id]===undefined){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
+      const first=all && store.score[c][q.id]===undefined;
+      let mastered=false;
+      if(first){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
+        mastered=before<80 && mastery(c)>=80;
         say(tries===1?'Nice work on the first try. Can you explain why the reasoning holds?':'Good recovery. We will revisit this idea in spaced review.');
-        if(before<80 && mastery(c)>=80) say(c<4?'Concept '+c+' mastered (80% or better). Concept '+(c+1)+' is unlocked. Go on when you are ready.':'You have finished the playable part of Unit 1. Keep going with the tutor prompt in Grok, or start Unit 2 when it lands.'); }
+        if(mastered) say(c<4?'Concept '+c+' mastered (80% or better). Concept '+(c+1)+' is unlocked. Go on when you are ready.':'You have finished the playable part of Unit 1. Keep going with the tutor prompt in Grok, or start Unit 2 when it lands.'); }
       if(!all && tries===2) say('On this problem: write out your first step (the formula, with numbers plugged in) and I\'ll help you find the slip. You can also skip or show the solution.');
+      try{ if(window.GrokeFun){ if(all) window.GrokeFun.report('correct',{first:first,tries:tries,qid:q.id,concept:c,mastered:mastered}); else window.GrokeFun.report('wrong',{qid:q.id}); } }catch(e){}
     });
     d.querySelectorAll('input').forEach(function(inp){
       inp.addEventListener('keydown',function(e){ if(e.key==='Enter' || e.keyCode===13){ e.preventDefault(); chk.click(); } });

@@ -1144,12 +1144,16 @@ function buildQuiz(q){
     d.classList.toggle('correct',all); d.classList.toggle('wrong',!all); fb.className='fb '+(all?'ok':'no');
     fb.innerHTML = all ? '✓ Correct'+(tries>1?' (after '+tries+' tries; first-try answers count more toward mastery)':'')+'.' : msgs.join(' ')+' Try again, take a hint, skip, or show the solution — you can always move on with Next or Back.';
     if(all) blurQuiz();
-    if(all && store.score[c][q.id]===undefined){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
-      if(before<80 && mastery(c)>=80){
+    const first=all && store.score[c][q.id]===undefined;
+    let mastered=false;
+    if(first){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
+      mastered=before<80 && mastery(c)>=80;
+      if(mastered){
         say(c<5?'Nice — this concept is mastered (80% or better). The next one is unlocked. Go on when you are ready.':'You’ve finished Statics Unit 1 on this device. For a harder review, copy the tutor prompt into Grok.');
       }
     }
     if(!all && tries===2) say('Not quite yet. Write out your first equation, with signs and units, and I’ll help you find the slip. You can also skip or show the solution — Next and Back still work.');
+    try{ if(window.GrokeFun){ if(all) window.GrokeFun.report('correct',{first:first,tries:tries,qid:q.id,concept:c,mastered:mastered}); else window.GrokeFun.report('wrong',{qid:q.id}); } }catch(e){}
   });
   d.querySelectorAll('input').forEach(function(inp){
     inp.addEventListener('keydown',function(e){ if(e.key==='Enter' || e.keyCode===13){ e.preventDefault(); chk.click(); } });
