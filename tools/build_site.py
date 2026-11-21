@@ -8,24 +8,35 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = pathlib.Path(__file__).resolve().parents[1]; SITE = ROOT / "prototype"; A = SITE / "assets"
 ap = argparse.ArgumentParser(); ap.add_argument("--base-url", default=""); args = ap.parse_args()
 
-def embed(html_path, prompt_src, dest_md):
+def rewrite_meta(html_path, html):
+    if not args.base_url:
+        return html
+    b = args.base_url.rstrip("/") + "/"
+    html = re.sub(r'(property="og:image" content=")[^"]*"', rf'\1{b}assets/og.png"', html)
+    html = re.sub(r'(name="twitter:image" content=")[^"]*"', rf'\1{b}assets/og.png"', html)
+    rel = html_path.relative_to(SITE).as_posix()
+    url = b if rel == "index.html" else b + rel
+    html = re.sub(r'(property="og:url" content=")[^"]*"', rf'\1{url}"', html)
+    return html
+
+def embed(html_path, prompt_src, dest_md=None):
     prompt = prompt_src.read_text()
-    shutil.copy(prompt_src, dest_md)
+    if dest_md is not None:
+        shutil.copy(prompt_src, dest_md)
     assert "</script" not in prompt.lower()
     html = html_path.read_text()
-    html = re.sub(r"<!--TUTOR_PROMPT_START-->.*?<!--TUTOR_PROMPT_END-->",
-                  lambda m, p=prompt: "<!--TUTOR_PROMPT_START-->" + p.replace("<!--", "&lt;!--") + "<!--TUTOR_PROMPT_END-->", html, flags=re.S)
-    if args.base_url:
-        b = args.base_url.rstrip("/") + "/"
-        html = re.sub(r'(property="og:image" content=")[^"]*"', rf'\1{b}assets/og.png"', html)
-        html = re.sub(r'(name="twitter:image" content=")[^"]*"', rf'\1{b}assets/og.png"', html)
-        url = b if html_path.name == "index.html" else b + html_path.name
-        html = re.sub(r'(property="og:url" content=")[^"]*"', rf'\1{url}"', html)
+    if "<!--TUTOR_PROMPT_START-->" in html:
+        html = re.sub(r"<!--TUTOR_PROMPT_START-->.*?<!--TUTOR_PROMPT_END-->",
+                      lambda m, p=prompt: "<!--TUTOR_PROMPT_START-->" + p.replace("<!--", "&lt;!--") + "<!--TUTOR_PROMPT_END-->", html, flags=re.S)
+    html = rewrite_meta(html_path, html)
     html_path.write_text(html)
     return len(prompt)
 
-n_me = embed(SITE / "index.html", ROOT / "tutor/TUTOR_PROMPT.md", SITE / "tutor-prompt.md")
+n_me = embed(SITE / "statics" / "unit-1.html", ROOT / "tutor/TUTOR_PROMPT.md", SITE / "tutor-prompt.md")
 n_ai = embed(SITE / "intro-ai.html", ROOT / "tutor/TUTOR_PROMPT_AI.md", SITE / "tutor-prompt-ai.md")
+# Landing has no tutor prompt; still rewrite absolute OG URLs when --base-url is set.
+index = SITE / "index.html"
+index.write_text(rewrite_meta(index, index.read_text()))
 
 F = "/usr/share/fonts/truetype/dejavu/"
 f = lambda n, s: ImageFont.truetype(F + n, s)

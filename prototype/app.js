@@ -14,18 +14,21 @@ function renderMath(el){ if(window.renderMathInElement) renderMathInElement(el||
 function say(html, who='t'){ const m=document.createElement('div'); m.className='msg '+who; m.innerHTML=html; $('#chat').appendChild(m); $('#chat').scrollTop=1e9; renderMath(m); }
 function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),2400); }
 function svgPt(svg,e){ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
+const ROOT = document.documentElement.dataset.root || '';
+function asset(p){ return ROOT + p; }
 
-/* ---------- ME / AI track maps ---------- */
+/* ---------- ME / AI track maps (landing only) ---------- */
 const TRACK = {
   'Year 1': ['Calculus I','Calculus II','Physics I: Mechanics','Physics II: E&M','Chemistry','Intro Design & CAD','Programming for Engineers'],
   'Year 2': ['Calculus III','Differential Equations','Linear Algebra','Statics','Dynamics','Mechanics of Materials','Circuits & Electronics','Materials Science'],
   'Year 3': ['Thermodynamics','Fluid Mechanics','Heat Transfer','Machine Design','Manufacturing','Numerical Methods','Probability & Statistics','Measurement & Instrumentation Lab'],
   'Year 4': ['System Dynamics & Controls','Thermal-Fluid Systems Design','Mechatronics','Capstone Design I','Capstone Design II','Technical Electives ×3','Ethics & Technical Communication']
 };
-$('#trackGrid').innerHTML = Object.entries(TRACK).map(([y,cs])=>`<div class="year"><h4>${y}</h4>${cs.map(c=> c==='Statics'
-  ? `<div class="course live" data-go="learn" role="link" tabindex="0"><span>ME 201 Statics</span><span class="badge">Play now</span></div>`
-  : `<div class="course"><span>${c}</span><span class="badge">Coming soon</span></div>`).join('')}</div>`).join('');
-$$('[data-go="learn"]').forEach(el=>el.addEventListener('click',()=>$('#learn').scrollIntoView()));
+if($('#trackGrid')){
+  $('#trackGrid').innerHTML = Object.entries(TRACK).map(([y,cs])=>`<div class="year"><h4>${y}</h4>${cs.map(c=> c==='Statics'
+    ? `<a class="course live" href="${asset('statics/unit-1.html')}"><span>ME 201 Statics</span><span class="badge">Play now</span></a>`
+    : `<div class="course"><span>${c}</span><span class="badge">Coming soon</span></div>`).join('')}</div>`).join('');
+}
 const AI_TRACK = {
   'Foundations': ['What AI Is (Unit 1)','Search & Problem Solving','Probability & Bayes','Math for ML'],
   'Learning': ['Supervised Learning I','Supervised Learning II','Neural Nets & Backprop'],
@@ -41,14 +44,14 @@ if($('#aiGrid')){
 /* ---------- copy tutor prompt ---------- */
 async function copyPrompt(){
   let txt = ($('#tutorPromptText').textContent||'').replace(/<!--TUTOR_PROMPT_(START|END)-->/g,'').trim();
-  if(!txt){ try{ txt = await (await fetch('tutor-prompt.md')).text(); }catch(e){} }
+  if(!txt){ try{ txt = await (await fetch(asset('tutor-prompt.md'))).text(); }catch(e){} }
   if(!txt){ toast('Could not load the prompt. Open tutor-prompt.md instead.'); return; }
   try{ await navigator.clipboard.writeText(txt); }
   catch(e){ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(_){} ta.remove(); }
   toast('Tutor prompt copied. Paste it into Grok and say “start”.');
   say('Prompt copied ✅. Open Grok, paste it as your first message, then type <b>start</b>. That tutor grades strictly and won\'t give away answers.');
 }
-$('#copyPrompt').addEventListener('click',copyPrompt);
+if($('#copyPrompt')) $('#copyPrompt').addEventListener('click',copyPrompt);
 if($('#copyHero')) $('#copyHero').addEventListener('click',copyPrompt);
 
 /* ---------- optional intro theme: click only, never autoplay ---------- */
@@ -57,7 +60,7 @@ if($('#copyHero')) $('#copyHero').addEventListener('click',copyPrompt);
   let aud=null;
   btn.addEventListener('click',()=>{
     if(!aud){
-      aud=new Audio('assets/audio/intro.mp3');
+      aud=new Audio(asset('assets/audio/intro.mp3'));
       aud.addEventListener('error',()=>{ toast('The intro theme is not uploaded yet.'); btn.textContent='♪ Intro'; });
       aud.addEventListener('ended',()=>{ btn.textContent='♪ Intro'; });
     }
@@ -68,24 +71,67 @@ if($('#copyHero')) $('#copyHero').addEventListener('click',copyPrompt);
   });
 })();
 
+/* Landing-only: old #learn bookmarks go to the lesson page. */
+if(!$('#lessonApp')){
+  const jump=()=>{
+    const h=(location.hash||'').replace(/^#/,'').toLowerCase();
+    if(h==='learn' || h.startsWith('learn') || /^c[1-5]/.test(h)){
+      const c=(h.match(/c([1-5])/)||[])[1]||'1';
+      location.replace(asset('statics/unit-1.html')+'?c='+c);
+    }
+  };
+  jump();
+  window.addEventListener('hashchange', jump);
+  return;
+}
+
 /* ---------- concept list + slides ---------- */
 const CONCEPTS = [[1,'Forces as vectors'],[2,'Free-body diagrams'],[3,'Particle equilibrium'],[4,'Moments'],[5,'Rigid-body equilibrium']];
 const unlocked = c => c===1 || (c<=5 && mastery(c-1)>=80);
 function mastery(c){ const q=Q[c]; if(!q) return 0; const v=Object.values(store.score[c]||{}); return Math.round(100*v.reduce((a,b)=>a+b,0)/q.length); }
 function slides(c){ return $$('#c'+c+' .slide'); }
+function lastUnlocked(){ let n=1; while(n<5 && unlocked(n+1)) n++; return n; }
+function readRoute(){
+  const q=new URLSearchParams(location.search);
+  let c=parseInt(q.get('c')||'',10);
+  if(!c) c=store.current||1;
+  const hs=(location.hash||'').match(/s=?([0-9]+)/i);
+  let i=hs ? (parseInt(hs[1],10)-1) : (store.slide[c]||0);
+  if(!unlocked(c)) c=lastUnlocked();
+  const n=slides(c).length;
+  i=Math.max(0, Math.min((n||1)-1, i));
+  return {c,i};
+}
+function writeRoute(c,i){
+  const next=`?c=${c}#s${i+1}`;
+  if((location.search+location.hash)!==next) history.replaceState(null,'',next);
+}
+function drawCrumb(){
+  const el=$('#crumb'); if(!el) return;
+  el.textContent=`ME 201 Statics › Unit 1 › Concept ${store.current}`;
+}
+function setDrawer(name,on){
+  const back=$('#'+name+'Back'), pan=$('#'+name+'Drawer'), btn=$('#'+name+'Btn');
+  if(back){ back.hidden=!on; back.classList.toggle('on',on); }
+  if(pan){ pan.hidden=!on; pan.classList.toggle('on',on); }
+  if(btn) btn.setAttribute('aria-expanded', on?'true':'false');
+}
+function closeDrawers(){ setDrawer('concepts',false); setDrawer('tutor',false); }
 function drawList(){
   $('#clist').innerHTML = CONCEPTS.map(([n,t])=>{ const st = mastery(n)>=80?'✓':(unlocked(n)?'●':'🔒');
     return `<button type="button" class="cbtn ${n===store.current?'active':''} ${!unlocked(n)?'locked':''}" data-c="${n}"><span>${n} · ${t}</span><span>${st}</span></button>`; }).join('');
-  $$('#clist .cbtn').forEach(b=>b.addEventListener('click',()=>go(+b.dataset.c)));
+  $$('#clist .cbtn').forEach(b=>b.addEventListener('click',()=>{ go(+b.dataset.c); closeDrawers(); }));
   const m = mastery(store.current); $('#mpct').textContent = m+'%'; $('#mbar').style.width=m+'%';
 }
-function go(c){
-  if(!unlocked(c)){ say(`Concept ${c} unlocks when you reach 80% mastery on concept ${c-1}. Want a hint on a question you're stuck on?`); return; }
+function go(c, i){
+  if(!unlocked(c)){ say(`That concept unlocks when you reach 80% mastery on the previous one. Want a hint on a question you’re stuck on?`); return; }
   store.current=c; save();
   $$('.concept').forEach(d=>d.hidden = d.id!=='c'+c);
-  $('#deckTitle').textContent = CONCEPTS[c-1][1];
+  if($('#deckTitle')) $('#deckTitle').textContent = CONCEPTS[c-1][1];
+  drawCrumb();
   drawList();
-  showSlide(c, store.slide[c]||0, 'jump');
+  const idx = (i!==undefined && i!==null) ? i : (store.slide[c]||0);
+  showSlide(c, idx, 'jump');
 }
 function showSlide(c, i, dir){
   const ss=slides(c); if(!ss.length) return;
@@ -98,6 +144,7 @@ function showSlide(c, i, dir){
   });
   $('#c'+c).dataset.i=i;
   store.slide[c]=i; save();
+  writeRoute(c,i);
   const n=ss.length;
   $('#slidePos').textContent=(i+1)+' / '+n;
   $('#prevSlide').disabled = i===0;
@@ -131,8 +178,22 @@ $('#prevSlide').addEventListener('click',()=>{ const c=store.current; showSlide(
 $('#nextSlide').addEventListener('click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)+1, 'fwd'); });
 document.addEventListener('keydown',e=>{
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if(e.key==='Escape') closeDrawers();
   if(e.key==='ArrowRight') $('#nextSlide').click();
   if(e.key==='ArrowLeft') $('#prevSlide').click();
+});
+if($('#conceptsBtn')){
+  $('#conceptsBtn').addEventListener('click',()=>{ const on=!$('#conceptsDrawer').classList.contains('on'); closeDrawers(); setDrawer('concepts',on); });
+  $('#conceptsBack').addEventListener('click',()=>setDrawer('concepts',false));
+}
+if($('#tutorBtn')){
+  $('#tutorBtn').addEventListener('click',()=>{ const on=!$('#tutorDrawer').classList.contains('on'); closeDrawers(); setDrawer('tutor',on); });
+  $('#tutorBack').addEventListener('click',()=>setDrawer('tutor',false));
+}
+window.addEventListener('hashchange',()=>{
+  const r=readRoute();
+  if(r.c!==store.current) go(r.c, r.i);
+  else if(r.i!==(store.slide[store.current]||0)) showSlide(r.c, r.i, 'jump');
 });
 
 /* ---------- trig refresher ---------- */
@@ -509,16 +570,16 @@ function drawWr(){
   $('#wrF').textContent=F.toFixed(0);
   $('#wrD').textContent=d.toFixed(2);
   $('#wrM').textContent=(F*d).toFixed(1)+' N·m';
-  const ox=80, oy=150, L=d*280, fy=F*6;
+  const ox=80, oy=120, L=d*280, fy=F*6;
   const svg=$('#wrSvg');
   svg.innerHTML=`<defs><marker id="warr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker></defs>
     <circle cx="${ox}" cy="${oy}" r="22" fill="none" stroke="#7c86c9" stroke-width="8"/>
     <line x1="${ox}" y1="${oy}" x2="${ox+L}" y2="${oy}" stroke="#7c9cff" stroke-width="10" stroke-linecap="round"/>
     <circle id="wrDh" class="handle" cx="${ox+L}" cy="${oy}" r="12" fill="#7c9cff" fill-opacity=".35" stroke="#7c9cff"/>
-    <line x1="${ox+L}" y1="${oy}" x2="${ox+L}" y2="${oy-fy}" stroke="#ff8a65" stroke-width="4" marker-end="url(#warr)"/>
-    <circle id="wrFh" class="handle" cx="${ox+L}" cy="${oy-fy}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>
-    <text x="${ox+L+8}" y="${oy-fy/2}" fill="#ff8a65" font-size="13">${F.toFixed(0)} N</text>
-    <text x="${ox+L/2}" y="${oy+18}" fill="#9aa3c7" font-size="13" text-anchor="middle">${d.toFixed(2)} m</text>`;
+    <line id="wrFarr" x1="${ox+L}" y1="${oy}" x2="${ox+L}" y2="${oy+fy}" stroke="#ff8a65" stroke-width="4" marker-end="url(#warr)"/>
+    <circle id="wrFh" class="handle" cx="${ox+L}" cy="${oy+fy}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>
+    <text x="${ox+L+8}" y="${oy+fy/2}" fill="#ff8a65" font-size="13">${F.toFixed(0)} N</text>
+    <text x="${ox+L/2}" y="${oy-14}" fill="#9aa3c7" font-size="13" text-anchor="middle">${d.toFixed(2)} m</text>`;
 }
 $('#wrFsl').addEventListener('input',drawWr);
 $('#wrDsl').addEventListener('input',drawWr);
@@ -530,7 +591,7 @@ $('#wrDsl').addEventListener('input',drawWr);
     if(!mode) return;
     const q=svgPt(svg,e);
     if(mode==='wrDh'){ $('#wrDsl').value=Math.max(0.10,Math.min(0.60,((q.x-80)/280))).toFixed(2); }
-    if(mode==='wrFh'){ $('#wrFsl').value=Math.max(5,Math.min(80,Math.round((150-q.y)/6))); }
+    if(mode==='wrFh'){ $('#wrFsl').value=Math.max(5,Math.min(80,Math.round((q.y-120)/6))); }
     drawWr();
   });
   svg.addEventListener('pointerup',()=>mode=null); svg.addEventListener('pointercancel',()=>mode=null);
@@ -541,15 +602,16 @@ function drawAng(){
   $('#angT').textContent=th;
   $('#angM').textContent=M.toFixed(2)+' N·m';
   $('#angP').textContent=(F*Math.sin(rad(th))).toFixed(2)+' N';
-  const ox=80, oy=160, L=140;
-  const endx=ox+L+90*Math.cos(Math.PI-rad(th)), endy=oy-90*Math.sin(Math.PI-rad(th));
+  const ox=80, oy=100, L=140;
+  // θ is the angle from the handle: 0° along the handle, 90° straight down (a downward push).
+  const endx=ox+L+90*Math.cos(rad(th)), endy=oy+90*Math.sin(rad(th));
   const svg=$('#angSvg');
   svg.innerHTML=`<defs><marker id="aarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker></defs>
     <circle cx="${ox}" cy="${oy}" r="22" fill="none" stroke="#7c86c9" stroke-width="8"/>
     <line x1="${ox}" y1="${oy}" x2="${ox+L}" y2="${oy}" stroke="#7c9cff" stroke-width="10" stroke-linecap="round"/>
-    <line x1="${ox+L}" y1="${oy}" x2="${endx}" y2="${endy}" stroke="#ff8a65" stroke-width="4" marker-end="url(#aarr)"/>
-    <path d="M ${ox+L+40} ${oy} A 40 40 0 0 0 ${ox+L+40*Math.cos(Math.PI-rad(th))} ${oy-40*Math.sin(Math.PI-rad(th))}" fill="none" stroke="#ffd54f" stroke-width="2"/>
-    <text x="${ox+L+48}" y="${oy-8}" fill="#ffd54f" font-size="13">θ</text>
+    <line id="angFarr" x1="${ox+L}" y1="${oy}" x2="${endx}" y2="${endy}" stroke="#ff8a65" stroke-width="4" marker-end="url(#aarr)"/>
+    <path d="M ${ox+L+40} ${oy} A 40 40 0 0 1 ${ox+L+40*Math.cos(rad(th))} ${oy+40*Math.sin(rad(th))}" fill="none" stroke="#ffd54f" stroke-width="2"/>
+    <text x="${ox+L+48}" y="${oy+18}" fill="#ffd54f" font-size="13">θ</text>
     <circle id="angH" class="handle" cx="${endx}" cy="${endy}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>`;
 }
 $('#angSl').addEventListener('input',drawAng);
@@ -557,8 +619,8 @@ $('#angSl').addEventListener('input',drawAng);
   svg.addEventListener('pointerdown',e=>{ if(e.target.id==='angH'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{
     if(!drag) return;
-    const q=svgPt(svg,e), hx=220, hy=160;
-    let angDeg=deg(Math.atan2(hy-q.y, q.x-hx));
+    const q=svgPt(svg,e), hx=220, hy=100;
+    let angDeg=deg(Math.atan2(q.y-hy, q.x-hx)); // y down: 90° is a downward push
     let theta=Math.abs(angDeg); if(theta>180) theta=360-theta;
     $('#angSl').value=Math.max(0,Math.min(180,Math.round(theta)));
     drawAng();
@@ -609,15 +671,21 @@ function drawBeam(){
     <line x1="${ox}" y1="${oy}" x2="${ox+Lpx}" y2="${oy}" stroke="#7c86c9" stroke-width="10" stroke-linecap="round"/>
     <polygon points="${ox},${oy+8} ${ox-14},${oy+28} ${ox+14},${oy+28}" fill="#7c9cff"/>
     <circle cx="${ox+Lpx}" cy="${oy+18}" r="10" fill="none" stroke="#4dd0e1" stroke-width="4"/>
-    <line x1="${xpx}" y1="${oy}" x2="${xpx}" y2="${oy-loadLen}" stroke="#ff8a65" stroke-width="4" marker-end="url(#barr)"/>
+    <line id="bmLoad" x1="${xpx}" y1="${oy-loadLen}" x2="${xpx}" y2="${oy}" stroke="#ff8a65" stroke-width="4" marker-end="url(#barr)"/>
     <circle id="bmH" class="handle" cx="${xpx}" cy="${oy-loadLen}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>
-    <line x1="${ox}" y1="${oy}" x2="${ox}" y2="${oy+Ay*rSc}" stroke="#7c9cff" stroke-width="3" marker-end="url(#baA)"/>
-    <line x1="${ox+Lpx}" y1="${oy}" x2="${ox+Lpx}" y2="${oy+By*rSc}" stroke="#4dd0e1" stroke-width="3" marker-end="url(#baB)"/>
+    <line id="bmAyArr" x1="${ox}" y1="${oy+Ay*rSc}" x2="${ox}" y2="${oy}" stroke="#7c9cff" stroke-width="3" marker-end="url(#baA)"/>
+    <line id="bmByArr" x1="${ox+Lpx}" y1="${oy+By*rSc}" x2="${ox+Lpx}" y2="${oy}" stroke="#4dd0e1" stroke-width="3" marker-end="url(#baB)"/>
     <text x="${ox}" y="${oy+Ay*rSc+16}" fill="#7c9cff" font-size="13" text-anchor="middle">A_y</text>
     <text x="${ox+Lpx}" y="${oy+By*rSc+16}" fill="#4dd0e1" font-size="13" text-anchor="middle">B_y</text>
     <text x="${xpx+8}" y="${oy-loadLen}" fill="#ff8a65" font-size="13">${beam.P.toFixed(1)} kN</text>`;
   $('#bmX').textContent=beam.x.toFixed(2)+' m from A';
-  $('#bmSum').textContent=`ΣF_y: ${Ay.toFixed(2)} + ${By.toFixed(2)} − ${beam.P.toFixed(2)} = 0.  ΣM_A: ${beam.P.toFixed(2)}×${beam.x.toFixed(2)} − ${By.toFixed(2)}×${beam.L} = 0.`;
+  const sum=$('#bmSum');
+  const fy=`ΣF_y: A_y + B_y − P = ${Ay.toFixed(2)} + ${By.toFixed(2)} − ${beam.P.toFixed(2)} = 0`;
+  const ma=`ΣM_A: B_y·L − P·x = ${By.toFixed(2)}×${beam.L} − ${beam.P.toFixed(2)}×${beam.x.toFixed(2)} = 0`;
+  if(sum){
+    if(sum.children.length>=2){ sum.children[0].textContent=fy; sum.children[1].textContent=ma; }
+    else sum.innerHTML=`<div>${fy}</div><div>${ma}</div>`;
+  }
 }
 $('#bmPsl').addEventListener('input',drawBeam);
 (function(){ const svg=$('#beamSvg'); let drag=false;
@@ -741,7 +809,7 @@ function buildQuiz(q){
     <button type="button" class="btn">Check</button> <button type="button" class="btn ghost">Hint</button><div class="fb"></div><div class="hints"></div>`;
   let hintN=0, tries=0; const [chk,hb]=d.querySelectorAll('button'), fb=d.querySelector('.fb');
   if(store.score[c][q.id]!==undefined){ d.classList.add('correct'); fb.className='fb ok'; fb.textContent='✓ Solved earlier (saved on this device).'; }
-  hb.onclick=()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say(`No more hints for ${q.id}. Tell me your first step and I'll check it.`); };
+  hb.onclick=()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say('Those are all the hints for this problem. Tell me your first step and I’ll check it.'); };
   chk.onclick=()=>{
     tries++; let all=true; const msgs=[];
     q.ans.forEach((a,i)=>{ const inp=d.querySelector(`input[data-i="${i}"]`), g=gradeAns(a,inp.value);
@@ -750,9 +818,11 @@ function buildQuiz(q){
     d.classList.toggle('correct',all); d.classList.toggle('wrong',!all); fb.className='fb '+(all?'ok':'no');
     fb.innerHTML = all ? `✓ Correct${tries>1?` (after ${tries} tries; first-try answers count more toward mastery)`:''}.` : msgs.join(' ')+' Try again or take a hint.';
     if(all && store.score[c][q.id]===undefined){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
-      say(tries===1?`Nice: ${q.id} on the first try. Can you explain <i>why</i> your signs make sense?`:`Good recovery on ${q.id}. We'll revisit this idea in spaced review.`);
-      if(before<80 && mastery(c)>=80) say(c<5?`🎉 Concept ${c} mastered (≥80%). Concept ${c+1} is unlocked. Go on when <b>you</b> are ready.`:'🎉 Concept 5 mastered. You’ve finished Unit 1 of Statics on this device. Copy the tutor prompt into Grok for a harder review, or start the Introduction to AI track when you like.'); }
-    if(!all && tries===2) say(`On ${q.id}: write out your first equation, with signs and units, and I’ll help you find the slip.`);
+      if(before<80 && mastery(c)>=80){
+        say(c<5?`Nice — this concept is mastered (80% or better). The next one is unlocked. Go on when you are ready.`:'You’ve finished Statics Unit 1 on this device. For a harder review, copy the tutor prompt into Grok.');
+      }
+    }
+    if(!all && tries===2) say('Not quite yet. Write out your first equation, with signs and units, and I’ll help you find the slip.');
   };
   box.innerHTML=''; box.appendChild(d);
 }
@@ -820,8 +890,8 @@ $('#cin').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#csend').click(
 function boot(){
   bindChecks();
   Object.values(Q).forEach(list=>list.forEach(buildQuiz));
-  const start = unlocked(store.current) ? store.current : 1;
-  go(start);
+  const r=readRoute();
+  go(r.c, r.i);
   renderMath(document.body);
   const any=Object.values(store.score).some(o=>Object.keys(o||{}).length);
   if(!$('#chat').children.length) say(any
