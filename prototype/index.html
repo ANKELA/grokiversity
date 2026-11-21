@@ -32,7 +32,7 @@
 <body>
 <header class="top">
   <a class="logo" href="#top"><img src="assets/favicon.svg" alt=""><span>Grok<b>e</b>versity</span></a>
-  <nav><a href="#how">How it works</a><a href="#tracks">Tracks</a><a href="#learn">Statics</a><a href="intro-ai.html">Intro to AI</a><a class="btn sm" href="#tracks">Start learning</a></nav>
+  <nav><a href="#how">How it works</a><a href="#tracks">Tracks</a><a href="#learn">Statics</a><a href="intro-ai.html">Intro to AI</a><button type="button" class="btn ghost sm" id="introAudio" title="Play a short intro theme, if it has been uploaded">♪ Intro</button><a class="btn sm" href="#tracks">Start learning</a></nav>
 </header>
 
 <a id="top"></a>
@@ -46,7 +46,7 @@
 <div class="wrap">
   <h2 class="sec-title" id="how">How it works</h2>
   <div class="how">
-    <div class="card"><h3>1 · Learn visually</h3><p>Every concept has rendered equations, draggable diagrams and step-by-step worked solutions.</p></div>
+    <div class="card"><h3>1 · Learn visually</h3><p>Interactive slides build the math one piece at a time. You drag diagrams, and each new symbol lights up the part it names.</p></div>
     <div class="card"><h3>2 · Prove mastery</h3><p>Numeric problems need correct values <i>and units</i> (±1%). You advance only at ≥ 80%.</p></div>
     <div class="card"><h3>3 · Tutor, not cheat sheet</h3><p>Paste our tutor prompt into Grok. It uses Socratic hints, makes you show your work, and grades strictly.</p></div>
     <div class="card"><h3>4 · Your pace</h3><p>Nothing in the lessons is timed. Unit exams and finals are timed, like a real course.</p></div>
@@ -84,125 +84,428 @@
     <div class="mastery" style="font-size:12px">Progress is saved in this browser only. <a href="#" id="reset">Reset progress</a></div>
   </div>
 
-  <div class="lesson">
-  <!-- ===== CONCEPT 1 ===== -->
-  <div id="c1" class="concept">
-    <h1>Forces as vectors</h1>
-    <p class="sub">ME 201 · Unit 1 · Concept 1 of 5 · ~5 h of study</p>
-    <div class="card"><b>Objectives</b><ul class="obj">
-      <li>Resolve a 2D force into components and recombine them into magnitude and direction.</li>
-      <li>Write a 3D force as a Cartesian vector using a position vector and a unit vector.</li>
-      <li>Project a force onto a line using the dot product.</li></ul></div>
-    <h2>Components</h2>
-    <p>A force has magnitude, direction and a point of application. With \(\theta\) measured counter-clockwise from \(+x\):</p>
-    <p>$$F_x = F\cos\theta,\qquad F_y = F\sin\theta,\qquad \vec R=\sum \vec F_i$$</p>
-    <p>$$|\vec R|=\sqrt{R_x^2+R_y^2},\qquad \theta_R=\operatorname{atan2}(R_y,R_x)$$</p>
-    <div class="card">
-      <b>Interactive: drag the arrow tips</b> <span class="tag">live</span>
-      <div class="viz" style="margin-top:10px">
-        <svg class="diagram" id="vec" viewBox="-300 -230 600 460" role="img" aria-label="Two draggable force vectors and their resultant">
-          <defs>
-            <marker id="h1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker>
-            <marker id="h2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#4dd0e1"/></marker>
-            <marker id="hr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ffd54f"/></marker>
-          </defs>
-          <g id="grid"></g><g id="comps"></g>
-          <line id="lr" stroke="#ffd54f" stroke-width="4" marker-end="url(#hr)"/>
-          <line id="l1" stroke="#ff8a65" stroke-width="4" marker-end="url(#h1)"/>
-          <line id="l2" stroke="#4dd0e1" stroke-width="4" marker-end="url(#h2)"/>
-          <line id="par1" stroke="#ffd54f" stroke-width="1.5" stroke-dasharray="5 5" opacity=".6"/>
-          <line id="par2" stroke="#ffd54f" stroke-width="1.5" stroke-dasharray="5 5" opacity=".6"/>
-          <circle id="d1" class="handle" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>
-          <circle id="d2" class="handle" r="14" fill="#4dd0e1" fill-opacity=".35" stroke="#4dd0e1"/>
-          <text id="t1" fill="#ff8a65" font-size="15">F₁</text><text id="t2" fill="#4dd0e1" font-size="15">F₂</text><text id="tr" fill="#ffd54f" font-size="15">R</text>
-        </svg>
-        <div class="readout">
-          <div class="row"><span class="k1">F₁</span><span id="r1"></span></div>
-          <div class="row"><span class="k2">F₂</span><span id="r2"></span></div>
-          <div class="row"><span class="kr">R</span><span id="rr"></span></div>
-          <div style="margin-top:8px;overflow-x:auto" id="rmath"></div>
-          <label style="display:block;margin-top:8px;font-size:13px;color:var(--mute)"><input type="checkbox" id="showc" checked> show components</label>
-          <button class="btn ghost sm" id="preset" style="margin-top:10px">Load example: 250 N ∠40°, 400 N ∠150°</button>
-          <p style="font-size:12px;color:var(--mute)">Grid: 1 square = 100 N. Snaps to 10 N.</p>
-        </div>
+  <div class="lesson lesson-slides">
+    <div class="lesson-bar">
+      <h1 id="deckTitle">Forces as vectors</h1>
+      <button type="button" class="btn ghost sm" id="trigBtn">Trig refresher</button>
+    </div>
+
+    <!-- ========== CONCEPT 1 ========== -->
+    <div id="c1" class="concept">
+      <div class="stage">
+        <article class="slide on" data-id="hook">
+          <h2>You push a box with a rope</h2>
+          <p>The rope is not level. Drag the end of the rope. Watch how much of your push goes along the floor, and how much lifts.</p>
+          <p>A <b>force</b> is a push or a pull. It has a size and a direction.</p>
+          <div class="viz">
+            <svg class="diagram" id="ropeSvg" viewBox="0 0 520 260" role="img" aria-label="A box pulled by a rope you can drag"></svg>
+            <div class="readout">
+              <p class="sub">Tap the box, the rope, or the floor to name them.</p>
+              <div class="row"><span>Along the floor</span><span id="ropeFloor"></span></div>
+              <div class="row"><span>Lifting up</span><span id="ropeLift"></span></div>
+              <div class="share"><div class="bar"><i id="ropeFloorBar" style="background:#ff8a65"></i><i id="ropeLiftBar" style="background:#4dd0e1"></i></div></div>
+              <p class="sub" id="ropeHint">A steeper rope lifts more, and pulls the box along the floor less.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="force">
+          <h2>Size and direction, as one arrow</h2>
+          <p>We draw a force as an arrow. The length is the size. The way it points is the direction.</p>
+          <p>The usual unit is the <b>newton</b> (N). A small apple weighs about one newton.</p>
+          <div class="viz">
+            <svg class="diagram" id="oneSvg" viewBox="-40 -200 440 280" role="img" aria-label="A single force arrow you can drag"></svg>
+            <div class="readout">
+              <div class="row"><span>Size</span><span id="oneF"></span></div>
+              <div class="row"><span>Angle up from the floor</span><span id="oneA"></span></div>
+              <p class="sub">Drag the arrow tip. There are no formulas yet — just get a feel for size and direction.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="split">
+          <h2>The same push, split in two</h2>
+          <p>Any angled push can be replaced by two simpler pushes: one along the floor, and one straight up. Together they do the same job.</p>
+          <p>Each of those simpler pushes is called a <b>component</b> — a part of the force in one direction.</p>
+          <div class="viz">
+            <svg class="diagram" id="splitSvg" viewBox="-40 -200 440 280" role="img" aria-label="A force split into floor and lift parts"></svg>
+            <div class="readout">
+              <label class="sub"><input type="checkbox" id="showFloor" checked> show the along-the-floor part</label>
+              <label class="sub"><input type="checkbox" id="showLift" checked> show the lifting part</label>
+              <div class="row"><span class="k1">Along the floor</span><span id="splitX"></span></div>
+              <div class="row"><span class="k2">Straight up</span><span id="splitY"></span></div>
+              <p class="sub">Turn a part off and on. The original arrow does not change.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="triangle">
+          <h2>A right triangle hides in the arrow</h2>
+          <p>Look at the triangle made by the arrow and its two parts. The long side is the original push. Drag the tip, then reveal the math one piece at a time.</p>
+          <div class="viz">
+            <svg class="diagram" id="triSvg" viewBox="-40 -220 440 300" role="img" aria-label="Right triangle on a force arrow, with an angle you can drag"></svg>
+            <div class="readout">
+              <div id="triMath"></div>
+              <button type="button" class="btn sm" id="triNext" style="margin-top:10px">Next piece</button>
+              <p class="sub" id="triHelp">We will start with a concrete number: a 100 N push.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="check-fx">
+          <h2>Check yourself</h2>
+          <p>Use the idea you just built. A 100 N push acts at 30° above the floor. How big is the along-the-floor part?</p>
+          <div class="check" data-check="c1fx">
+            <div class="inrow"><label>Along the floor<br><input placeholder="value N"></label></div>
+            <button type="button" class="btn">Check</button>
+            <div class="fb"></div>
+            <p class="sub">Hint: it is 100 times the cosine of 30°. Cosine of 30° is √3 / 2 ≈ 0.866.</p>
+          </div>
+        </article>
+
+        <article class="slide" data-id="fy">
+          <h2>The lifting part uses sine</h2>
+          <p>The side standing up is opposite the angle. So the lifting part is the size times the sine of the angle.</p>
+          <p>For the same 100 N push at 30°: the lift is 100 × sin 30° = 100 × 0.5 = 50 N.</p>
+          <p>In symbols, after that example: \(F_y = F\sin\theta\). \(F_y\) is just a name for “the up-and-down part.”</p>
+          <div class="check" data-check="c1fy">
+            <p>Now you try. Same 100 N push at 30°. How big is the lifting part?</p>
+            <div class="inrow"><label>Lifting part<br><input placeholder="value N"></label></div>
+            <button type="button" class="btn">Check</button>
+            <div class="fb"></div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="two">
+          <h2>Two people pull on a bolt</h2>
+          <p>Together, their pulls act like one pull. That one equivalent pull is the <b>resultant</b>.</p>
+          <p>Drag either arrow tip. We add the along-x parts, and we add the along-y parts. Then we rebuild one arrow from those two totals.</p>
+          <div class="viz">
+            <svg class="diagram" id="vec" viewBox="-300 -230 600 460" role="img" aria-label="Two draggable force vectors and their resultant">
+              <defs>
+                <marker id="h1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker>
+                <marker id="h2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#4dd0e1"/></marker>
+                <marker id="hr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ffd54f"/></marker>
+              </defs>
+              <g id="grid"></g><g id="comps"></g>
+              <line id="lr" stroke="#ffd54f" stroke-width="4" marker-end="url(#hr)"/>
+              <line id="l1" stroke="#ff8a65" stroke-width="4" marker-end="url(#h1)"/>
+              <line id="l2" stroke="#4dd0e1" stroke-width="4" marker-end="url(#h2)"/>
+              <line id="par1" stroke="#ffd54f" stroke-width="1.5" stroke-dasharray="5 5" opacity=".6"/>
+              <line id="par2" stroke="#ffd54f" stroke-width="1.5" stroke-dasharray="5 5" opacity=".6"/>
+              <circle id="d1" class="handle" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>
+              <circle id="d2" class="handle" r="14" fill="#4dd0e1" fill-opacity=".35" stroke="#4dd0e1"/>
+              <text id="t1" fill="#ff8a65" font-size="15">F₁</text><text id="t2" fill="#4dd0e1" font-size="15">F₂</text><text id="tr" fill="#ffd54f" font-size="15">R</text>
+            </svg>
+            <div class="readout">
+              <div class="row"><span class="k1">F₁</span><span id="r1"></span></div>
+              <div class="row"><span class="k2">F₂</span><span id="r2"></span></div>
+              <div class="row"><span class="kr">R</span><span id="rr"></span></div>
+              <div style="margin-top:8px;overflow-x:auto" id="rmath"></div>
+              <label class="sub"><input type="checkbox" id="showc" checked> show components</label>
+              <button type="button" class="btn ghost sm" id="preset" style="margin-top:8px">Load 250 N ∠40° and 400 N ∠150°</button>
+              <p class="sub">Grid: 1 square = 100 N.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="check-r">
+          <h2>Check yourself</h2>
+          <p>One person pulls 3 N due east. Another pulls 4 N due north. How big is the single equivalent pull?</p>
+          <div class="check" data-check="c1r">
+            <div class="inrow"><label>Size of the resultant<br><input placeholder="value N"></label></div>
+            <button type="button" class="btn">Check</button>
+            <div class="fb"></div>
+            <p class="sub">This is a 3-4-5 right triangle.</p>
+          </div>
+        </article>
+
+        <article class="slide" data-id="quiz-q1-1"><h2>Practice · easy</h2><p class="sub">Work on paper first. Enter numbers with units (for example <code>512 N</code> or <code>0.512 kN</code>). Answers count within 1% (angles ±0.5°).</p><div class="q-mount" data-q="q1.1"></div></article>
+        <article class="slide" data-id="quiz-q1-4"><h2>Practice · medium</h2><div class="q-mount" data-q="q1.4"></div></article>
+        <article class="slide" data-id="quiz-q1-3"><h2>Practice · hard</h2><div class="q-mount" data-q="q1.3"></div></article>
       </div>
     </div>
-    <h2>Worked example, step by step</h2>
-    <div class="card">
-      <p>A 600 N cable force acts at \(A(2,0,0)\) m toward \(B(-1,3,6)\) m. Write \(\vec F\) as a Cartesian vector.</p>
-      <div class="steps" id="steps1">
-        <div class="step">$$\vec r_{AB}=B-A=(-3,\;3,\;6)\ \text{m}$$</div>
-        <div class="step">$$|\vec r_{AB}|=\sqrt{9+9+36}=\sqrt{54}=7.348\ \text{m}$$</div>
-        <div class="step">$$\hat u_{AB}=\frac{\vec r_{AB}}{|\vec r_{AB}|}=(-0.4082,\;0.4082,\;0.8165)$$</div>
-        <div class="step">$$\vec F=600\,\hat u_{AB}=(-244.9\,\hat\imath+244.9\,\hat\jmath+489.9\,\hat k)\ \text{N}$$</div>
-        <div class="step">Check: \(|\vec F|=\sqrt{244.9^2+244.9^2+489.9^2}=600\ \text{N}\) ✓. Always verify with something you didn't use.</div>
+
+    <!-- ========== CONCEPT 2 ========== -->
+    <div id="c2" class="concept" hidden>
+      <div class="stage">
+        <article class="slide on" data-id="sign">
+          <h2>A hanging shop sign</h2>
+          <p>A sign hangs from a wall by a rod and a cable. Tap the sign, the cable, the rod, or the wall to name them.</p>
+          <p>To study the forces, we will later draw the sign alone, with every push or pull that touches it. That picture is a <b>free-body diagram</b>.</p>
+          <svg class="diagram" id="signSvg" viewBox="0 0 520 240" role="img" aria-label="A shop sign hanging from a wall; tap the parts"></svg>
+          <p class="sub" id="signLabel">Tap a part of the picture.</p>
+        </article>
+
+        <article class="slide" data-id="isolate">
+          <h2>Draw the sign alone</h2>
+          <p>Imagine cutting the cable and the rod. Whatever you cut must be replaced by the force it was applying. Gravity still pulls down.</p>
+          <p>Tap the buttons to add those pulls. That is how a free-body diagram is built.</p>
+          <div class="viz">
+            <svg class="diagram" id="isoSvg" viewBox="0 0 520 240" role="img" aria-label="Building a free-body diagram of the sign"></svg>
+            <div class="readout">
+              <div class="palette" id="isoPal"></div>
+              <p class="sub" id="isoHint">Add every external push or pull. Do not draw the wall itself — only what it does to the sign.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="supports">
+          <h2>What each support can do</h2>
+          <p>A <b>support</b> is something that holds a body up, like a pin, a roller, or a cable. A <b>reaction</b> is the force (or twist) that the support applies.</p>
+          <p>Tap a support. You will see what motion it stops, and how many unknown parts that gives you.</p>
+          <div class="support-grid" id="supGrid"></div>
+          <p id="supInfo" class="sub">Tap a card to begin.</p>
+        </article>
+
+        <article class="slide" data-id="check-roll">
+          <h2>Check yourself</h2>
+          <div class="check" data-check="c2roll">
+            <p>How many unknown reaction parts does a roller provide in 2D?</p>
+            <div class="inrow"><label>Number<br><input placeholder="number"></label></div>
+            <button type="button" class="btn">Check</button>
+            <div class="fb"></div>
+          </div>
+          <div class="check" data-check="c2pull" style="margin-top:16px">
+            <p>Can a roller pull on the beam, or only push?</p>
+            <div class="choices">
+              <button type="button" data-v="pull">It can pull or push</button>
+              <button type="button" data-v="push">It can only push</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="fbd">
+          <h2>Build this beam’s free-body diagram</h2>
+          <p>This beam has a <b>pin at A</b>, a <b>roller at B</b>, and a 10 kN load. Toggle the forces that belong on the diagram, then check.</p>
+          <svg class="diagram" id="fbd" viewBox="0 0 600 240" role="img" aria-label="Beam free-body diagram builder"></svg>
+          <div class="palette" id="palette"></div>
+          <button type="button" class="btn" id="checkfbd">Check my FBD</button> <span class="fb" id="fbdfb"></span>
+        </article>
+
+        <article class="slide" data-id="check-unk">
+          <h2>Check yourself</h2>
+          <p>A 2D beam is held by a pin at one end and a roller at the other. How many unknown reaction parts are there in total?</p>
+          <div class="check" data-check="c2unk">
+            <div class="inrow"><label>Unknowns<br><input placeholder="number"></label></div>
+            <button type="button" class="btn">Check</button>
+            <div class="fb"></div>
+            <p class="sub">A pin stops two motions. A roller stops one.</p>
+          </div>
+        </article>
+
+        <article class="slide" data-id="quiz-q2-1"><h2>Practice · easy</h2><div class="q-mount" data-q="q2.1"></div></article>
+        <article class="slide" data-id="quiz-q2-3"><h2>Practice · medium</h2><div class="q-mount" data-q="q2.3"></div></article>
+        <article class="slide" data-id="quiz-q2-5"><h2>Practice · medium</h2><div class="q-mount" data-q="q2.5"></div></article>
+        <article class="slide" data-id="quiz-q2-4"><h2>Practice · hard</h2><div class="q-mount" data-q="q2.4"></div></article>
       </div>
-      <button class="btn" id="next1">Show next step</button>
     </div>
-    <h2>Quiz: concept 1</h2>
-    <p class="sub">Work on paper first. Enter numbers with units (e.g. <code>512 N</code> or <code>0.512 kN</code>). Answers count within 1% (angles ±0.5°).</p>
-    <div id="quiz1"></div>
-  </div>
 
-  <!-- ===== CONCEPT 2 ===== -->
-  <div id="c2" class="concept" hidden>
-    <h1>Free-body diagrams &amp; support reactions</h1>
-    <p class="sub">ME 201 · Unit 1 · Concept 2 of 5 · ~5 h of study</p>
-    <div class="card"><b>Objectives</b><ul class="obj">
-      <li>Isolate a body and draw every external force.</li>
-      <li>State the reactions supplied by common 2D and 3D supports.</li>
-      <li>Recognize two-force members and count unknowns vs. equations.</li></ul></div>
-    <p>A planar rigid body gives exactly three independent equations:</p>
-    <p>$$\sum F_x=0,\qquad \sum F_y=0,\qquad \sum M_A=0$$</p>
-    <p>If there are more than 3 unknowns, the body is statically indeterminate: \(\;n_{\text{indet}} = n_{\text{unknowns}}-3\).</p>
-    <div class="card"><b>Supports cheat-sheet</b>
-      <p style="margin:6px 0 0;font-size:14px;color:#c5cae9">Roller → 1 force ⟂ surface (push only) · Pin → \(A_x, A_y\) · Fixed → \(A_x, A_y, M_A\) · Cable → 1 tension · 3D ball-and-socket → 3 forces · 3D fixed → 3 forces + 3 couples</p></div>
-    <div class="card">
-      <b>Interactive: build the free-body diagram</b> <span class="tag">FBD builder</span>
-      <p style="font-size:14px;color:var(--mute)">This beam has a <b>pin at A</b>, a <b>roller at B</b> and a 10 kN load. Toggle the forces that belong on the FBD, then check.</p>
-      <svg class="diagram" id="fbd" viewBox="0 0 600 240" role="img" aria-label="Beam free-body diagram builder"></svg>
-      <div class="palette" id="palette"></div>
-      <button class="btn" id="checkfbd">Check my FBD</button> <span class="fb" id="fbdfb"></span>
-    </div>
-    <h2>Quiz: concept 2</h2>
-    <div id="quiz2"></div>
-  </div>
+    <!-- ========== CONCEPT 3 ========== -->
+    <div id="c3" class="concept" hidden>
+      <div class="stage">
+        <article class="slide on" data-id="hang">
+          <h2>A lamp hangs on two strings</h2>
+          <p>The lamp is not moving. Drag it left, right, or down. Watch the strings. The tighter string is the one that has to pull harder.</p>
+          <p>If something is not starting to move, the pushes and pulls on it cancel. We say it is in <b>equilibrium</b>.</p>
+          <div class="viz">
+            <svg class="diagram" id="hangSvg" viewBox="-280 -20 560 300" role="img" aria-label="A lamp on two strings; drag the lamp"></svg>
+            <div class="readout">
+              <p class="sub" id="hangNote">Drag the lamp. The strings get tighter as they flatten.</p>
+            </div>
+          </div>
+        </article>
 
-  <!-- ===== CONCEPT 3 ===== -->
-  <div id="c3" class="concept" hidden>
-    <h1>Equilibrium of a particle</h1>
-    <p class="sub">ME 201 · Unit 1 · Concept 3 of 5 · ~6 h of study</p>
-    <div class="card"><b>Objectives</b><ul class="obj">
-      <li>Apply \(\sum\vec F=\vec 0\) to a particle in 2D (2 equations) and 3D (3 equations).</li>
-      <li>Model springs (\(F=ks\)) and cables (tension only).</li>
-      <li>Solve simultaneous linear equations and sanity-check the signs.</li></ul></div>
-    <p>For a ring held by two cables at angles \(\theta_1\) (left) and \(\theta_2\) (right) above horizontal, supporting weight \(W\):</p>
-    <p>$$\sum F_x:\ -T_1\cos\theta_1+T_2\cos\theta_2=0\qquad \sum F_y:\ T_1\sin\theta_1+T_2\sin\theta_2-W=0$$</p>
-    <p>$$\Rightarrow\quad T_1=\frac{W\cos\theta_2}{\sin(\theta_1+\theta_2)},\qquad T_2=\frac{W\cos\theta_1}{\sin(\theta_1+\theta_2)}$$</p>
-    <div class="card">
-      <b>Interactive: drag the ring</b> <span class="tag">live equilibrium</span>
-      <div class="viz" style="margin-top:10px">
-        <svg class="diagram" id="eq" viewBox="-300 -40 600 420" role="img" aria-label="Ring suspended by two cables; drag to change angles"></svg>
-        <div class="readout">
-          <label style="font-size:13px;color:var(--mute)">Mass: <b id="mval">20</b> kg</label>
-          <input type="range" id="mass" min="5" max="100" value="20">
-          <div class="row"><span>W = mg</span><span id="eW"></span></div>
-          <div class="row"><span class="k1">θ₁ (left)</span><span id="eT1a"></span></div>
-          <div class="row"><span class="k2">θ₂ (right)</span><span id="eT2a"></span></div>
-          <div class="row"><span class="k1">T₁</span><span id="eT1"></span></div>
-          <div class="row"><span class="k2">T₂</span><span id="eT2"></span></div>
-          <label style="display:block;margin-top:8px;font-size:13px;color:var(--mute)"><input type="checkbox" id="predict"> predict mode (hide tensions)</label>
-          <p style="font-size:12px;color:var(--mute)">Drag the ring down to flatten the cables and watch the tensions explode. Inset: the closed force triangle.</p>
-        </div>
+        <article class="slide" data-id="balance">
+          <h2>Not moving means the forces balance</h2>
+          <p>If 20 N pulls down, the upward parts of the other forces must add to 20 N. Sideways parts must cancel too.</p>
+          <p>We write that as \(\sum F_x=0\) and \(\sum F_y=0\). The capital sigma means “add them all up.” The 0 means “they cancel.”</p>
+          <div class="check" data-check="c3w">
+            <p>A 5 kg lamp hangs still. What is its weight? Use \(g=9.81\ \mathrm{m/s}^2\), and \(W=mg\).</p>
+            <div class="inrow"><label>Weight<br><input placeholder="value N"></label></div>
+            <button type="button" class="btn">Check</button>
+            <div class="fb"></div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="ring">
+          <h2>Drag the ring, and the tensions change</h2>
+          <p>Two cables hold a hanging mass. Drag the ring. Change the mass. The tensions update live. You can hide them and try to predict first.</p>
+          <div class="viz">
+            <svg class="diagram" id="eq" viewBox="-300 -40 600 420" role="img" aria-label="Ring suspended by two cables; drag to change angles"></svg>
+            <div class="readout">
+              <label class="sub">Mass: <b id="mval">20</b> kg</label>
+              <input type="range" id="mass" min="5" max="100" value="20">
+              <div class="row"><span>W = mg</span><span id="eW"></span></div>
+              <div class="row"><span class="k1">θ₁ (left)</span><span id="eT1a"></span></div>
+              <div class="row"><span class="k2">θ₂ (right)</span><span id="eT2a"></span></div>
+              <div class="row"><span class="k1">T₁</span><span id="eT1"></span></div>
+              <div class="row"><span class="k2">T₂</span><span id="eT2"></span></div>
+              <label class="sub"><input type="checkbox" id="predict"> predict mode (hide tensions)</label>
+              <p class="sub">The inset is the closed force triangle: the three arrows add to zero.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="check-tight">
+          <h2>Check yourself</h2>
+          <div class="check" data-check="c3tight">
+            <p>The ring is closer to the left support, so the left cable is steeper. Which cable has the larger tension?</p>
+            <div class="choices">
+              <button type="button" data-v="left">The left cable</button>
+              <button type="button" data-v="right">The right cable</button>
+              <button type="button" data-v="same">They are always equal</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="quiz-q3-1"><h2>Practice · easy</h2><p class="sub">Use \(g=9.81\ \mathrm{m/s}^2\).</p><div class="q-mount" data-q="q3.1"></div></article>
+        <article class="slide" data-id="quiz-q3-2"><h2>Practice · medium</h2><div class="q-mount" data-q="q3.2"></div></article>
+        <article class="slide" data-id="quiz-q3-3"><h2>Practice · hard</h2><div class="q-mount" data-q="q3.3"></div></article>
       </div>
     </div>
-    <h2>Quiz: concept 3</h2>
-    <p class="sub">Use \(g = 9.81\ \text{m/s}^2\).</p>
-    <div id="quiz3"></div>
-  </div>
 
-  <div id="c4" class="concept soon" hidden><div><h1>Moments</h1><p>Coming soon. The content is already written in the course files (<code>r × F</code>, moment about an axis, couples).<br>Want to build this interactive? See CONTRIBUTING.md.</p></div></div>
-  <div id="c5" class="concept soon" hidden><div><h1>Rigid-body equilibrium</h1><p>Coming soon: beams, 3D booms and an exam-style frame problem.<br>Meanwhile, practice it with the tutor prompt →</p></div></div>
+    <!-- ========== CONCEPT 4 ========== -->
+    <div id="c4" class="concept" hidden>
+      <div class="stage">
+        <article class="slide on" data-id="seesaw">
+          <h2>A force can also twist</h2>
+          <p>Drag the box along the seesaw. The farther it sits from the middle, the more that side wants to go down.</p>
+          <p>That twisting effect is a <b>moment</b>. A moment is bigger when the force is bigger, and when you apply it farther from the turning point.</p>
+          <div class="viz">
+            <svg class="diagram" id="seeSvg" viewBox="0 0 520 240" role="img" aria-label="A seesaw with a box you can drag"></svg>
+            <div class="readout">
+              <div class="row"><span>Distance from the pivot</span><span id="seeD"></span></div>
+              <div class="row"><span>Moment (twist)</span><span id="seeM"></span></div>
+              <p class="sub">The pivot is the triangle in the middle. Try both sides.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="wrench">
+          <h2>A wrench: moment is force times distance</h2>
+          <p>When you push straight across the handle, the moment about the bolt is the force times the distance from the bolt.</p>
+          <p>First a number: 10 N, at 0.50 m, pushing straight, gives \(10\times 0.50=5\) N·m. The unit is the <b>newton-metre</b> (N·m).</p>
+          <p>Then the general rule: \(M=F\,d\), for a perpendicular push.</p>
+          <div class="viz">
+            <svg class="diagram" id="wrSvg" viewBox="0 0 520 240" role="img" aria-label="A wrench; drag the force and the distance"></svg>
+            <div class="readout">
+              <label class="sub">Force: <b id="wrF">10</b> N</label>
+              <input type="range" id="wrFsl" min="5" max="80" value="10">
+              <label class="sub">Distance: <b id="wrD">0.50</b> m</label>
+              <input type="range" id="wrDsl" min="0.10" max="0.60" step="0.01" value="0.50">
+              <div class="row"><span>Moment \(M=F\,d\)</span><span id="wrM"></span></div>
+              <p class="sub">You can also drag the force arrow and the handle end on the picture.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="angled">
+          <h2>If you don't push straight</h2>
+          <p>Only the part of the force that is perpendicular to the handle twists the bolt. The part along the handle just shoves into the bolt.</p>
+          <p>Example: 10 N at 0.50 m, at 30° to the handle. The twisting part is 10 × sin 30° = 5 N, so \(M=5\times 0.50=2.5\) N·m.</p>
+          <p>In general: \(M=F\,d\sin\theta\), where \(\theta\) is the angle between the force and the handle.</p>
+          <div class="viz">
+            <svg class="diagram" id="angSvg" viewBox="0 0 520 240" role="img" aria-label="A wrench with a force at an angle you can change"></svg>
+            <div class="readout">
+              <label class="sub">Angle to the handle: <b id="angT">60</b>°</label>
+              <input type="range" id="angSl" min="0" max="180" value="60">
+              <div class="row"><span>Perpendicular part</span><span id="angP"></span></div>
+              <div class="row"><span>Moment</span><span id="angM"></span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="check-m">
+          <h2>Check yourself</h2>
+          <div class="check" data-check="c4m">
+            <p>You push 20 N, straight across a 0.30 m handle. What is the moment about the bolt?</p>
+            <div class="inrow"><label>Moment<br><input placeholder="value N·m"></label></div>
+            <button type="button" class="btn">Check</button>
+            <div class="fb"></div>
+          </div>
+          <p class="sub" style="margin-top:12px">We will take counter-clockwise moments as positive, and clockwise as negative. That is just a sign convention — a rule we agree on so the algebra stays consistent.</p>
+        </article>
+
+        <article class="slide" data-id="quiz-q4-1"><h2>Practice · easy</h2><p class="sub">The unit of moment is N·m. You may write <code>N·m</code>, <code>N.m</code>, or <code>Nm</code>.</p><div class="q-mount" data-q="q4.1"></div></article>
+        <article class="slide" data-id="quiz-q4-2"><h2>Practice · medium</h2><div class="q-mount" data-q="q4.2"></div></article>
+        <article class="slide" data-id="quiz-q4-5"><h2>Practice · medium</h2><div class="q-mount" data-q="q4.5"></div></article>
+        <article class="slide" data-id="quiz-q4-3"><h2>Practice · medium</h2><div class="q-mount" data-q="q4.3"></div></article>
+        <article class="slide" data-id="quiz-q4-4"><h2>Practice · hard</h2><div class="q-mount" data-q="q4.4"></div></article>
+      </div>
+    </div>
+
+    <!-- ========== CONCEPT 5 ========== -->
+    <div id="c5" class="concept" hidden>
+      <div class="stage">
+        <article class="slide on" data-id="plank">
+          <h2>A box on a plank</h2>
+          <p>A board rests on two supports. Drag the box. The closer support has to push up harder.</p>
+          <p>The board does not move, and it does not start to spin. Both things have to be true at once.</p>
+          <div class="viz">
+            <svg class="diagram" id="plankSvg" viewBox="0 0 520 240" role="img" aria-label="A plank on two supports with a box you can drag"></svg>
+            <div class="readout">
+              <div class="row"><span>Left support</span><span id="plL"></span></div>
+              <div class="row"><span>Right support</span><span id="plR"></span></div>
+              <p class="sub">The two upward pushes always add up to the weight of the box.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="threeeq">
+          <h2>Forces balance, and twists balance</h2>
+          <p>For a rigid body in a plane, three independent statements must hold:</p>
+          <p>The left-right forces cancel: \(\sum F_x=0\).</p>
+          <p>The up-down forces cancel: \(\sum F_y=0\).</p>
+          <p>The twists about a chosen point cancel: \(\sum M=0\).</p>
+          <p>A <b>rigid body</b> is an object that does not change shape for the purpose of this course — a beam, a wrench, a frame.</p>
+          <p>A good trick: take moments about a point where an unknown force acts. That unknown drops out of the moment equation.</p>
+        </article>
+
+        <article class="slide" data-id="beam">
+          <h2>Drag the load, watch the supports</h2>
+          <p>This beam has a pin at A and a roller at B. Drag the load along the beam, or change its size. The support forces update so the beam stays in equilibrium.</p>
+          <div class="viz">
+            <svg class="diagram" id="beamSvg" viewBox="0 0 600 260" role="img" aria-label="A beam with a load you can drag; support reactions update"></svg>
+            <div class="readout">
+              <label class="sub">Load: <b id="bmP">8.0</b> kN</label>
+              <input type="range" id="bmPsl" min="2" max="16" step="0.5" value="8">
+              <div class="row"><span>Distance from A</span><span id="bmX"></span></div>
+              <div class="row"><span>A<sub>y</sub></span><span id="bmAy"></span></div>
+              <div class="row"><span>B<sub>y</sub></span><span id="bmBy"></span></div>
+              <div class="row"><span>Check: A<sub>y</sub> + B<sub>y</sub></span><span id="bmSum"></span></div>
+              <p class="sub">Moments about A give B<sub>y</sub> directly: \(B_y = P\,x / L\).</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="check-beam">
+          <h2>Check yourself</h2>
+          <p>An 8.0 m beam has a pin at A (x = 0) and a roller at B (x = 8.0 m). A 12 kN downward load sits at x = 2.0 m. Find A<sub>y</sub> and B<sub>y</sub>.</p>
+          <div class="check" data-check="c5ab">
+            <div class="inrow"><label>A<sub>y</sub><br><input placeholder="value kN"></label><label>B<sub>y</sub><br><input placeholder="value kN"></label></div>
+            <button type="button" class="btn">Check</button>
+            <div class="fb"></div>
+            <p class="sub">Take moments about A to find B<sub>y</sub> first.</p>
+          </div>
+        </article>
+
+        <article class="slide" data-id="quiz-q5-1"><h2>Practice · easy</h2><div class="q-mount" data-q="q5.1"></div></article>
+        <article class="slide" data-id="quiz-q5-2"><h2>Practice · medium</h2><div class="q-mount" data-q="q5.2"></div></article>
+        <article class="slide" data-id="quiz-q5-3"><h2>Practice · medium</h2><div class="q-mount" data-q="q5.3"></div></article>
+        <article class="slide" data-id="quiz-q5-4"><h2>Practice · hard</h2><div class="q-mount" data-q="q5.4"></div></article>
+        <article class="slide" data-id="quiz-q5-5"><h2>Practice · exam</h2><div class="q-mount" data-q="q5.5"></div></article>
+      </div>
+    </div>
+
+    <div class="slide-nav">
+      <button type="button" class="btn ghost sm" id="prevSlide">Back</button>
+      <div class="dots" id="dots"></div>
+      <span id="slidePos">1 / 1</span>
+      <button type="button" class="btn sm" id="nextSlide">Next</button>
+    </div>
   </div>
 
   <aside class="tutor">
@@ -215,6 +518,22 @@
     </div>
   </aside>
 </section>
+
+<div class="trig-backdrop" id="trigBack" hidden></div>
+<aside class="trig-panel" id="trigPanel" hidden>
+  <button type="button" class="btn ghost sm" id="trigClose" style="float:right">Close</button>
+  <h2>Trig refresher</h2>
+  <p>In a right triangle: <b>SOH-CAH-TOA</b>.</p>
+  <p>Sine is opposite over hypotenuse. Cosine is adjacent over hypotenuse. Tangent is opposite over adjacent.</p>
+  <svg class="diagram" id="trigSvg" viewBox="0 0 360 230" role="img" aria-label="A right triangle; drag the angle"></svg>
+  <label class="sub">Angle θ: <b id="trigA">30</b>°</label>
+  <input type="range" id="trigSl" min="5" max="85" value="30">
+  <div class="row" style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:4px 0"><span>sin θ</span><span id="trigS"></span></div>
+  <div class="row" style="display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:4px 0"><span>cos θ</span><span id="trigC"></span></div>
+  <p>For a force \(F\) at an angle \(\theta\) measured counter-clockwise from the +x axis (usually the floor):</p>
+  <p>The along-x part is \(F\cos\theta\). The along-y part is \(F\sin\theta\).</p>
+  <p class="sub" id="trigEx"></p>
+</aside>
 
 <footer>
   <div class="disc"><b>Honest disclaimer:</b> Grokeversity is an independent, open-source community project. It is <b>not affiliated with, sponsored by or endorsed by xAI</b> or any university. It is <b>not an accredited institution</b> and does not award degrees or academic credit. The ME and Introduction to AI tracks are degree-equivalent <i>curricula</i>, and completion certificates are not degrees. Lab and hands-on work can't be fully replaced online.</div>

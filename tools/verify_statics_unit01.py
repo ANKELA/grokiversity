@@ -71,4 +71,29 @@ for c in data["concepts"]:
         for a, v in zip(q["answers"], vals):
             n += 1; good = ok(a["value"], float(v), a); bad += not good
             print(f"{'PASS' if good else 'FAIL'}  {q['id']:5} {a['quantity']:<26} yaml={a['value']:<10} computed={float(v):.4f} {a['unit']}")
-print(f"\n{n-bad}/{n} answers verified"); sys.exit(1 if bad else 0)
+
+# teaching micro-checks (not in the YAML quiz bank; used on "check yourself" slides)
+import math
+micro = [
+    ("c1fx 100 N at 30°", 100*math.cos(math.radians(30)), 86.6025, "N", 1),
+    ("c1fy 100 N at 30°", 100*math.sin(math.radians(30)), 50.0, "N", 1),
+    ("c1r 3-4-5", 5.0, 5.0, "N", 1),
+    ("c2roll unknowns", 1, 1, "count", 0),
+    ("c2unk pin+roller", 3, 3, "count", 0),
+    ("c3w 5 kg * 9.81", 5*9.81, 49.05, "N", 1),
+    ("c4m 20 N * 0.30 m", 20*0.30, 6.0, "N·m", 1),
+    ("c5ab Ay 12 kN at 2 m on 8 m", 12*(8-2)/8, 9.0, "kN", 1),
+    ("c5ab By 12 kN at 2 m on 8 m", 12*2/8, 3.0, "kN", 1),
+]
+mbad = 0
+for name, got, exp, unit, tp in micro:
+    n += 1
+    tol = (0 if unit=="count" else tp/100*abs(exp) or 1e-9)
+    if unit=="count":
+        good = got == exp
+    else:
+        good = abs(got-exp) <= max(tol, 1e-6)
+    mbad += not good
+    print(f"{'PASS' if good else 'FAIL'}  micro {name:<36} expected={exp:<10} computed={got:.4f} {unit}")
+bad += mbad
+print(f"\n{n-bad}/{n} answers verified (including micro-checks)"); sys.exit(1 if bad else 0)
