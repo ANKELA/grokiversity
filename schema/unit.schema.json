@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/grokeversity/schema/unit.schema.json",
+  "title": "Grokeversity Unit",
+  "description": "One unit of a Grokeversity course: ordered concepts, each with objectives, an explanation outline, tutor prompts and a quiz bank with verified answers.",
+  "type": "object",
+  "required": ["id", "course_id", "title", "version", "status", "mastery_threshold", "concepts", "unit_exam"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "course_id": {"type": "string"},
+    "title": {"type": "string"},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "status": {"enum": ["draft-needs-human-review", "reviewed", "verified", "deprecated"]},
+    "estimated_hours": {"type": "number", "minimum": 0},
+    "mastery_threshold": {"type": "number", "minimum": 0.8, "maximum": 1},
+    "conventions": {"type": "object"},
+    "references": {"type": "array", "items": {"type": "string"}},
+    "prerequisites": {"type": "array", "items": {"type": "string"}},
+    "concepts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/concept"}},
+    "unit_exam": {
+      "type": "object",
+      "required": ["timed_minutes", "pass_threshold", "draw"],
+      "properties": {
+        "timed_minutes": {"type": "integer", "minimum": 10},
+        "closed_book": {"type": "boolean"},
+        "allowed": {"type": "array", "items": {"type": "string"}},
+        "draw": {"type": "string"},
+        "pass_threshold": {"type": "number", "minimum": 0.8, "maximum": 1},
+        "retake_policy": {"type": "string"}
+      }
+    }
+  },
+  "$defs": {
+    "concept": {
+      "type": "object",
+      "required": ["id", "title", "prerequisites", "objectives", "explanation_outline", "quiz"],
+      "properties": {
+        "id": {"type": "string"},
+        "title": {"type": "string"},
+        "prerequisites": {"type": "array", "items": {"type": "string"}},
+        "objectives": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "explanation_outline": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "explanation_prompts": {"type": "array", "items": {"type": "string"}},
+        "quiz": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/question"}}
+      }
+    },
+    "question": {
+      "type": "object",
+      "required": ["id", "difficulty", "prompt", "answers", "hints", "solution"],
+      "properties": {
+        "id": {"type": "string"},
+        "difficulty": {"enum": ["easy", "medium", "hard", "exam"]},
+        "type": {"enum": ["numeric", "multi_part", "conceptual"]},
+        "prompt": {"type": "string"},
+        "answers": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/answer"}},
+        "expected_text": {"type": "string"},
+        "rubric": {"type": "array", "items": {"type": "string"}},
+        "hints": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "solution": {"type": "string"}
+      }
+    },
+    "answer": {
+      "type": "object",
+      "required": ["quantity", "value", "unit"],
+      "properties": {
+        "quantity": {"type": "string"},
+        "value": {"type": "number"},
+        "unit": {"type": "string"},
+        "tolerance_pct": {"type": "number", "minimum": 0},
+        "tolerance_abs": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+id: mechanical-engineering
+title: "Mechanical Engineering — degree-equivalent curriculum (not an accredited degree)"
+total_credits_equivalent: ~120
+benchmark: "ABET EAC general criteria + Mechanical program criteria; MIT Course 2 core"
+sequence:   # year: [course ids]   — see PLAN.md §Degree map for details & sources
+  year1: [math-101-calculus-1, math-102-calculus-2, phys-101-mechanics, phys-102-em, chem-101, me-101-intro-design-cad, cs-101-programming]
+  year2: [math-201-calculus-3, math-202-differential-equations, math-203-linear-algebra, me-201-statics, me-202-dynamics, me-203-mechanics-of-materials, ee-201-circuits, mse-201-materials-science]
+  year3: [me-301-thermodynamics, me-302-fluid-mechanics, me-303-heat-transfer, me-304-machine-design, me-305-manufacturing, me-306-numerical-methods, stat-301-probability-statistics, me-307-measurement-lab]
+  year4: [me-401-system-dynamics-controls, me-402-thermal-fluid-systems-design, me-403-mechatronics, me-490-capstone-1, me-491-capstone-2, electives-x3, humanities-ethics-communication]

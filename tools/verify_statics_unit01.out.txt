@@ -1,0 +1,61 @@
+PASS  q1.1  |R|                        yaml=512.2      computed=512.2053 N
+PASS  q1.1  θ_R (CCW from +x)          yaml=100.5      computed=100.5459 deg
+PASS  q1.2  Fx                         yaml=-244.9     computed=-244.9490 N
+PASS  q1.2  Fy                         yaml=244.9      computed=244.9490 N
+PASS  q1.2  Fz                         yaml=489.9      computed=489.8979 N
+PASS  q1.2  α                          yaml=114.1      computed=114.0948 deg
+PASS  q1.2  β                          yaml=65.9       computed=65.9052 deg
+PASS  q1.2  γ                          yaml=35.3       computed=35.2644 deg
+PASS  q1.3  |F2| (a)                   yaml=371.8      computed=371.8143 N
+PASS  q1.3  θ2 (a)                     yaml=-27.4      computed=-27.3829 deg
+PASS  q1.3  |F2|min (b)                yaml=171.0      computed=171.0101 N
+PASS  q1.3  θ2 (b)                     yaml=-90.0      computed=-90.0000 deg
+PASS  q1.4  F_OC                       yaml=244.9      computed=244.9490 N
+PASS  q1.4  θ                          yaml=65.9       computed=65.9052 deg
+PASS  q2.1  roller                     yaml=1          computed=1.0000 count
+PASS  q2.1  pin                        yaml=2          computed=2.0000 count
+PASS  q2.1  fixed                      yaml=3          computed=3.0000 count
+PASS  q2.1  cable                      yaml=1          computed=1.0000 count
+PASS  q2.2  angle from vertical        yaml=30         computed=30.0000 deg
+PASS  q2.3  unknowns                   yaml=4          computed=4.0000 count
+PASS  q2.3  equations                  yaml=3          computed=3.0000 count
+PASS  q2.3  degree of indeterminacy    yaml=1          computed=1.0000 count
+PASS  q2.4  unknowns on beam FBD       yaml=3          computed=3.0000 count
+PASS  q2.5  ball-and-socket            yaml=3          computed=3.0000 count
+PASS  q2.5  fixed (3D)                 yaml=6          computed=6.0000 count
+PASS  q3.1  T_AB                       yaml=359.1      computed=359.0709 N
+PASS  q3.1  T_AC                       yaml=439.8      computed=439.7703 N
+PASS  q3.2  T_AC                       yaml=156.96     computed=156.9600 N
+PASS  q3.2  F_spring                   yaml=135.9      computed=135.9313 N
+PASS  q3.2  stretch                    yaml=0.1699     computed=0.1699 m
+PASS  q3.3  T_AB                       yaml=509.1      computed=509.0909 N
+PASS  q3.3  T_AC                       yaml=339.4      computed=339.3939 N
+PASS  q3.3  T_AD                       yaml=568.1      computed=568.1475 N
+PASS  q4.1  M                          yaml=69.28      computed=69.2820 N·m
+PASS  q4.2  M_O                        yaml=-149.5     computed=-149.5191 N·m
+PASS  q4.3  Mx                         yaml=0.0        computed=0.0000 N·m
+PASS  q4.3  My                         yaml=-979.8     computed=-979.7959 N·m
+PASS  q4.3  Mz                         yaml=489.9      computed=489.8979 N·m
+PASS  q4.3  |M_O|                      yaml=1095.4     computed=1095.4451 N·m
+PASS  q4.4  M_OC                       yaml=391.9      computed=391.9184 N·m
+PASS  q4.5  F_y at O                   yaml=-400       computed=-400.0000 N
+PASS  q4.5  M_O                        yaml=-1200      computed=-1200.0000 N·m
+PASS  q5.1  A_y                        yaml=6.667      computed=6.6667 kN
+PASS  q5.1  B_y                        yaml=3.333      computed=3.3333 kN
+PASS  q5.2  A_y                        yaml=6.0        computed=6.0000 kN
+PASS  q5.2  B_y                        yaml=12.0       computed=12.0000 kN
+PASS  q5.3  N_B                        yaml=5.543      computed=5.5426 kN
+PASS  q5.3  A_x                        yaml=2.771      computed=2.7713 kN
+PASS  q5.3  A_y                        yaml=3.2        computed=3.2000 kN
+PASS  q5.4  T_BC                       yaml=3.111      computed=3.1111 kN
+PASS  q5.4  T_BD                       yaml=1.736      computed=1.7356 kN
+PASS  q5.4  A_x                        yaml=4.0        computed=4.0000 kN
+PASS  q5.4  A_y                        yaml=0.0        computed=0.0000 kN
+PASS  q5.4  A_z                        yaml=0.0        computed=-0.0000 kN
+PASS  q5.5  F_CD (b)                   yaml=22.22      computed=22.2222 kN
+PASS  q5.5  A_x (c)                    yaml=-17.78     computed=-17.7778 kN
+PASS  q5.5  A_y (c)                    yaml=-3.333     computed=-3.3333 kN
+PASS  q5.5  |A| (c)                    yaml=18.09      computed=18.0876 kN
+PASS  q5.5  P_max (d)                  yaml=11.25      computed=11.2500 kN
+
+59/59 answers verified

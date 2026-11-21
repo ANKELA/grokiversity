@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+"""Independently recompute every numeric answer in ME 201 Unit 1 and compare to the YAML.
+Usage: python3 tools/verify_statics_unit01.py   (exit code 1 on any mismatch)"""
+import sys, pathlib, numpy as np, yaml
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+UNIT = ROOT / "courses/me-201-statics/units/01-forces-and-equilibrium.yaml"
+d, g = np.deg2rad, 9.81
+ang = lambda v: np.degrees(np.arctan2(v[1], v[0]))
+unit = lambda v: np.asarray(v, float) / np.linalg.norm(v)
+calc = {}
+
+# q1.1
+R = 300*np.array([np.cos(d(30)), np.sin(d(30))]) + 500*np.array([np.cos(d(135)), np.sin(d(135))])
+calc["q1.1"] = [np.linalg.norm(R), ang(R)]
+# q1.2
+F = 600*unit(np.array([-1, 3, 6]) - np.array([2, 0, 0]))
+calc["q1.2"] = [*F, *np.degrees(np.arccos(F/600))]
+# q1.3
+F1 = 500*np.array([np.cos(d(20)), np.sin(d(20))]); F2 = np.array([800, 0]) - F1
+calc["q1.3"] = [np.linalg.norm(F2), ang(F2), abs(F1[1]), -90.0]
+# q1.4
+u = unit([3, 0, 4]); calc["q1.4"] = [F @ u, np.degrees(np.arccos(F @ u / 600))]
+# q2.x  (counting answers – support theory)
+calc["q2.1"] = [1, 2, 3, 1]; calc["q2.2"] = [30]; calc["q2.3"] = [4, 3, 4-3]
+calc["q2.4"] = [3]; calc["q2.5"] = [3, 6]
+# q3.1
+W = 50*g
+T = np.linalg.solve([[-np.cos(d(30)), np.cos(d(45))], [np.sin(d(30)), np.sin(d(45))]], [0, W])
+calc["q3.1"] = list(T)
+# q3.2
+Tac = 8*g/np.sin(d(30)); Fs = Tac*np.cos(d(30)); calc["q3.2"] = [Tac, Fs, Fs/800]
+# q3.3
+U = np.column_stack([unit(p) for p in ([-2, -3, 6], [3, -2, 6], [0, 4, 6])])
+T3 = np.linalg.solve(U, [0, 0, 1200]); assert (T3 > 0).all(); calc["q3.3"] = list(T3)
+# q4.1, q4.2
+calc["q4.1"] = [200*0.40*np.sin(d(60))]
+Fx, Fy = 500*np.cos(d(30)), 500*np.sin(d(30)); calc["q4.2"] = [2.0*Fy - 1.5*Fx]
+# q4.3, q4.4
+M = np.cross([2, 0, 0], F); calc["q4.3"] = [*M, np.linalg.norm(M)]; calc["q4.4"] = [M @ u]
+# q4.5
+calc["q4.5"] = [-400, 3.0*-400]
+# q5.1
+By = 10*2/6; calc["q5.1"] = [10 - By, By]
+# q5.2
+By = (12*1.5 + 6*5)/4; calc["q5.2"] = [12 + 6 - By, By]
+# q5.3
+NB = 8*3/(5*np.cos(d(30))); calc["q5.3"] = [NB, NB*np.sin(d(30)), 8 - NB*np.cos(d(30))]
+# q5.4 (solve full 6-equation system by least squares, check residual ~ 0)
+B = np.array([6., 0, 0]); uc, ud = unit(np.array([0, 2, 3]) - B), unit(np.array([0, -4, 3]) - B); L = np.array([0, 0, -2.])
+# unknowns: Tc, Td, Ax, Ay, Az
+A = np.zeros((6, 5)); b = np.zeros(6)
+A[:3, 0], A[:3, 1], A[:3, 2:] = uc, ud, np.eye(3); b[:3] = -L
+A[3:, 0], A[3:, 1] = np.cross(B, uc), np.cross(B, ud); b[3:] = -np.cross(B, L)
+x, *_ = np.linalg.lstsq(A, b, rcond=None); assert np.allclose(A @ x, b, atol=1e-9)
+calc["q5.4"] = list(x)
+# q5.5
+e = unit([3.0, 2.25]); Fcd = 10*4.0/(3.0*e[1])
+Ax, Ay = -Fcd*e[0], 10 - Fcd*e[1]
+calc["q5.5"] = [Fcd, Ax, Ay, np.hypot(Ax, Ay), 10*25/Fcd]
+
+def ok(expected, got, a):
+    if "tolerance_abs" in a: return abs(expected - got) <= a["tolerance_abs"]
+    tol = a.get("tolerance_pct", 1)/100
+    return abs(expected - got) <= tol*max(abs(got), 1e-9) or abs(expected - got) < 1e-6
+
+data = yaml.safe_load(UNIT.read_text()); bad = n = 0
+for c in data["concepts"]:
+    for q in c["quiz"]:
+        vals = calc[q["id"]]
+        assert len(vals) == len(q["answers"]), q["id"]
+        for a, v in zip(q["answers"], vals):
+            n += 1; good = ok(a["value"], float(v), a); bad += not good
+            print(f"{'PASS' if good else 'FAIL'}  {q['id']:5} {a['quantity']:<26} yaml={a['value']:<10} computed={float(v):.4f} {a['unit']}")
+print(f"\n{n-bad}/{n} answers verified"); sys.exit(1 if bad else 0)

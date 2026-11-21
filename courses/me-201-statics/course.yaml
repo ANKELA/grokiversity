@@ -1,0 +1,27 @@
+id: me-201-statics
+degree: mechanical-engineering
+title: "ME 201 — Statics"
+credits_equivalent: 3
+study_hours: 120-150
+prerequisites: [math-101-calculus-1, phys-101-mechanics]
+corequisites: [math-201-calculus-3]
+benchmark_syllabi:
+  - "MIT 2.001 Mechanics & Materials I (statics portion) — https://ocw.mit.edu/courses/2-001-mechanics-materials-i-fall-2006/pages/syllabus/"
+  - "Engineering Statics: Open and Interactive — https://engineeringstatics.org/"
+abet_outcomes: [1, 7]       # ABET EAC Criterion 3 student outcomes addressed
+textbooks:
+  - "Hibbeler, Engineering Mechanics: Statics (Pearson) — https://www.pearson.com/en-us/subject-catalog/p/engineering-mechanics-statics/P200000003383"
+  - "Beer, Johnston et al., Vector Mechanics for Engineers: Statics (McGraw Hill) — https://www.mheducation.com/highered/product/vector-mechanics-engineers-statics-beer-johnston/M9781260804638.html"
+  - "Baker & Haynes, Engineering Statics: Open and Interactive (free) — https://engineeringstatics.org/"
+units:
+  - {id: me-201-u01, file: units/01-forces-and-equilibrium.yaml, hours: 30, status: draft-needs-human-review}
+  - {id: me-201-u02, title: "Force system resultants & distributed loads", hours: 18, status: planned}
+  - {id: me-201-u03, title: "Trusses, frames and machines", hours: 28, status: planned}
+  - {id: me-201-u04, title: "Internal forces, shear & moment diagrams", hours: 22, status: planned}
+  - {id: me-201-u05, title: "Friction (dry, wedges, belts)", hours: 16, status: planned}
+  - {id: me-201-u06, title: "Centroids, centers of gravity, area moments of inertia", hours: 20, status: planned}
+assessment:
+  problem_sets: "One graded set per unit, 10-15 end-of-chapter-level problems, ≥80% to pass."
+  unit_exams: "Timed, closed-book, randomized; ≥80%."
+  final_exam: "Cumulative, 3 h, randomized; ≥80%; identity-checked for certificate."
+  design_problem: "Multi-step: design a shelf bracket / crane boom to a load and safety factor; written report."

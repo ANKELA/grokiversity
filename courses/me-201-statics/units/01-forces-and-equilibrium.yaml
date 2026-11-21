@@ -1,0 +1,344 @@
+# Grokeversity — Mechanical Engineering — ME 201 Statics — Unit 1
+# License: CC BY-SA 4.0 (course content). Every numeric answer below is re-computed
+# by tools/verify_statics_unit01.py; CI must fail if any value drifts.
+id: me-201-u01
+course_id: me-201-statics
+title: "Unit 1 — Forces, Free-Body Diagrams, Moments and Equilibrium"
+version: 0.1.0
+status: draft-needs-human-review
+estimated_hours: 30          # ~1/4 of a 120-150 h, 3-credit statics course
+mastery_threshold: 0.80
+conventions:
+  units: SI (N, kN, m, N·m). g = 9.81 m/s². Angles measured counter-clockwise from +x unless stated.
+  significant_figures: "Report 3-4 significant figures. Answers within ±1% (or the stated tolerance) are accepted."
+  sign_convention: "Counter-clockwise moments positive (2D). Right-hand rule for 3D."
+references:
+  - "R.C. Hibbeler, Engineering Mechanics: Statics (Pearson), Ch. 2-5"
+  - "F.P. Beer, E.R. Johnston et al., Vector Mechanics for Engineers: Statics (McGraw Hill), Ch. 2-4"
+  - "D. Baker & W. Haynes, Engineering Statics: Open and Interactive (free), https://engineeringstatics.org/"
+prerequisites:
+  - "Trigonometry (sin, cos, tan, law of sines/cosines)"
+  - "Calculus I (derivatives, integrals) — used later for distributed loads"
+  - "Physics I: Newton's laws (e.g., MIT 8.01SC)"
+  - "Vectors: dot and cross products (introduced in Concept 1 and 4; full treatment in Linear Algebra / Calc III)"
+
+concepts:
+  # ------------------------------------------------------------------ 1
+  - id: c1-force-vectors
+    title: "Forces as vectors (2D and 3D)"
+    prerequisites: []
+    objectives:
+      - "Resolve a 2D force into rectangular components and recombine components into magnitude and direction."
+      - "Write a 3D force as a Cartesian vector using a position vector and unit vector."
+      - "Find coordinate direction angles and the projection of a force onto a line using the dot product."
+    explanation_outline:
+      - "A force has magnitude, direction and point of application; it is a bound vector."
+      - "2D: F = Fx i + Fy j with Fx = F cosθ, Fy = F sinθ; resultant R = ΣF."
+      - "3D: u_AB = r_AB/|r_AB|; F = F u_AB. Direction cosines: cosα = ux, cosβ = uy, cosγ = uz."
+      - "Projection of F on a line with unit vector u: F∥ = F·u; angle θ = arccos(F·u / |F|)."
+      - "Common errors: mixing degrees and radians, using the angle from the wrong axis, r pointing the wrong way (A→B vs B→A)."
+    explanation_prompts:
+      - "Explain force components with a picture of a sled being pulled at an angle."
+      - "Re-explain using a 'shadow on the axes' analogy if the student misses a component sign."
+    quiz:
+      - id: q1.1
+        difficulty: easy
+        prompt: "Two forces act on a bolt: F1 = 300 N at 30° and F2 = 500 N at 135° (both measured counter-clockwise from +x). Find the magnitude and direction of the resultant."
+        answers:
+          - {quantity: "|R|", value: 512.2, unit: N, tolerance_pct: 1}
+          - {quantity: "θ_R (CCW from +x)", value: 100.5, unit: deg, tolerance_abs: 0.5}
+        hints:
+          - "Resolve each force into x and y components before adding."
+          - "cos 135° is negative — check the sign of F2x."
+        solution: "F1 = (259.8, 150.0) N; F2 = (-353.6, 353.6) N; R = (-93.7, 503.6) N; |R| = 512.2 N; θ = atan2(503.6, -93.7) = 100.5°."
+      - id: q1.2
+        difficulty: medium
+        prompt: "A cable exerts a 600 N force on point A(2, 0, 0) m, directed from A toward B(-1, 3, 6) m. Write F as a Cartesian vector and find its coordinate direction angles α, β, γ."
+        answers:
+          - {quantity: Fx, value: -244.9, unit: N, tolerance_pct: 1}
+          - {quantity: Fy, value: 244.9, unit: N, tolerance_pct: 1}
+          - {quantity: Fz, value: 489.9, unit: N, tolerance_pct: 1}
+          - {quantity: α, value: 114.1, unit: deg, tolerance_abs: 0.5}
+          - {quantity: β, value: 65.9, unit: deg, tolerance_abs: 0.5}
+          - {quantity: γ, value: 35.3, unit: deg, tolerance_abs: 0.5}
+        hints:
+          - "r_AB = B − A. What is its length?"
+          - "Unit vector u = r_AB/|r_AB|, then F = 600 u. The direction cosines are the components of u."
+        solution: "r_AB = (-3, 3, 6) m, |r| = √54 = 7.348 m, u = (-0.4082, 0.4082, 0.8165). F = (-244.9, 244.9, 489.9) N. α = arccos(-0.4082) = 114.1°, β = 65.9°, γ = 35.3°."
+      - id: q1.3
+        difficulty: hard
+        prompt: "Two tugboats pull a barge. Tug 1 pulls with F1 = 500 N at +20°. (a) What force F2 (magnitude and angle) must tug 2 apply so the resultant is exactly 800 N along +x? (b) If only the direction of the resultant must be +x (its magnitude is free), what is the minimum possible |F2| and in what direction?"
+        answers:
+          - {quantity: "|F2| (a)", value: 371.8, unit: N, tolerance_pct: 1}
+          - {quantity: "θ2 (a)", value: -27.4, unit: deg, tolerance_abs: 0.5}
+          - {quantity: "|F2|min (b)", value: 171.0, unit: N, tolerance_pct: 1}
+          - {quantity: "θ2 (b)", value: -90.0, unit: deg, tolerance_abs: 0.5}
+        hints:
+          - "(a) F2 = R − F1 as vectors."
+          - "(b) Only the y-component of F1 needs cancelling. Which direction does that most efficiently?"
+        solution: "(a) F1 = (469.8, 171.0) N; F2 = (800 − 469.8, −171.0) = (330.2, −171.0) N, |F2| = 371.8 N at −27.4°. (b) F2 must cancel F1y = 171.0 N; the shortest vector doing that is perpendicular to +x: 171.0 N at −90°."
+      - id: q1.4
+        difficulty: medium
+        prompt: "Using F from q1.2, find the component of F along the line from the origin O to C(3, 0, 4) m, and the angle between F and line OC."
+        answers:
+          - {quantity: "F_OC", value: 244.9, unit: N, tolerance_pct: 1}
+          - {quantity: "θ", value: 65.9, unit: deg, tolerance_abs: 0.5}
+        hints:
+          - "u_OC = (3, 0, 4)/5."
+          - "F_OC = F · u_OC; cos θ = F_OC / |F|."
+        solution: "u_OC = (0.6, 0, 0.8). F·u = (−244.9)(0.6) + (489.9)(0.8) = 244.9 N. θ = arccos(244.9/600) = 65.9°."
+
+  # ------------------------------------------------------------------ 2
+  - id: c2-free-body-diagrams
+    title: "Free-body diagrams and support reactions"
+    prerequisites: [c1-force-vectors]
+    objectives:
+      - "Isolate a body and draw every external force: applied loads, weight, and support reactions."
+      - "State the reactions supplied by common 2D and 3D supports."
+      - "Recognize two-force members and count unknowns vs. equations (static determinacy)."
+    explanation_outline:
+      - "Steps: (1) choose the body, (2) sketch it free of surroundings, (3) add known loads, (4) add a reaction for every removed constraint, (5) dimensions and axes."
+      - "2D supports: roller/smooth surface → 1 force normal to surface; pin → 2 forces; fixed → 2 forces + 1 couple; cable → 1 tension along the cable."
+      - "3D supports: ball-and-socket → 3 forces; fixed → 3 forces + 3 couples; properly aligned smooth journal bearing (used with others) → 2 forces normal to the shaft."
+      - "Two-force member: only two points of load and no couples → the forces are equal, opposite and collinear along the line joining the points."
+      - "2D rigid body: 3 independent equations. More unknowns than equations → statically indeterminate."
+    explanation_prompts:
+      - "Use a ladder against a smooth wall as the running example."
+      - "If the student adds internal forces to an FBD, re-teach with 'cut a bubble around the body; only arrows crossing the bubble count'."
+    quiz:
+      - id: q2.1
+        difficulty: easy
+        prompt: "How many unknown reaction components does each 2D support provide: (a) roller, (b) smooth pin, (c) fixed (cantilever) support, (d) cable?"
+        answers:
+          - {quantity: roller, value: 1, unit: count, tolerance_abs: 0}
+          - {quantity: pin, value: 2, unit: count, tolerance_abs: 0}
+          - {quantity: fixed, value: 3, unit: count, tolerance_abs: 0}
+          - {quantity: cable, value: 1, unit: count, tolerance_abs: 0}
+        hints: ["Ask: which motions does the support prevent? One reaction per prevented motion."]
+        solution: "Roller 1 (normal force); pin 2 (Ax, Ay); fixed 3 (Ax, Ay, M_A); cable 1 (tension along cable, pulling only)."
+      - id: q2.2
+        difficulty: medium
+        prompt: "A beam rests on a roller at B on a surface inclined 30° above horizontal. At what angle from vertical does the roller reaction act, and can it pull the beam toward the surface?"
+        answers:
+          - {quantity: "angle from vertical", value: 30, unit: deg, tolerance_abs: 0.5}
+        expected_text: "Perpendicular to the inclined surface (30° from vertical); a roller can only push, not pull."
+        hints: ["A smooth roller cannot resist motion along the surface."]
+        solution: "The reaction is normal to the 30° surface, so it is tilted 30° from vertical. It is compressive (push only) unless the roller is constrained in a slot."
+      - id: q2.3
+        difficulty: medium
+        prompt: "A 2D beam is held by a pin at A and a second pin at B. How many unknown reactions are there, how many independent equilibrium equations, and what is the degree of static indeterminacy?"
+        answers:
+          - {quantity: unknowns, value: 4, unit: count, tolerance_abs: 0}
+          - {quantity: equations, value: 3, unit: count, tolerance_abs: 0}
+          - {quantity: "degree of indeterminacy", value: 1, unit: count, tolerance_abs: 0}
+        hints: ["Each pin gives 2; a planar rigid body gives ΣFx, ΣFy, ΣM."]
+        solution: "4 unknowns − 3 equations = indeterminate to degree 1 (needs deformation/compatibility from Mechanics of Materials)."
+      - id: q2.4
+        difficulty: hard
+        prompt: "A straight link CD is pinned at both ends and carries no load between its pins (its weight is neglected). A beam is pinned at A and supported by link CD. Explain what you know about the force in CD before writing any equations, and how many unknowns the beam's FBD has."
+        answers:
+          - {quantity: "unknowns on beam FBD", value: 3, unit: count, tolerance_abs: 0}
+        expected_text: "CD is a two-force member: its force acts along line CD (one unknown magnitude). Beam FBD unknowns: Ax, Ay, F_CD → 3, statically determinate."
+        hints: ["Take moments about one pin of the link: what must be true of the force at the other pin?"]
+        solution: "Summing moments about C on link CD forces the force at D to pass through C, so the force lies along CD. Unknowns: Ax, Ay, F_CD = 3 = number of equations."
+      - id: q2.5
+        difficulty: medium
+        prompt: "In 3D, how many reaction components are provided by (a) a ball-and-socket joint and (b) a fixed support?"
+        answers:
+          - {quantity: "ball-and-socket", value: 3, unit: count, tolerance_abs: 0}
+          - {quantity: "fixed (3D)", value: 6, unit: count, tolerance_abs: 0}
+        hints: ["A ball-and-socket allows all rotations; a fixed support prevents all 6 rigid-body motions."]
+        solution: "Ball-and-socket: Ax, Ay, Az (3). Fixed: 3 forces + 3 couple moments (6)."
+
+  # ------------------------------------------------------------------ 3
+  - id: c3-particle-equilibrium
+    title: "Equilibrium of a particle (2D and 3D)"
+    prerequisites: [c1-force-vectors, c2-free-body-diagrams]
+    objectives:
+      - "Apply ΣF = 0 to a particle in 2D (2 equations) and 3D (3 equations)."
+      - "Model springs (F = k s) and cables (tension only) in equilibrium problems."
+      - "Solve simultaneous linear equations by hand and with a matrix solver; sanity-check signs."
+    explanation_outline:
+      - "A particle has no size → only concurrent forces → ΣF = 0 (no moment equation)."
+      - "2D: ΣFx = 0, ΣFy = 0. 3D: write each cable force as T u, then ΣFx = ΣFy = ΣFz = 0."
+      - "Spring: F = k s where s is the change from unstretched length."
+      - "A negative cable tension means the assumed configuration is impossible (cables cannot push)."
+    explanation_prompts:
+      - "Use a traffic light hanging from two cables as the example."
+      - "If the student struggles with 3D, re-teach by building the 3×3 matrix of unit vectors column by column."
+    quiz:
+      - id: q3.1
+        difficulty: easy
+        prompt: "A 50 kg crate hangs from ring A. Cable AB goes up-left at 30° above horizontal; cable AC goes up-right at 45° above horizontal. Find T_AB and T_AC (g = 9.81 m/s²)."
+        answers:
+          - {quantity: T_AB, value: 359.1, unit: N, tolerance_pct: 1}
+          - {quantity: T_AC, value: 439.8, unit: N, tolerance_pct: 1}
+        hints: ["W = mg = 490.5 N.", "ΣFx: −T_AB cos30° + T_AC cos45° = 0; ΣFy: T_AB sin30° + T_AC sin45° − W = 0."]
+        solution: "Solving: T_AB = 359.1 N, T_AC = 439.8 N."
+      - id: q3.2
+        difficulty: medium
+        prompt: "An 8 kg lamp hangs at A. A horizontal spring AB (k = 800 N/m) pulls left; cable AC pulls up-right at 30° above horizontal. Find T_AC, the spring force, and the spring's stretch."
+        answers:
+          - {quantity: T_AC, value: 156.96, unit: N, tolerance_pct: 1}
+          - {quantity: F_spring, value: 135.9, unit: N, tolerance_pct: 1}
+          - {quantity: stretch, value: 0.1699, unit: m, tolerance_pct: 1}
+        hints: ["Only the cable has a vertical component — start with ΣFy."]
+        solution: "T_AC sin30° = 78.48 → T_AC = 156.96 N; F_s = T_AC cos30° = 135.9 N; s = F/k = 0.1699 m."
+      - id: q3.3
+        difficulty: hard
+        prompt: "A 1200 N load hangs from point A at the origin, supported by three cables to B(−2, −3, 6) m, C(3, −2, 6) m and D(0, 4, 6) m. Find the tension in each cable."
+        answers:
+          - {quantity: T_AB, value: 509.1, unit: N, tolerance_pct: 1}
+          - {quantity: T_AC, value: 339.4, unit: N, tolerance_pct: 1}
+          - {quantity: T_AD, value: 568.1, unit: N, tolerance_pct: 1}
+        hints:
+          - "|AB| = 7, |AC| = 7, |AD| = √52 = 7.211 m."
+          - "Write ΣFx, ΣFy, ΣFz using the unit vectors; the load is (0, 0, −1200) N."
+        solution: "u_AB = (−2,−3,6)/7, u_AC = (3,−2,6)/7, u_AD = (0,4,6)/7.211. Solving the 3×3 system: T_AB = 509.1 N, T_AC = 339.4 N, T_AD = 568.1 N (all positive → all cables taut)."
+
+  # ------------------------------------------------------------------ 4
+  - id: c4-moments
+    title: "Moment of a force, moment about an axis, couples"
+    prerequisites: [c1-force-vectors]
+    objectives:
+      - "Compute 2D moments by M = F d and by components (Varignon's theorem)."
+      - "Compute a 3D moment M_O = r × F and its magnitude."
+      - "Compute the moment about a specified axis, M_a = u · (r × F)."
+      - "Replace a force with an equivalent force-couple system."
+    explanation_outline:
+      - "Moment = tendency to rotate; magnitude F·d with d the perpendicular distance."
+      - "2D components: M_O = x Fy − y Fx (CCW positive)."
+      - "3D: M_O = r × F (determinant form). r goes from the moment point to ANY point on the line of action."
+      - "Moment about an axis: project M_O on the axis unit vector (mixed triple product)."
+      - "Couple: two equal, opposite, non-collinear forces; free vector M = F d. Moving a force sideways requires adding a couple."
+    explanation_prompts:
+      - "Use a wrench on a bolt and a door hinge (moment about an axis)."
+    quiz:
+      - id: q4.1
+        difficulty: easy
+        prompt: "A 200 N force is applied at the end of a 0.40 m wrench, at 60° to the handle. What moment does it produce about the bolt?"
+        answers:
+          - {quantity: M, value: 69.28, unit: N·m, tolerance_pct: 1}
+        hints: ["Only the component perpendicular to the handle creates moment."]
+        solution: "M = (200)(0.40) sin60° = 69.28 N·m."
+      - id: q4.2
+        difficulty: medium
+        prompt: "A 500 N force at 30° above +x acts at point (2.0, 1.5) m. Find the moment about the origin (CCW positive) and state its sense."
+        answers:
+          - {quantity: M_O, value: -149.5, unit: N·m, tolerance_pct: 1}
+        expected_text: "149.5 N·m clockwise"
+        hints: ["Fx = 433.0 N, Fy = 250 N.", "M_O = x Fy − y Fx."]
+        solution: "M_O = (2.0)(250) − (1.5)(433.0) = −149.5 N·m → 149.5 N·m clockwise."
+      - id: q4.3
+        difficulty: medium
+        prompt: "The force F = (−244.9, 244.9, 489.9) N from q1.2 acts at A(2, 0, 0) m. Find M_O = r × F and its magnitude."
+        answers:
+          - {quantity: Mx, value: 0.0, unit: N·m, tolerance_abs: 1}
+          - {quantity: My, value: -979.8, unit: N·m, tolerance_pct: 1}
+          - {quantity: Mz, value: 489.9, unit: N·m, tolerance_pct: 1}
+          - {quantity: "|M_O|", value: 1095.4, unit: N·m, tolerance_pct: 1}
+        hints: ["r = (2, 0, 0). Expand the 3×3 determinant |i j k; 2 0 0; Fx Fy Fz|."]
+        solution: "M_O = (0·Fz − 0·Fy, 0·Fx − 2·Fz, 2·Fy − 0·Fx) = (0, −979.8, 489.9) N·m; |M_O| = 1095.4 N·m."
+      - id: q4.4
+        difficulty: hard
+        prompt: "Find the moment of that same force about the axis through O and C(3, 0, 4) m."
+        answers:
+          - {quantity: M_OC, value: 391.9, unit: N·m, tolerance_pct: 1}
+        hints: ["M_OC = u_OC · M_O with u_OC = (0.6, 0, 0.8)."]
+        solution: "M_OC = (0.6)(0) + (0)(−979.8) + (0.8)(489.9) = 391.9 N·m."
+      - id: q4.5
+        difficulty: medium
+        prompt: "A 400 N downward force acts at x = 3.0 m on a horizontal beam. Replace it with an equivalent force-couple system at the origin O."
+        answers:
+          - {quantity: "F_y at O", value: -400, unit: N, tolerance_pct: 0.5}
+          - {quantity: "M_O", value: -1200, unit: N·m, tolerance_pct: 0.5}
+        expected_text: "400 N downward at O plus a 1200 N·m clockwise couple."
+        hints: ["The force is unchanged; the couple equals the moment of the original force about O."]
+        solution: "F = 400 N ↓ at O; M_O = (3.0)(−400) = −1200 N·m (clockwise)."
+
+  # ------------------------------------------------------------------ 5
+  - id: c5-rigid-body-equilibrium
+    title: "Equilibrium of rigid bodies (2D, 3D, and connected bodies)"
+    prerequisites: [c2-free-body-diagrams, c3-particle-equilibrium, c4-moments]
+    objectives:
+      - "Apply ΣFx = ΣFy = 0 and ΣM = 0 to 2D rigid bodies, choosing moment points to eliminate unknowns."
+      - "Replace a uniform distributed load by its resultant at its centroid."
+      - "Solve 3D rigid-body equilibrium with ball-and-socket joints and cables."
+      - "Break a frame into members, using two-force members to reduce unknowns."
+    explanation_outline:
+      - "2D: 3 equations. Take moments about the point where the most unknowns intersect."
+      - "Uniform load w over length L → resultant wL at L/2."
+      - "3D: ΣF = 0 (3 eqns) and ΣM = 0 (3 eqns)."
+      - "Frames: draw an FBD of each member; equal and opposite forces at connections (Newton's 3rd law)."
+      - "Always check with an equation you did not use."
+    explanation_prompts:
+      - "Use a diving board (overhang) and a shelf bracket (two-force strut) as examples."
+    quiz:
+      - id: q5.1
+        difficulty: easy
+        prompt: "A 6.0 m simply supported beam has a pin at A (x = 0) and a roller at B (x = 6.0 m). A 10 kN downward load acts at x = 2.0 m. Find A_y and B_y."
+        answers:
+          - {quantity: A_y, value: 6.667, unit: kN, tolerance_pct: 1}
+          - {quantity: B_y, value: 3.333, unit: kN, tolerance_pct: 1}
+        hints: ["ΣM_A = 0 gives B_y directly."]
+        solution: "ΣM_A: 6 B_y − 10(2) = 0 → B_y = 3.333 kN; ΣFy: A_y = 6.667 kN."
+      - id: q5.2
+        difficulty: medium
+        prompt: "A beam has a pin at A (x = 0) and a roller at B (x = 4 m). It carries a uniform load of 4 kN/m from x = 0 to x = 3 m and a 6 kN point load at the free end x = 5 m. Find A_y and B_y."
+        answers:
+          - {quantity: A_y, value: 6.0, unit: kN, tolerance_pct: 1}
+          - {quantity: B_y, value: 12.0, unit: kN, tolerance_pct: 1}
+        hints: ["Distributed load resultant: 12 kN at x = 1.5 m."]
+        solution: "ΣM_A: 4 B_y − 12(1.5) − 6(5) = 0 → B_y = 12.0 kN; ΣFy: A_y = 12 + 6 − 12 = 6.0 kN."
+      - id: q5.3
+        difficulty: medium
+        prompt: "Beam AB (5 m) has a pin at A and a roller at B resting on a surface inclined 30° (so the roller reaction is 30° from vertical, leaning toward A). An 8 kN downward load acts 3 m from A. Find N_B, A_x and A_y."
+        answers:
+          - {quantity: N_B, value: 5.543, unit: kN, tolerance_pct: 1}
+          - {quantity: A_x, value: 2.771, unit: kN, tolerance_pct: 1}
+          - {quantity: A_y, value: 3.200, unit: kN, tolerance_pct: 1}
+        hints: ["N_B = N_B(−sin30°, cos30°).", "Only N_B cos30° creates moment about A."]
+        solution: "ΣM_A: 5 N_B cos30° = 8(3) → N_B = 5.543 kN. ΣFx: A_x = N_B sin30° = 2.771 kN. ΣFy: A_y = 8 − N_B cos30° = 3.200 kN."
+      - id: q5.4
+        difficulty: hard
+        prompt: "A boom lies along the x-axis from a ball-and-socket at A(0,0,0) to B(6,0,0) m. A 2 kN load acts downward (−z) at B. Cables run from B to C(0, 2, 3) m and from B to D(0, −4, 3) m. Find T_BC, T_BD and the reaction at A. What do you notice about the boom?"
+        answers:
+          - {quantity: T_BC, value: 3.111, unit: kN, tolerance_pct: 1}
+          - {quantity: T_BD, value: 1.736, unit: kN, tolerance_pct: 1}
+          - {quantity: A_x, value: 4.000, unit: kN, tolerance_pct: 1}
+          - {quantity: A_y, value: 0.0, unit: kN, tolerance_abs: 0.01}
+          - {quantity: A_z, value: 0.0, unit: kN, tolerance_abs: 0.01}
+        expected_text: "All loads act at B, so the boom is a two-force member: the reaction at A acts purely along the boom (4 kN compression)."
+        hints: ["|BC| = 7 m, |BD| = √61 = 7.810 m.", "ΣM_A = r_AB × (T_BC u_BC + T_BD u_BD + L) = 0 gives two useful equations."]
+        solution: "ΣM_A: y-component → 6(3T_BC/7 + 3T_BD/7.810 − 2) = 0; z-component → 6(2T_BC/7 − 4T_BD/7.810) = 0. Solving: T_BC = 3.111 kN, T_BD = 1.736 kN. ΣF = 0 gives A = (4.000, 0, 0) kN — pure compression along the boom."
+      - id: q5.5
+        difficulty: exam
+        type: multi_part
+        prompt: |
+          EXAM-STYLE (20 min). A horizontal beam AB (4.0 m) is pinned to a wall at A. A straight strut CD connects point C on the beam (3.0 m from A) to point D on the wall, 2.25 m directly below A. A load P = 10 kN acts downward at B. Neglect weights.
+          (a) Which member is a two-force member, and along what line does its force act?
+          (b) Find the strut force F_CD and state tension or compression.
+          (c) Find the pin reaction at A (A_x, A_y and magnitude).
+          (d) The strut buckles at 25 kN compression. What is the maximum load P?
+        answers:
+          - {quantity: "F_CD (b)", value: 22.22, unit: kN, tolerance_pct: 1}
+          - {quantity: "A_x (c)", value: -17.78, unit: kN, tolerance_pct: 1}
+          - {quantity: "A_y (c)", value: -3.333, unit: kN, tolerance_pct: 1}
+          - {quantity: "|A| (c)", value: 18.09, unit: kN, tolerance_pct: 1}
+          - {quantity: "P_max (d)", value: 11.25, unit: kN, tolerance_pct: 1}
+        expected_text: "(a) CD, along the line D→C with slope 3-4-5 (0.8, 0.6). (b) compression. (c) A_x acts toward the wall, A_y acts downward."
+        rubric:
+          - "(a) 2 pts — identifies CD as two-force member, direction (0.8, 0.6)."
+          - "(b) 4 pts — correct FBD of AB, ΣM_A, value, compression."
+          - "(c) 3 pts — signs and magnitude."
+          - "(d) 1 pt — linear scaling."
+        hints: ["CD has length 3.75 m — a 3-4-5 triangle.", "Moments about A eliminate A_x and A_y."]
+        solution: "Strut force on beam at C: F(0.8, 0.6). ΣM_A: (3.0)(0.6F) − (4.0)(10) = 0 → F = 22.22 kN (compression). ΣFx: A_x = −0.8F = −17.78 kN. ΣFy: A_y = 10 − 0.6F = −3.333 kN. |A| = 18.09 kN. P_max = 10 × 25/22.22 = 11.25 kN."
+
+unit_exam:
+  timed_minutes: 75
+  closed_book: true
+  allowed: ["scientific calculator", "one handwritten formula sheet"]
+  draw: "6 problems from a randomized bank of ≥ 60 parametrized items (new numbers each attempt): 1 easy, 3 medium, 1 hard 3D, 1 exam-style multi-part"
+  pass_threshold: 0.80
+  retake_policy: "New randomized form after 24 h and a targeted review of missed concepts."

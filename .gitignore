@@ -1,0 +1,8 @@
+# Local review screenshots — do not publish
+prototype/screenshots/
+
+# Build / local artifacts
+__pycache__/
+*.py[cod]
+.DS_Store
+live_check.png
