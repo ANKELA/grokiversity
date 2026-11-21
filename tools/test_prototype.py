@@ -3,7 +3,8 @@
 Landing stays a marketing page. The Statics lesson lives on its own single-screen page
 (statics/unit-1.html): document height must fit the viewport on every slide and scrollY stays 0.
 Also checks beam arrow directions, human tutor messages, quiz grading, mastery, copy-prompt,
-OG tags, #learn redirect, and the Intro to AI lesson (unchanged)."""
+OG tags, #learn redirect, the Intro to AI lesson (unchanged), and a 46-slide graphic tour:
+every interactive must have a non-empty, non-zero SVG and respond to a drag or slider."""
 import http.server, json, pathlib, socketserver, sys, threading, functools
 from playwright.sync_api import sync_playwright
 ROOT = pathlib.Path(__file__).resolve().parents[1]; SITE = ROOT / "prototype"; SHOTS = SITE / "screenshots"; SHOTS.mkdir(exist_ok=True)
@@ -15,7 +16,7 @@ threading.Thread(target=srv.serve_forever, daemon=True).start()
 URL = f"http://127.0.0.1:{port}/index.html"
 LESSON = f"http://127.0.0.1:{port}/statics/unit-1.html"
 errors = []
-IGNORE_404 = ("assets/audio/intro.mp3",)
+IGNORE_404 = ("assets/audio/intro.mp3", "assets/favicon.svg")
 def skip_net(url):
     return any(s in url for s in IGNORE_404)
 def req_failed(r):
@@ -102,6 +103,105 @@ def height_tour(pg, label, width_limit=None):
             assert_fits(pg, f"{label} c{c}#{i+1} {sid}", check_width=width_limit)
             n += 1
     print(f"{label}: {n} slides fit the viewport, scrollY=0")
+    return n
+
+# Every concept slide that has an svg.diagram must render it (non-zero size,
+# non-empty markup, a valid getScreenCTM) and respond to a drag, slider, or tap.
+INTERACT = {
+    "hook": ("#ropeH", "drag"),
+    "force": ("#oneH", "drag"),
+    "split": ("#splitH", "drag"),
+    "triangle": ("#triH", "drag"),
+    "two": ("#d2", "drag"),
+    "sign": ("#signSvg [data-tap='wall']", "click"),
+    "isolate": ("#isoPal button", "click"),
+    "fbd": ("#palette [data-k='Ay']", "click"),
+    "hang": ("#hangH", "drag"),
+    "ring": ("#ringH", "drag"),
+    "seesaw": ("#seeH", "drag"),
+    "wrench": ("#wrFsl", "slider"),
+    "angled": ("#angSl", "slider"),
+    "plank": ("#plBox", "drag"),
+    "beam": ("#bmH", "drag"),
+}
+
+def slide_graphics(pg):
+    return pg.evaluate("""() => {
+      const c=document.querySelector('.concept:not([hidden])');
+      const s=(c && c.querySelector('.slide.on')) || document.querySelector('.slide.on');
+      if(!s) return {id:null, diags:[], snapshot:''};
+      const diags=[...s.querySelectorAll('svg.diagram')].map(el=>{
+        const r=el.getBoundingClientRect();
+        const ctm=el.getScreenCTM && el.getScreenCTM();
+        return {id:el.id, w:r.width, h:r.height, kids:el.childElementCount,
+                html:(el.innerHTML||'').trim().length, ctm:!!ctm};
+      });
+      const svg=s.querySelector('svg.diagram');
+      return {id:s.dataset.id, snapshot:(svg?svg.innerHTML:'') + '\\n' + s.innerText, diags};
+    }""")
+
+def assert_graphics(info, label):
+    for d in info["diags"]:
+        assert d["w"] >= 80 and d["h"] >= 80, f"{label} {info['id']} #{d['id']} size {d['w']:.1f}x{d['h']:.1f}"
+        assert d["kids"] > 0 and d["html"] > 0, f"{label} {info['id']} #{d['id']} empty"
+        assert d["ctm"], f"{label} {info['id']} #{d['id']} getScreenCTM() is null"
+
+def interact_slide(pg, info, label):
+    sid = info["id"]
+    spec = INTERACT.get(sid)
+    if not spec:
+        return "skip"
+    sel, kind = spec
+    before = info["snapshot"]
+    if kind == "drag":
+        drag(pg, sel, 50, -40)
+    elif kind == "slider":
+        pg.locator(sel).evaluate("""el => {
+          const min=+el.min, max=+el.max, step=+el.step||1;
+          let v=+el.value + Math.max(step, (max-min)/5);
+          if(v>max) v=min+Math.max(step,(max-min)/5);
+          el.value=String(v);
+          el.dispatchEvent(new Event('input',{bubbles:true}));
+          el.dispatchEvent(new Event('change',{bubbles:true}));
+        }""")
+        pg.wait_for_timeout(80)
+    elif kind == "click":
+        pg.locator(sel).first.click()
+        pg.wait_for_timeout(80)
+    after = slide_graphics(pg)["snapshot"]
+    assert after != before, f"{label} {sid}: {kind} on {sel} did not change the graphic or readout"
+    return kind
+
+def graphic_tour(pg, label, click_next=True):
+    """Click through all 46 slides and assert every interactive graphic."""
+    n = 0
+    n_diag = 0
+    n_act = 0
+    for c in range(1, 6):
+        goto_concept(pg, c)
+        dots = pg.locator("#dots .dot")
+        dots.nth(0).click(); pg.wait_for_timeout(450)
+        count = dots.count()
+        for i in range(count):
+            if i > 0:
+                if click_next:
+                    assert not pg.is_disabled("#nextSlide"), f"{label} c{c} Next disabled early at slide {i}"
+                    pg.click("#nextSlide")
+                else:
+                    pg.locator("#dots .dot").nth(i).click()
+                pg.wait_for_timeout(450)
+            info = slide_graphics(pg)
+            assert_graphics(info, f"{label} c{c}#{i+1}")
+            if info["diags"]:
+                n_diag += 1
+            kind = interact_slide(pg, info, f"{label} c{c}#{i+1}")
+            if kind and kind != "skip":
+                n_act += 1
+            n += 1
+    print(f"{label}: {n} slides, {n_diag} diagrams rendered, {n_act} interactions responded")
+    assert n == 46, f"{label}: expected 46 slides, got {n}"
+    assert n_diag >= 15, f"{label}: expected >=15 diagrams, got {n_diag}"
+    assert n_act >= 15, f"{label}: expected >=15 interactions, got {n_act}"
     return n
 
 with sync_playwright() as p:
@@ -243,6 +343,32 @@ with sync_playwright() as p:
     ph.goto(LESSON); ph.wait_for_load_state("networkidle"); ph.wait_for_timeout(300)
     n_desk = height_tour(ph, "desktop")
     ctxH.close()
+
+    # Regression: click Next through all 46 slides at the viewports a real PC uses.
+    # 1280x720 is short enough that a 0-height SVG (height:auto while hidden) would fail.
+    for w, h, name in ((1280, 720, "chrome1280x720"), (1366, 768, "chrome1366x768"), (1920, 1080, "chrome1920x1080")):
+        ctxG = br.new_context(viewport={"width": w, "height": h})
+        ctxG.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+        g = ctxG.new_page(); watch(g)
+        g.goto(LESSON); g.wait_for_load_state("networkidle"); g.wait_for_timeout(400)
+        graphic_tour(g, name)
+        ctxG.close()
+
+    for engine, name in (("firefox", "firefox1280x720"), ("webkit", "webkit1280x720")):
+        try:
+            fx = getattr(p, engine).launch()
+        except Exception as e:
+            print(f"{name} skipped (browser not launchable): {e}")
+            continue
+        try:
+            ctxF = fx.new_context(viewport={"width": 1280, "height": 720})
+            ctxF.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+            gf = ctxF.new_page(); watch(gf)
+            gf.goto(LESSON); gf.wait_for_load_state("networkidle"); gf.wait_for_timeout(400)
+            graphic_tour(gf, name)
+            ctxF.close()
+        finally:
+            fx.close()
 
     ctxM = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
     ctxM.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")

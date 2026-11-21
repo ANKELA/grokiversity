@@ -240,7 +240,7 @@ html.lesson-page, html.lesson-page body{
   border-top:1px solid var(--line);
   background:#121528;
 }
-.lesson-page svg.diagram{max-height:min(280px, 36dvh)}
+.lesson-page svg.diagram{max-height:min(280px, 36dvh); min-height:min(120px, 28dvh); width:100%; height:auto; overflow:visible}
 .lesson-page .viz{grid-template-columns:minmax(0,1fr) minmax(150px, 220px); gap:10px; align-items:start}
 .eqcheck{font-size:13px; color:var(--mute); margin-top:8px; line-height:1.45}
 .eqcheck div{border-bottom:1px dashed var(--line); padding:3px 0}

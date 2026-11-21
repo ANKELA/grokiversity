@@ -38,6 +38,23 @@ n_ai = embed(SITE / "intro-ai.html", ROOT / "tutor/TUTOR_PROMPT_AI.md", SITE / "
 index = SITE / "index.html"
 index.write_text(rewrite_meta(index, index.read_text()))
 
+# Cache-bust app.css / app.js so a stale GitHub Pages or browser cache cannot
+# serve old script against new HTML (later-slide graphics would not init).
+import hashlib
+def asset_ver():
+    h=hashlib.sha256()
+    for p in (SITE/'app.css', SITE/'app.js'):
+        h.update(p.read_bytes())
+    return h.hexdigest()[:8]
+def stamp_assets(html_path, ver):
+    html=html_path.read_text()
+    html=re.sub(r'((?:href|src)=")([^"]*app\.(?:css|js))(?:\?v=[^"]*)?(")', rf'\1\2?v={ver}\3', html)
+    html_path.write_text(html)
+_ver=asset_ver()
+for _p in (SITE/'statics'/'unit-1.html', SITE/'index.html', SITE/'intro-ai.html'):
+    stamp_assets(_p, _ver)
+
+
 F = "/usr/share/fonts/truetype/dejavu/"
 f = lambda n, s: ImageFont.truetype(F + n, s)
 def icon(size):

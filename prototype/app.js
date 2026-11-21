@@ -13,7 +13,92 @@ const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(store)); }cat
 function renderMath(el){ if(window.renderMathInElement) renderMathInElement(el||document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false}); }
 function say(html, who='t'){ const m=document.createElement('div'); m.className='msg '+who; m.innerHTML=html; $('#chat').appendChild(m); $('#chat').scrollTop=1e9; renderMath(m); }
 function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),2400); }
-function svgPt(svg,e){ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
+function svgPt(svg,e){
+  const p=svg.createSVGPoint();
+  p.x=e.clientX; p.y=e.clientY;
+  const ctm=svg.getScreenCTM();
+  if(!ctm) return {x:0,y:0};
+  return p.matrixTransform(ctm.inverse());
+}
+function fitDiagram(svg){
+  if(!svg || !svg.getAttribute) return 0;
+  const raw=(svg.getAttribute('viewBox')||'').trim().split(/[\s,]+/).map(Number);
+  if(raw.length!==4 || !raw[2] || !raw[3]) return svg.clientWidth||0;
+  const parent=svg.parentElement;
+  let avail=0;
+  if(parent){
+    const cs=getComputedStyle(parent);
+    const pad=(parseFloat(cs.paddingLeft)||0)+(parseFloat(cs.paddingRight)||0);
+    avail=Math.max(0, parent.clientWidth-pad);
+  }
+  if(avail<8){
+    const slide=svg.closest('.slide');
+    if(slide) avail=Math.max(0, slide.clientWidth-32);
+  }
+  if(avail<8) return 0;
+  const maxH=parseFloat(getComputedStyle(svg).maxHeight);
+  const cap=(maxH && isFinite(maxH)) ? maxH : Infinity;
+  const w=avail;
+  let h=w*raw[3]/raw[2];
+  if(h>cap) h=cap;
+  if(h<80) h=Math.min(120, isFinite(cap)?cap:120);
+  const wPx=Math.round(w)+'px', hPx=Math.round(h)+'px';
+  if(svg.style.width!==wPx) svg.style.width=wPx;
+  if(svg.style.height!==hPx) svg.style.height=hPx;
+  return w;
+}
+function redrawSlide(s){
+  if(!s) return;
+  const id=s.dataset.id;
+  if(id==='hook') drawRope();
+  if(id==='force') drawOne();
+  if(id==='split') drawSplit();
+  if(id==='triangle') drawTri();
+  if(id==='two') drawVec();
+  if(id==='sign') drawSign();
+  if(id==='isolate') drawIso();
+  if(id==='fbd') drawFBD();
+  if(id==='hang') drawHang();
+  if(id==='ring') drawEq();
+  if(id==='seesaw') drawSee();
+  if(id==='wrench') drawWr();
+  if(id==='angled') drawAng();
+  if(id==='plank') drawPlank();
+  if(id==='beam') drawBeam();
+  s.querySelectorAll('svg.diagram').forEach(fitDiagram);
+}
+const _diagRO=new ResizeObserver(entries=>{
+  for(const ent of entries){
+    const el=ent.target;
+    if(!el) continue;
+    if(el.tagName==='svg' || (el.matches && el.matches('svg.diagram'))){
+      fitDiagram(el);
+    } else {
+      const root=el.classList && el.classList.contains('slide') ? el : (el.querySelector && el.querySelector('.slide.on'));
+      if(root) root.querySelectorAll('svg.diagram').forEach(fitDiagram);
+    }
+  }
+});
+function observeDiagrams(s){
+  if(!s || !window.ResizeObserver) return;
+  try{
+    _diagRO.observe(s);
+    const stage=s.closest('.stage-wrap')||s.closest('.concept');
+    if(stage) _diagRO.observe(stage);
+    s.querySelectorAll('svg.diagram').forEach(svg=>_diagRO.observe(svg));
+  }catch(e){}
+}
+function currentSlide(){
+  const c=document.querySelector('.concept:not([hidden])');
+  return (c && c.querySelector('.slide.on')) || document.querySelector('.slide.on');
+}
+function refreshVisibleDiagrams(){
+  const s=currentSlide();
+  if(s) s.querySelectorAll('svg.diagram').forEach(fitDiagram);
+}
+window.addEventListener('resize', refreshVisibleDiagrams);
+if(window.visualViewport) visualViewport.addEventListener('resize', refreshVisibleDiagrams);
+
 const ROOT = document.documentElement.dataset.root || '';
 function asset(p){ return ROOT + p; }
 
@@ -131,6 +216,8 @@ function go(c, i){
   drawCrumb();
   drawList();
   const idx = (i!==undefined && i!==null) ? i : (store.slide[c]||0);
+  const panel=$('#c'+c);
+  if(panel) panel.getBoundingClientRect();
   showSlide(c, idx, 'jump');
 }
 function showSlide(c, i, dir){
@@ -154,27 +241,17 @@ function showSlide(c, i, dir){
   $('#nextSlide').textContent = (ss[i].dataset.id||'').startsWith('quiz') && i<n-1 ? 'Next problem' : 'Next';
   $('#dots').innerHTML = ss.map((s,j)=>`<button type="button" class="dot ${j===i?'on':''} ${(s.dataset.id||'').startsWith('quiz')?'quiz':''}" data-i="${j}" aria-label="Slide ${j+1}"></button>`).join('');
   $$('#dots .dot').forEach(b=>b.addEventListener('click',()=>showSlide(c, +b.dataset.i, +b.dataset.i<i?'back':'fwd')));
+  ss[i].getBoundingClientRect();
   onShow(ss[i]);
   renderMath(ss[i]);
 }
 function onShow(s){
-  const id=s.dataset.id;
-  if(id==='hook') drawRope();
-  if(id==='force') drawOne();
-  if(id==='split') drawSplit();
-  if(id==='triangle') drawTri();
-  if(id==='two') drawVec();
-  if(id==='sign') drawSign();
-  if(id==='isolate') drawIso();
-  if(id==='fbd') drawFBD();
-  if(id==='hang') drawHang();
-  if(id==='ring') drawEq();
-  if(id==='seesaw') drawSee();
-  if(id==='wrench') drawWr();
-  if(id==='angled') drawAng();
-  if(id==='plank') drawPlank();
-  if(id==='beam') drawBeam();
+  if(!s) return;
   s.querySelectorAll('.term').forEach((t,i)=>{ t.classList.remove('in','hot'); setTimeout(()=>t.classList.add('in'), 80+i*160); });
+  const run=()=>redrawSlide(s);
+  run();
+  requestAnimationFrame(()=>{ run(); requestAnimationFrame(run); });
+  observeDiagrams(s);
 }
 $('#prevSlide').addEventListener('click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)-1, 'back'); });
 $('#nextSlide').addEventListener('click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)+1, 'fwd'); });
@@ -495,17 +572,36 @@ function drawFBD(){
 }
 
 /* ---------- C3: hanging lamp + two-cable ring ---------- */
+const hang={x:260,y:200};
 function drawHang(){
   const svg=$('#hangSvg');
-  const mid=260, top=30, lampY=200, lx=mid-90, rx=mid+170;
+  const top=30, mid=hang.x, lampY=hang.y, lx=80, rx=440;
+  const leftLen=Math.hypot(mid-lx, lampY-20-top), rightLen=Math.hypot(rx-mid, lampY-20-top);
   svg.innerHTML=`<circle cx="${lx}" cy="${top}" r="6" fill="#9aa3c7"/><circle cx="${rx}" cy="${top}" r="6" fill="#9aa3c7"/>
     <line x1="${lx}" y1="${top}" x2="${mid}" y2="${lampY-20}" stroke="#ff8a65" stroke-width="4"/>
     <line x1="${rx}" y1="${top}" x2="${mid}" y2="${lampY-20}" stroke="#7c9cff" stroke-width="4"/>
     <circle cx="${mid}" cy="${lampY-20}" r="6" fill="#e8eaf6"/>
-    <rect x="${mid-20}" y="${lampY}" width="40" height="40" rx="6" fill="#3a4170" stroke="#ffd54f"/>
+    <rect id="hangH" class="handle" x="${mid-20}" y="${lampY}" width="40" height="40" rx="6" fill="#3a4170" stroke="#ffd54f"/>
     <text x="${(lx+mid)/2-10}" y="110" fill="#ff8a65" font-size="13">left</text>
     <text x="${(rx+mid)/2}" y="90" fill="#7c9cff" font-size="13">right</text>`;
+  if($('#hangNote')){
+    const tighter = leftLen<rightLen ? 'left' : (rightLen<leftLen ? 'right' : 'both');
+    $('#hangNote').textContent = tighter==='both'
+      ? 'The strings are equally tight when the lamp hangs in the middle.'
+      : 'The '+tighter+' string is tighter (it is flatter / carrying more of the weight).';
+  }
 }
+(function(){ const svg=$('#hangSvg'); if(!svg) return; let drag=false;
+  svg.addEventListener('pointerdown',e=>{ if(e.target.id==='hangH'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
+  svg.addEventListener('pointermove',e=>{
+    if(!drag) return;
+    const q=svgPt(svg,e);
+    hang.x=Math.max(120,Math.min(400,q.x));
+    hang.y=Math.max(90,Math.min(250,q.y));
+    drawHang();
+  });
+  svg.addEventListener('pointerup',()=>drag=false); svg.addEventListener('pointercancel',()=>drag=false);
+})();
 const EQ={L:{x:-220,y:0},R:{x:220,y:0},ring:{x:-40,y:170}};
 let eqDrag=false;
 function drawEq(){
@@ -539,6 +635,7 @@ function drawEq(){
   const h=$('#ringH'); if(h) h.addEventListener('pointerdown',e=>{ eqDrag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); });
 }
 (function(){ const svg=$('#eq');
+  svg.addEventListener('pointerdown',e=>{ if(e.target.id==='ringH'){ eqDrag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{ if(!eqDrag) return; const q=svgPt(svg,e); EQ.ring={x:Math.max(-200,Math.min(200,Math.round(q.x))), y:Math.max(15,Math.min(250,Math.round(q.y)))}; drawEq(); });
   svg.addEventListener('pointerup',()=>eqDrag=false); svg.addEventListener('pointercancel',()=>eqDrag=false);
   $('#mass').addEventListener('input',drawEq); $('#predict').addEventListener('change',drawEq);

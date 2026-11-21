@@ -6,6 +6,7 @@ __pycache__/
 *.py[cod]
 .DS_Store
 live_check.png
+live_check*.png
 promo/
 audio_src/
 live_check_ai.png
