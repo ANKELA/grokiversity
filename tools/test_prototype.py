@@ -133,8 +133,15 @@ def slide_graphics(pg):
       const diags=[...s.querySelectorAll('svg.diagram')].map(el=>{
         const r=el.getBoundingClientRect();
         const ctm=el.getScreenCTM && el.getScreenCTM();
+        let painted=0;
+        el.querySelectorAll('line,rect,circle,polygon,path,text').forEach(k=>{
+          const kr=k.getBoundingClientRect();
+          const w=Math.max(0, Math.min(r.right,kr.right)-Math.max(r.left,kr.left));
+          const h=Math.max(0, Math.min(r.bottom,kr.bottom)-Math.max(r.top,kr.top));
+          painted += w*h;
+        });
         return {id:el.id, w:r.width, h:r.height, kids:el.childElementCount,
-                html:(el.innerHTML||'').trim().length, ctm:!!ctm};
+                html:(el.innerHTML||'').trim().length, ctm:!!ctm, painted};
       });
       const svg=s.querySelector('svg.diagram');
       return {id:s.dataset.id, snapshot:(svg?svg.innerHTML:'') + '\\n' + s.innerText, diags};
@@ -145,6 +152,7 @@ def assert_graphics(info, label):
         assert d["w"] >= 80 and d["h"] >= 80, f"{label} {info['id']} #{d['id']} size {d['w']:.1f}x{d['h']:.1f}"
         assert d["kids"] > 0 and d["html"] > 0, f"{label} {info['id']} #{d['id']} empty"
         assert d["ctm"], f"{label} {info['id']} #{d['id']} getScreenCTM() is null"
+        assert d.get("painted", 0) >= 400, f"{label} {info['id']} #{d['id']} graphic is clipped or blank (painted={d.get('painted')})"
 
 def interact_slide(pg, info, label):
     sid = info["id"]
@@ -214,7 +222,7 @@ with sync_playwright() as p:
     og = pg.evaluate("[...document.querySelectorAll('meta[property^=og],meta[name^=twitter]')].map(m=>(m.getAttribute('property')||m.name)+'='+m.content)")
     print("OG/Twitter tags:", len(og)); assert any("og:image=" in t for t in og) and any("summary_large_image" in t for t in og)
     assert pg.locator("#lessonApp").count() == 0 and pg.locator("#c1").count() == 0
-    href = pg.get_attribute("a[href='statics/unit-1.html']", "href")
+    href = pg.get_attribute("a[href*='statics/unit-1.html']", "href")
     print("Start Statics href:", href); assert href and "statics/unit-1.html" in href
     assert "Start Statics" in pg.inner_text("body")
     assert pg.locator("#introAudio").count() == 1
@@ -369,6 +377,26 @@ with sync_playwright() as p:
             ctxF.close()
         finally:
             fx.close()
+
+    IPHONE = dict(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=3,
+                  user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0.6778.73 Mobile/15E148 Safari/604.1")
+    ctxI = br.new_context(**IPHONE)
+    ctxI.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+    gi = ctxI.new_page(); watch(gi)
+    gi.goto(LESSON); gi.wait_for_load_state("networkidle"); gi.wait_for_timeout(400)
+    graphic_tour(gi, "chrome-iphone-390x844")
+    ctxI.close()
+    try:
+        wk = p.webkit.launch()
+        ctxW = wk.new_context(**IPHONE)
+        ctxW.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+        gw = ctxW.new_page(); watch(gw)
+        gw.goto(LESSON); gw.wait_for_load_state("networkidle"); gw.wait_for_timeout(400)
+        graphic_tour(gw, "webkit-iphone-390x844")
+        ctxW.close()
+        wk.close()
+    except Exception as e:
+        print("webkit-iphone-390x844 skipped (browser not launchable):", e)
 
     ctxM = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
     ctxM.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")

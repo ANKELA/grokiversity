@@ -13,13 +13,38 @@ const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(store)); }cat
 function renderMath(el){ if(window.renderMathInElement) renderMathInElement(el||document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false}); }
 function say(html, who='t'){ const m=document.createElement('div'); m.className='msg '+who; m.innerHTML=html; $('#chat').appendChild(m); $('#chat').scrollTop=1e9; renderMath(m); }
 function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),2400); }
+function eventClient(e){
+  const t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0]);
+  if(t) return {x:t.clientX,y:t.clientY};
+  return {x:e.clientX,y:e.clientY};
+}
 function svgPt(svg,e){
+  const c=eventClient(e);
   const p=svg.createSVGPoint();
-  p.x=e.clientX; p.y=e.clientY;
+  p.x=c.x; p.y=c.y;
   const ctm=svg.getScreenCTM();
   if(!ctm) return {x:0,y:0};
   return p.matrixTransform(ctm.inverse());
 }
+function hitHandle(id,cx,cy,color){
+  color=color||'#ff8a65';
+  return `<circle id="${id}" class="handle" cx="${cx}" cy="${cy}" r="36" fill="${color}" fill-opacity=".18" stroke="${color}" stroke-width="2"/>`;
+}
+(function(){
+  let cap=null;
+  document.addEventListener('pointerdown',e=>{
+    const t=e.target;
+    cap = (t && t.closest) ? t.closest('svg.diagram') : null;
+  }, true);
+  document.addEventListener('pointermove',e=>{
+    if(!cap) return;
+    if(e.target && cap.contains(e.target)) return;
+    cap.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,composed:true,pointerId:e.pointerId,pointerType:e.pointerType||'touch',clientX:e.clientX,clientY:e.clientY,isPrimary:e.isPrimary!==false,buttons:e.buttons}));
+  }, true);
+  const clear=()=>{ cap=null; };
+  document.addEventListener('pointerup',clear,true);
+  document.addEventListener('pointercancel',clear,true);
+})();
 function fitDiagram(svg){
   if(!svg || !svg.getAttribute) return 0;
   const raw=(svg.getAttribute('viewBox')||'').trim().split(/[\s,]+/).map(Number);
@@ -42,6 +67,9 @@ function fitDiagram(svg){
   let h=w*raw[3]/raw[2];
   if(h>cap) h=cap;
   if(h<80) h=Math.min(120, isFinite(cap)?cap:120);
+  svg.setAttribute('width', String(raw[2]));
+  svg.setAttribute('height', String(raw[3]));
+  svg.style.setProperty('--diagram-ar', raw[2]+' / '+raw[3]);
   const wPx=Math.round(w)+'px', hPx=Math.round(h)+'px';
   if(svg.style.width!==wPx) svg.style.width=wPx;
   if(svg.style.height!==hPx) svg.style.height=hPx;
@@ -96,11 +124,31 @@ function refreshVisibleDiagrams(){
   const s=currentSlide();
   if(s) s.querySelectorAll('svg.diagram').forEach(fitDiagram);
 }
-window.addEventListener('resize', refreshVisibleDiagrams);
-if(window.visualViewport) visualViewport.addEventListener('resize', refreshVisibleDiagrams);
+window.addEventListener('resize', refreshAndRedraw);
+if(window.visualViewport) visualViewport.addEventListener('resize', refreshAndRedraw);
+window.addEventListener('orientationchange', function(){ setTimeout(refreshAndRedraw, 200); });
+window.addEventListener('pageshow', refreshAndRedraw);
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshAndRedraw(); });
 
 const ROOT = document.documentElement.dataset.root || '';
+const ASSET_V=(function(){
+  const scripts=document.getElementsByTagName('script');
+  for(let i=0;i<scripts.length;i++){
+    const src=scripts[i].src||'';
+    const m=src.match(/app\.js\?v=([^&]+)/);
+    if(m) return m[1];
+  }
+  return '';
+})();
 function asset(p){ return ROOT + p; }
+function lessonUrl(q){
+  const base=asset('statics/unit-1.html');
+  const bits=[];
+  if(ASSET_V) bits.push('v='+ASSET_V);
+  if(q) bits.push(q.replace(/^\?/,''));
+  return bits.length? base+'?'+bits.join('&') : base;
+}
+
 
 /* ---------- ME / AI track maps (landing only) ---------- */
 const TRACK = {
@@ -111,7 +159,7 @@ const TRACK = {
 };
 if($('#trackGrid')){
   $('#trackGrid').innerHTML = Object.entries(TRACK).map(([y,cs])=>`<div class="year"><h4>${y}</h4>${cs.map(c=> c==='Statics'
-    ? `<a class="course live" href="${asset('statics/unit-1.html')}"><span>ME 201 Statics</span><span class="badge">Play now</span></a>`
+    ? `<a class="course live" href="${lessonUrl()}"><span>ME 201 Statics</span><span class="badge">Play now</span></a>`
     : `<div class="course"><span>${c}</span><span class="badge">Coming soon</span></div>`).join('')}</div>`).join('');
 }
 const AI_TRACK = {
@@ -162,7 +210,7 @@ if(!$('#lessonApp')){
     const h=(location.hash||'').replace(/^#/,'').toLowerCase();
     if(h==='learn' || h.startsWith('learn') || /^c[1-5]/.test(h)){
       const c=(h.match(/c([1-5])/)||[])[1]||'1';
-      location.replace(asset('statics/unit-1.html')+'?c='+c);
+      location.replace(lessonUrl('c='+c));
     }
   };
   jump();
@@ -250,8 +298,27 @@ function onShow(s){
   s.querySelectorAll('.term').forEach((t,i)=>{ t.classList.remove('in','hot'); setTimeout(()=>t.classList.add('in'), 80+i*160); });
   const run=()=>redrawSlide(s);
   run();
-  requestAnimationFrame(()=>{ run(); requestAnimationFrame(run); });
+  let tries=0;
+  const retry=()=>{
+    run();
+    const ok=[].slice.call(s.querySelectorAll('svg.diagram')).every(function(el){ const r=el.getBoundingClientRect(); return r.width>=8 && r.height>=8; });
+    if(!ok && tries++<24) requestAnimationFrame(retry);
+  };
+  requestAnimationFrame(retry);
+  [50,100,250,500,1000].forEach(function(ms){ setTimeout(run, ms); });
   observeDiagrams(s);
+  s.querySelectorAll('svg.diagram').forEach(guardSvgTouch);
+}
+function guardSvgTouch(svg){
+  if(!svg || svg.dataset.touchGuard) return;
+  svg.dataset.touchGuard='1';
+  const stop=function(e){ if(e.cancelable) e.preventDefault(); };
+  svg.addEventListener('touchstart', stop, {passive:false});
+  svg.addEventListener('touchmove', stop, {passive:false});
+}
+function refreshAndRedraw(){
+  const s=currentSlide();
+  if(s) redrawSlide(s);
 }
 $('#prevSlide').addEventListener('click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)-1, 'back'); });
 $('#nextSlide').addEventListener('click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)+1, 'fwd'); });
@@ -319,7 +386,7 @@ function drawRope(){
   svg.innerHTML=`<line x1="20" y1="240" x2="500" y2="240" stroke="#3d4680" stroke-width="6" data-tap="floor"/>
     <rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="6" fill="#3a4170" stroke="#7c86c9" stroke-width="2" data-tap="box"/>
     <line x1="${hx}" y1="${hy}" x2="${tx}" y2="${ty}" stroke="#ff8a65" stroke-width="5" stroke-linecap="round" data-tap="rope"/>
-    <circle id="ropeH" class="handle" cx="${tx}" cy="${ty}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65" stroke-width="2"/>
+    ${hitHandle("ropeH",tx,ty,"#ff8a65")}
     <text x="30" y="232" fill="#5c6390" font-size="13">floor</text>`;
   $('#ropeFloor').textContent=fx.toFixed(0)+' of 100';
   $('#ropeLift').textContent=fy.toFixed(0)+' of 100';
@@ -350,17 +417,19 @@ const oOx=40, oOy=200;
 function drawOne(){
   const F=Math.hypot(one.x,one.y), a=deg(Math.atan2(one.y,one.x));
   const svg=$('#oneSvg');
+  svg.setAttribute('viewBox','-20 -20 420 280');
   svg.innerHTML=`<defs><marker id="oh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker></defs>
     <line x1="${oOx-20}" y1="${oOy}" x2="380" y2="${oOy}" stroke="#3d4680" stroke-width="3"/>
     <rect x="${oOx-30}" y="${oOy}" width="70" height="36" rx="4" fill="#3a4170" stroke="#7c86c9"/>
     <line x1="${oOx}" y1="${oOy}" x2="${oOx+one.x}" y2="${oOy-one.y}" stroke="#ff8a65" stroke-width="4" marker-end="url(#oh)"/>
-    <circle id="oneH" class="handle" cx="${oOx+one.x}" cy="${oOy-one.y}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>`;
+    ${hitHandle("oneH",oOx+one.x,oOy-one.y,"#ff8a65")}`;
   $('#oneF').textContent=F.toFixed(0)+' N';
   $('#oneA').textContent=a.toFixed(0)+'°';
 }
 function drawSplit(){
   const showX=$('#showFloor').checked, showY=$('#showLift').checked;
   const svg=$('#splitSvg');
+  svg.setAttribute('viewBox','-20 -20 420 280');
   svg.innerHTML=`<defs>
       <marker id="sh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker>
       <marker id="sx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker>
@@ -370,7 +439,7 @@ function drawSplit(){
     <line x1="${oOx}" y1="${oOy}" x2="${oOx+one.x}" y2="${oOy-one.y}" stroke="#ff8a65" stroke-width="4" marker-end="url(#sh)" opacity=".9"/>
     ${showX?`<line x1="${oOx}" y1="${oOy}" x2="${oOx+one.x}" y2="${oOy}" stroke="#ff8a65" stroke-width="3" marker-end="url(#sx)"/>`:''}
     ${showY?`<line x1="${oOx+one.x}" y1="${oOy}" x2="${oOx+one.x}" y2="${oOy-one.y}" stroke="#4dd0e1" stroke-width="3" marker-end="url(#sy)"/>`:''}
-    <circle id="splitH" class="handle" cx="${oOx+one.x}" cy="${oOy-one.y}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>`;
+    ${hitHandle("splitH",oOx+one.x,oOy-one.y,"#ff8a65")}`;
   $('#splitX').textContent=Math.abs(one.x).toFixed(0)+' N';
   $('#splitY').textContent=Math.abs(one.y).toFixed(0)+' N';
 }
@@ -403,6 +472,7 @@ function drawTri(){
   const th=rad(tri.th), F=100, sc=2.2, adj=F*Math.cos(th)*sc, opp=F*Math.sin(th)*sc;
   const ox=40, oy=210;
   const svg=$('#triSvg');
+  svg.setAttribute('viewBox','-20 -40 440 300');
   const hl=k=> tri.step>=k ? 'hl-on' : '';
   svg.innerHTML=`<defs>
       <marker id="th" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker>
@@ -415,7 +485,7 @@ function drawTri(){
     <text x="${ox+adj/2}" y="${oy+16}" fill="#ffd54f" font-size="13" text-anchor="middle">${tri.step>=2?'adjacent':''}</text>
     <text x="${ox+adj+8}" y="${oy-opp/2}" fill="#4dd0e1" font-size="13">${tri.step>=2?'opposite':''}</text>
     <text x="${ox+20}" y="${oy-8}" fill="#ff8a65" font-size="14">θ = ${tri.th}°</text>
-    <circle id="triH" class="handle" cx="${ox+adj}" cy="${oy-opp}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>`;
+    ${hitHandle("triH",ox+adj,oy-opp,"#ff8a65")}`;
   const fx=(100*Math.cos(rad(tri.th)));
   const bits=[
     `\\text{hypotenuse}=100\\,\\text{N}`,
@@ -581,7 +651,7 @@ function drawHang(){
     <line x1="${lx}" y1="${top}" x2="${mid}" y2="${lampY-20}" stroke="#ff8a65" stroke-width="4"/>
     <line x1="${rx}" y1="${top}" x2="${mid}" y2="${lampY-20}" stroke="#7c9cff" stroke-width="4"/>
     <circle cx="${mid}" cy="${lampY-20}" r="6" fill="#e8eaf6"/>
-    <rect id="hangH" class="handle" x="${mid-20}" y="${lampY}" width="40" height="40" rx="6" fill="#3a4170" stroke="#ffd54f"/>
+    <rect id="hangH" class="handle" x="${mid-28}" y="${lampY-8}" width="56" height="56" rx="8" fill="#3a4170" fill-opacity=".15" stroke="#ffd54f"/><rect x="${mid-20}" y="${lampY}" width="40" height="40" rx="6" fill="#3a4170" stroke="#ffd54f" pointer-events="none"/>
     <text x="${(lx+mid)/2-10}" y="110" fill="#ff8a65" font-size="13">left</text>
     <text x="${(rx+mid)/2}" y="90" fill="#7c9cff" font-size="13">right</text>`;
   if($('#hangNote')){
@@ -623,7 +693,7 @@ function drawEq(){
    <text x="${L.x+56}" y="${L.y+22}" fill="#ff8a65" font-size="20">θ₁</text>
    <path d="M ${R.x-50} ${R.y} A 50 50 0 0 0 ${R.x-50*Math.cos(t2)} ${R.y+50*Math.sin(t2)}" fill="none" stroke="#4dd0e1"/>
    <text x="${R.x-74}" y="${R.y+22}" fill="#4dd0e1" font-size="20">θ₂</text>
-   <circle id="ringH" class="handle" cx="${ring.x}" cy="${ring.y}" r="15" fill="#ffd54f" fill-opacity=".3" stroke="#ffd54f" stroke-width="2"/>
+   ${hitHandle("ringH",ring.x,ring.y,"#ffd54f")}
    <g opacity=".95"><text x="${ox-75}" y="${oy-80}" fill="#9aa3c7" font-size="16">force triangle</text>
    <line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#ffd54f" stroke-width="2.5" marker-end="url(#ea)"/>
    <line x1="${b.x}" y1="${b.y}" x2="${c.x}" y2="${c.y}" stroke="#ff8a65" stroke-width="2.5" marker-end="url(#e1)"/>
@@ -653,7 +723,7 @@ function drawSee(){
   svg.innerHTML=`<line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="#7c9cff" stroke-width="8" stroke-linecap="round"/>
     <polygon points="${ox},${oy+8} ${ox-16},${oy+36} ${ox+16},${oy+36}" fill="#3d4680"/>
     <circle cx="${ox}" cy="${oy}" r="6" fill="#e8eaf6"/>
-    <circle id="seeH" class="handle" cx="${wx}" cy="${wy}" r="16" fill="#ff8a65" fill-opacity=".4" stroke="#ff8a65"/>
+    ${hitHandle("seeH",wx,wy,"#ff8a65")}
     <text x="${wx}" y="${wy-22}" fill="#ffd54f" font-size="13" text-anchor="middle">10 N</text>`;
   if($('#seeD')) $('#seeD').textContent=Math.abs(d/100).toFixed(2)+' m '+(d>=0?'to the right':'to the left');
   if($('#seeM')) $('#seeM').textContent=Math.abs(M).toFixed(2)+' N·m';
@@ -674,9 +744,9 @@ function drawWr(){
   svg.innerHTML=`<defs><marker id="warr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker></defs>
     <circle cx="${ox}" cy="${oy}" r="22" fill="none" stroke="#7c86c9" stroke-width="8"/>
     <line x1="${ox}" y1="${oy}" x2="${ox+L}" y2="${oy}" stroke="#7c9cff" stroke-width="10" stroke-linecap="round"/>
-    <circle id="wrDh" class="handle" cx="${ox+L}" cy="${oy}" r="12" fill="#7c9cff" fill-opacity=".35" stroke="#7c9cff"/>
+    ${hitHandle("wrDh",ox+L,oy,"#7c9cff")}
     <line id="wrFarr" x1="${ox+L}" y1="${oy}" x2="${ox+L}" y2="${oy+fy}" stroke="#ff8a65" stroke-width="4" marker-end="url(#warr)"/>
-    <circle id="wrFh" class="handle" cx="${ox+L}" cy="${oy+fy}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>
+    ${hitHandle("wrFh",ox+L,oy+fy,"#ff8a65")}
     <text x="${ox+L+8}" y="${oy+fy/2}" fill="#ff8a65" font-size="13">${F.toFixed(0)} N</text>
     <text x="${ox+L/2}" y="${oy-14}" fill="#9aa3c7" font-size="13" text-anchor="middle">${d.toFixed(2)} m</text>`;
 }
@@ -711,7 +781,7 @@ function drawAng(){
     <line id="angFarr" x1="${ox+L}" y1="${oy}" x2="${endx}" y2="${endy}" stroke="#ff8a65" stroke-width="4" marker-end="url(#aarr)"/>
     <path d="M ${ox+L+40} ${oy} A 40 40 0 0 1 ${ox+L+40*Math.cos(rad(th))} ${oy+40*Math.sin(rad(th))}" fill="none" stroke="#ffd54f" stroke-width="2"/>
     <text x="${ox+L+48}" y="${oy+18}" fill="#ffd54f" font-size="13">θ</text>
-    <circle id="angH" class="handle" cx="${endx}" cy="${endy}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>`;
+    ${hitHandle("angH",endx,endy,"#ff8a65")}`;
 }
 $('#angSl').addEventListener('input',drawAng);
 (function(){ const svg=$('#angSvg'); let drag=false;
@@ -736,7 +806,7 @@ function drawPlank(){
   svg.innerHTML=`<circle cx="${ox}" cy="${oy}" r="10" fill="#7c9cff"/><text x="${ox}" y="${oy+28}" fill="#9aa3c7" font-size="13" text-anchor="middle">left</text>
     <circle cx="${ox+Lpx}" cy="${oy}" r="10" fill="#4dd0e1"/><text x="${ox+Lpx}" y="${oy+28}" fill="#9aa3c7" font-size="13" text-anchor="middle">right</text>
     <line x1="${ox}" y1="${oy}" x2="${ox+Lpx}" y2="${oy}" stroke="#7c86c9" stroke-width="10" stroke-linecap="round"/>
-    <rect id="plBox" x="${xpx-18}" y="${oy-44}" width="36" height="28" rx="4" fill="#ff8a65" fill-opacity=".85" stroke="#ff8a65"/>
+    <rect id="plBox" class="handle" x="${xpx-28}" y="${oy-54}" width="56" height="48" rx="6" fill="#ff8a65" fill-opacity=".85" stroke="#ff8a65"/>
     <text x="${xpx}" y="${oy-52}" fill="#ffd54f" font-size="13" text-anchor="middle">${W.toFixed(0)} kN</text>`;
   if($('#plL')) $('#plL').textContent=Ay.toFixed(2)+' kN';
   if($('#plR')) $('#plR').textContent=By.toFixed(2)+' kN';
@@ -773,7 +843,7 @@ function drawBeam(){
     <polygon points="${ox},${oy+6} ${ox-12},${oy+22} ${ox+12},${oy+22}" fill="#7c9cff"/>
     <circle cx="${ox+Lpx}" cy="${oy+14}" r="9" fill="none" stroke="#4dd0e1" stroke-width="3"/>
     <line id="bmLoad" x1="${xpx}" y1="${oy-loadLen}" x2="${xpx}" y2="${oy}" stroke="#ff8a65" stroke-width="4" marker-end="url(#barr)"/>
-    <circle id="bmH" class="handle" cx="${xpx}" cy="${oy-loadLen}" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>
+    ${hitHandle("bmH",xpx,oy-loadLen,"#ff8a65")}
     <line id="bmAyArr" x1="${ox}" y1="${tip+ayLen}" x2="${ox}" y2="${tip}" stroke="#7c9cff" stroke-width="3" marker-end="url(#baA)"/>
     <line id="bmByArr" x1="${ox+Lpx}" y1="${tip+byLen}" x2="${ox+Lpx}" y2="${tip}" stroke="#4dd0e1" stroke-width="3" marker-end="url(#baB)"/>
     <text x="${ox}" y="${tip+ayLen+16}" fill="#7c9cff" font-size="13" text-anchor="middle">A_y</text>

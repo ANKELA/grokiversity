@@ -2,7 +2,9 @@
 <html lang="en" class="lesson-page" data-root="../">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>ME 201 Statics · Unit 1 — Grokeversity</title>
 <meta name="description" content="Interactive single-screen slides for ME 201 Statics, Unit 1: forces, free-body diagrams, equilibrium, moments, and rigid-body equilibrium.">
 <meta name="theme-color" content="#0f1220">
@@ -26,7 +28,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="../app.css?v=8df733f4">
+<link rel="stylesheet" href="../app.css?v=49c02fd1">
 </head>
 <body>
 <div class="lesson-app" id="lessonApp">
@@ -64,7 +66,7 @@
           <p>We draw a force as an arrow. The length is the size. The way it points is the direction.</p>
           <p>The usual unit is the <b>newton</b> (N). A small apple weighs about one newton.</p>
           <div class="viz">
-            <svg class="diagram" id="oneSvg" viewBox="-40 -200 440 280" role="img" aria-label="A single force arrow you can drag"></svg>
+            <svg class="diagram" id="oneSvg" viewBox="-20 -20 420 280" role="img" aria-label="A single force arrow you can drag"></svg>
             <div class="readout">
               <div class="row"><span>Size</span><span id="oneF"></span></div>
               <div class="row"><span>Angle up from the floor</span><span id="oneA"></span></div>
@@ -78,7 +80,7 @@
           <p>Any angled push can be replaced by two simpler pushes: one along the floor, and one straight up. Together they do the same job.</p>
           <p>Each of those simpler pushes is called a <b>component</b> — a part of the force in one direction.</p>
           <div class="viz">
-            <svg class="diagram" id="splitSvg" viewBox="-40 -200 440 280" role="img" aria-label="A force split into floor and lift parts"></svg>
+            <svg class="diagram" id="splitSvg" viewBox="-20 -20 420 280" role="img" aria-label="A force split into floor and lift parts"></svg>
             <div class="readout">
               <label class="sub"><input type="checkbox" id="showFloor" checked> show the along-the-floor part</label>
               <label class="sub"><input type="checkbox" id="showLift" checked> show the lifting part</label>
@@ -93,7 +95,7 @@
           <h2>A right triangle hides in the arrow</h2>
           <p>Look at the triangle made by the arrow and its two parts. The long side is the original push. Drag the tip, then reveal the math one piece at a time.</p>
           <div class="viz">
-            <svg class="diagram" id="triSvg" viewBox="-40 -220 440 300" role="img" aria-label="Right triangle on a force arrow, with an angle you can drag"></svg>
+            <svg class="diagram" id="triSvg" viewBox="-20 -40 440 300" role="img" aria-label="Right triangle on a force arrow, with an angle you can drag"></svg>
             <div class="readout">
               <div id="triMath"></div>
               <button type="button" class="btn sm" id="triNext" style="margin-top:10px">Next piece</button>
@@ -143,8 +145,8 @@
               <line id="l2" stroke="#4dd0e1" stroke-width="4" marker-end="url(#h2)"/>
               <line id="par1" stroke="#ffd54f" stroke-width="1.5" stroke-dasharray="5 5" opacity=".6"/>
               <line id="par2" stroke="#ffd54f" stroke-width="1.5" stroke-dasharray="5 5" opacity=".6"/>
-              <circle id="d1" class="handle" r="14" fill="#ff8a65" fill-opacity=".35" stroke="#ff8a65"/>
-              <circle id="d2" class="handle" r="14" fill="#4dd0e1" fill-opacity=".35" stroke="#4dd0e1"/>
+              <circle id="d1" class="handle" r="28" fill="#ff8a65" fill-opacity=".28" stroke="#ff8a65"/>
+              <circle id="d2" class="handle" r="28" fill="#4dd0e1" fill-opacity=".28" stroke="#4dd0e1"/>
               <text id="t1" fill="#ff8a65" font-size="15">F₁</text><text id="t2" fill="#4dd0e1" font-size="15">F₂</text><text id="tr" fill="#ffd54f" font-size="15">R</text>
             </svg>
             <div class="readout">
@@ -592,6 +594,6 @@ Each line gives the ID [difficulty], the problem, ‖ the key, and the most comm
 
 Begin now. Greet the student and ask for their pace.
 <!--TUTOR_PROMPT_END--></script>
-<script src="../app.js?v=8df733f4"></script>
+<script src="../app.js?v=49c02fd1"></script>
 </body>
 </html>
