@@ -74,10 +74,10 @@ for y in range(H):  # soft top glow
     t = max(0, 1 - y / 420); d.line([0, y, W, y], fill=(int(15 + 28 * t), int(18 + 35 * t), int(32 + 78 * t)))
 im.paste(icon(84), (70, 64), icon(84))
 d.text((172, 78), "Grokiversity", font=f("DejaVuSans-Bold.ttf", 50), fill="#e8eaf6")
-d.text((70, 190), "University-level curricula,", font=f("DejaVuSans-Bold.ttf", 54), fill="#ffffff")
-d.text((70, 256), "curriculum, one concept at a time.", font=f("DejaVuSans-Bold.ttf", 54), fill="#7c9cff")
+d.text((70, 190), "Free, open-source,", font=f("DejaVuSans-Bold.ttf", 54), fill="#ffffff")
+d.text((70, 256), "degree-level curriculum.", font=f("DejaVuSans-Bold.ttf", 54), fill="#7c9cff")
 d.text((70, 350), "Mechanical Engineering  ·  Introduction to AI  ·  strict quizzes", font=f("DejaVuSans.ttf", 28), fill="#c5cae9")
-d.text((70, 392), "Free & open source. Try Unit 1 of either track in your browser.", font=f("DejaVuSans.ttf", 28), fill="#c5cae9")
+d.text((70, 392), "One concept at a time. Try Unit 1 of Statics or Economics in your browser.", font=f("DejaVuSans.ttf", 28), fill="#c5cae9")
 # vector motif
 ox, oy = 1010, 595
 for (dx, dy), c in [((-50, -120), "#ff8a65"), ((130, -50), "#4dd0e1"), ((85, -160), "#ffd54f")]:

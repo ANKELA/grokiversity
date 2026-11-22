@@ -187,6 +187,7 @@ function lastUnlocked(){ let n=1; while(n<4 && unlocked(n+1)) n++; return n; }
 function hasExplicitLessonRoute(){
   const q=new URLSearchParams(location.search);
   if(q.has('c')) return true;
+  if(q.get('daily')==='1') return true;
   if(/#s=?[0-9]+/i.test(location.hash||'')) return true;
   return false;
 }
@@ -250,7 +251,8 @@ function readRoute(){
   return {c,i};
 }
 function writeRoute(c,i){
-  const next=`?c=${c}#s${i+1}`;
+  const keep=new URLSearchParams(location.search).get('daily')==='1'?'&daily=1':'';
+  const next=`?c=${c}${keep}#s${i+1}`;
   if((location.search+location.hash)!==next) history.replaceState(null,'',next);
 }
 function drawCrumb(){

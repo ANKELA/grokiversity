@@ -823,6 +823,8 @@ function hasAiLessonRoute(){
   return h==='#learn' || /^#c[1-4]/.test(h) || h==='#overview';
 }
 function shouldShowAiOverview(){
+  const q=new URLSearchParams(location.search);
+  if(q.get('daily')==='1') return false;
   const h=(location.hash||'').toLowerCase();
   if(h==='#overview') return true;
   if(h==='#learn' || /^#c[1-4]/.test(h)) return false;

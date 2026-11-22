@@ -353,11 +353,60 @@ html.lesson-page select,
 .fun-toast.show{opacity:1;transform:translate(-50%, 0)}
 .mute{color:var(--mute);font-weight:400}
 @media (prefers-reduced-motion:reduce){
-  .fun-meter i, .fun-toast{transition:none}
+  .fun-meter i, .fun-toast, .fun-ring-val, .fun-overlay .fun-card-box{transition:none}
 }
 @media (max-width:700px){
-  .fun-bar{padding:4px 8px;gap:6px;font-size:11px}
-  .fun-daily{display:none}
+  .fun-bar{padding:3px 8px;gap:6px;font-size:11px}
+  .fun-daily, .fun-rank{display:none}
+}
+.fun-ring{position:relative;width:32px;height:32px;flex:0 0 32px}
+.fun-ring svg{display:block;width:32px;height:32px}
+.fun-ring-track{stroke:#2a3058}
+.fun-ring-val{stroke:var(--acc);transition:stroke-dasharray .4s ease}
+.fun-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;pointer-events:none;line-height:1}
+.fun-rank{font-weight:700;color:var(--acc);white-space:nowrap;font-size:11px;overflow:hidden;text-overflow:ellipsis;max-width:9em}
+.fun-bar .fun-ring + .fun-rank{margin-right:2px}
+.fun-bar .fun-streak{margin-left:auto}
+.fun-goals{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 8px}
+.fun-goals label{display:flex;align-items:center;gap:4px}
+.fun-pop-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.fun-card.legendary{border-color:#ce93d8}
+.fun-card.common{border-color:var(--line)}
+.fun-card.locked{opacity:.55}
+.fun-rare{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);font-weight:600;margin-left:6px}
+.fun-overlay{position:fixed;inset:0;z-index:70;background:#0f1220cc;display:flex;align-items:flex-end;justify-content:center;padding:12px 12px max(16px, env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain}
+.fun-overlay[hidden]{display:none !important}
+.fun-overlay .fun-card-box{width:min(520px,100%);max-height:min(88dvh,720px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px 16px 12px 12px;padding:16px 16px 18px;color:var(--ink);box-shadow:0 16px 48px #0008}
+.fun-overlay h2{margin:0 0 8px;font-size:22px;letter-spacing:-.3px}
+.fun-overlay h3{margin:14px 0 6px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
+.fun-kicker{margin:0 0 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.fun-teaser{margin:0 0 8px}
+.fun-timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--acc);margin:0 0 8px}
+.fun-speed-meta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:0 0 8px}
+.fun-qtext{margin:0 0 10px;font-size:14px;line-height:1.45}
+.fun-qform label{display:block;margin:0 0 8px;font-size:13px}
+.fun-qform .btn{margin-top:4px}
+.fun-qfb{min-height:1.2em}
+.fun-grid{font-size:32px;margin:8px 0;letter-spacing:4px}
+.fun-overlay .btn.ghost, .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.fun-overlay .btn{margin:6px 6px 0 0}
+.fun-diag{margin:0 0 8px}
+.fun-diag svg{max-height:120px;width:100%}
+/* home engagement strip — one compact row */
+.fun-home{display:flex;align-items:center;gap:8px;padding:4px 20px;border-bottom:1px solid var(--line);background:#121528;flex:0 0 auto;min-height:40px;max-width:100%;box-sizing:border-box}
+.fun-home-rings{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+.fun-home-copy{display:flex;flex-direction:column;line-height:1.15;text-align:left;min-width:0}
+.fun-home-copy strong{font-size:12px;color:var(--ink);font-weight:700}
+.fun-home-copy span{font-size:11px;color:var(--mute);white-space:nowrap}
+.fun-home-chal{flex:0 0 auto;margin:0}
+@media (min-width:720px){
+  .fun-overlay{align-items:center;padding:24px}
+  .fun-overlay .fun-card-box{border-radius:16px}
+}
+@media (max-width:640px){
+  .fun-home{padding:4px 14px;gap:6px}
+  .fun-home-copy span{font-size:10px}
+  .fun-home-chal{font-size:12px;padding:6px 10px;min-height:32px}
 }
 
 .inrow label{min-width:0;max-width:100%}
@@ -408,31 +457,31 @@ body.home .home-main{
   width:100%;
   max-width:720px;
   margin:0 auto;
-  padding:16px 20px 12px;
+  padding:10px 20px 8px;
   text-align:center;
   min-width:0;
 }
 body.home h1{
-  font-size:clamp(20px,3.2vw,32px);
+  font-size:clamp(18px,3vw,28px);
   line-height:1.15;
-  margin:0 0 6px;
+  margin:0 0 4px;
   letter-spacing:-.3px;
 }
 body.home .lead{
-  margin:0 auto 10px;
+  margin:0 auto 8px;
   max-width:36em;
   color:#c5cae9;
-  font-size:15px;
+  font-size:14.5px;
 }
-.home-demo{
+ .home-demo{
   width:100%;
   max-width:640px;
-  margin:0 auto 10px;
-  padding:10px 12px;
+  margin:0 auto 8px;
+  padding:8px 12px;
   text-align:left;
 }
 .home-demo svg.diagram{
-  max-height:200px;
+  max-height:168px;
   width:100%;
   height:auto;
   touch-action:none;
@@ -440,7 +489,7 @@ body.home .lead{
 .home-demo .readout{font-size:13px}
 .home-demo .readout .row{padding:3px 0}
 .home-demo .thumb-layout{height:auto}
-body.home .home-cta{margin:0 0 12px}
+body.home .home-cta{margin:0 0 8px}
 body.home .btn-lg{font-size:17px;padding:12px 24px;min-height:46px}
 .course-list{
   display:grid;
@@ -448,7 +497,7 @@ body.home .btn-lg{font-size:17px;padding:12px 24px;min-height:46px}
   gap:12px;
   list-style:none;
   padding:0;
-  margin:0 0 16px;
+  margin:0 0 10px;
   text-align:left;
 }
 .course-card{
@@ -493,15 +542,15 @@ body.home .disc{max-width:720px;padding:10px 14px;margin:0 auto 8px}
   body.home .course-card{padding:8px 8px}
   body.home .course-card h2{font-size:13px;margin:4px 0 2px;line-height:1.2}
   body.home .course-card p{font-size:11px;line-height:1.3}
-  body.home .home-demo{padding:6px 8px;margin-bottom:6px}
-  body.home .home-demo svg.diagram{max-height:140px}
+  body.home .home-demo{padding:4px 8px;margin-bottom:4px}
+  body.home .home-demo svg.diagram{max-height:110px}
   body.home .home-cta{margin:0 0 8px}
-  body.home .cert-note{font-size:12px;margin:0 0 4px}
-  body.home footer{padding:8px 14px 10px}
+  body.home .cert-note{font-size:11px;margin:0 0 2px;line-height:1.3}
+  body.home footer{padding:6px 14px 8px}
 }
 @media (max-width:700px), (pointer:coarse){
   .home-demo .thumb-layout > .readout{max-height:none}
-  .home-demo svg.diagram:not(.is-output){min-height:100px;max-height:140px;flex:0 0 auto}
+  .home-demo svg.diagram:not(.is-output){min-height:80px;max-height:110px;flex:0 0 auto}
 }
 
 /* ---- thumb-reach interactive layout ---- */

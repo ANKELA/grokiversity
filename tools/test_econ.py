@@ -50,6 +50,15 @@ STORE_KEY = "grokiversity.econ101.v1"
 def watch(pg, errors):
     pg.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
     pg.on("console", lambda m: errors.append(f"console:{m.type}: {m.text}") if m.type == "error" else None)
+    def _hide_fun():
+        try:
+            pg.evaluate("() => document.querySelectorAll('.fun-overlay').forEach(el=>el.setAttribute('hidden',''))")
+        except Exception:
+            pass
+    try:
+        pg.add_locator_handler(pg.locator(".fun-overlay:not([hidden])"), _hide_fun)
+    except Exception:
+        pass
 
 
 def no_shift(pg, label):

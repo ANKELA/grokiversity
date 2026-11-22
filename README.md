@@ -1,6 +1,6 @@
 # Grokiversity
 
-**University-level curricula, one concept at a time. It is free, open source and mastery-based, and you can study it with an AI tutor such as Grok. The tracks include Mechanical Engineering, Introduction to Economics, and Introduction to AI.**
+**Free, open-source, degree-level curriculum, one concept at a time. It is mastery-based, and you can study it with an AI tutor such as Grok. The tracks include Mechanical Engineering, Introduction to Economics, and Introduction to AI.**
 
 > ⚠️ **Honest disclaimer.** Built with and powered by Grok. Not an accredited degree. Community project, not affiliated with or endorsed by xAI. This project does not use xAI or Grok logos.
 

@@ -43,6 +43,16 @@ def watch(pg):
     pg.on("console", lambda m: m.type == "error" and errors.append(f"console: {m.text}"))
     pg.on("requestfailed", req_failed)
     pg.on("response", lambda r: r.status >= 400 and not skip_net(r.url) and "fonts/KaTeX_" not in r.url and errors.append(f"HTTP {r.status}: {r.url}"))
+    def _hide_fun():
+        try:
+            pg.evaluate("() => document.querySelectorAll('.fun-overlay').forEach(el=>el.setAttribute('hidden',''))")
+        except Exception:
+            pass
+    try:
+        pg.add_locator_handler(pg.locator(".fun-overlay:not([hidden])"), _hide_fun)
+    except Exception:
+        pass
+
 def live_exact(pg, qid):
     return pg.evaluate("""(qid) => {
       const api=window.GrokiversityQuiz;
@@ -51,6 +61,7 @@ def live_exact(pg, qid):
     }""", qid)
 
 def answer(pg, qid, vals=None):
+    dismiss_fun(pg)
     if vals is None:
         vals = live_exact(pg, qid)
     loc = pg.locator("#Q" + qid.replace(".", "_"))
@@ -62,15 +73,23 @@ def answer(pg, qid, vals=None):
         inp.fill(v)
     loc.locator('[data-act="check"], button.btn').first.click(); return loc.locator(".fb").inner_text()
 def drag(pg, sel, dx, dy):
-    pg.evaluate(f"document.querySelector('{sel}').scrollIntoView({{block:'center',behavior:'instant'}})"); pg.wait_for_timeout(150)
+    pg.evaluate(f"document.querySelector('{sel}').scrollIntoView({{block:'nearest',behavior:'instant'}})"); pg.wait_for_timeout(150)
     b = pg.locator(sel).bounding_box(); assert b, f"no box for {sel}"
     x, y = b["x"] + b["width"]/2, b["y"] + b["height"]/2
     pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x + dx, y + dy, steps=10); pg.mouse.up()
+def dismiss_fun(pg):
+    try:
+        pg.evaluate("() => document.querySelectorAll('.fun-overlay').forEach(el=>el.setAttribute('hidden',''))")
+    except Exception:
+        pass
+
 def goto_concept(pg, c):
+    dismiss_fun(pg)
     pg.click("#conceptsBtn"); pg.wait_for_timeout(200)
     pg.click(f'#clist [data-c="{c}"]'); pg.wait_for_timeout(280)
     assert pg.is_visible(f"#c{c}"), f"concept {c} not visible"
 def goto_slide(pg, data_id):
+    dismiss_fun(pg)
     i = pg.evaluate("""(id) => {
       const c = [...document.querySelectorAll(".concept")].find(x => !x.hidden);
       return [...c.querySelectorAll(".slide")].findIndex(s => s.dataset.id === id);
@@ -724,7 +743,7 @@ with sync_playwright() as p:
     assert "Correct" in answer(pg2, "q1.3", q13["exact"])
     assert "Correct" in answer(pg2, "q1.4")
     print("AI C1 mastery:", pg2.inner_text("#mpct"))
-    pg2.click('#clist [data-c="2"]'); assert pg2.is_visible("#c2")
+    dismiss_fun(pg2); pg2.click('#clist [data-c="2"]'); assert pg2.is_visible("#c2")
     before = pg2.inner_text("#rmse"); drag(pg2, "#hW", 0, -40); after = pg2.inner_text("#rmse")
     print("Regression drag MSE:", before, "->", after); assert before != after
     pg2.click("#olsBtn"); print("OLS snap MSE:", pg2.inner_text("#rmse")); assert "0.450" in pg2.inner_text("#rmse") or "0.45" in pg2.inner_text("#rmse")
@@ -733,7 +752,7 @@ with sync_playwright() as p:
     assert "Correct" in answer(pg2, "q2.2")
     assert "Correct" in answer(pg2, "q2.3")
     assert "Correct" in answer(pg2, "q2.4")
-    pg2.click('#clist [data-c="3"]'); assert pg2.is_visible("#c3")
+    dismiss_fun(pg2); pg2.click('#clist [data-c="3"]'); assert pg2.is_visible("#c3")
     w0 = pg2.inner_text("#gdw"); pg2.click("#gdStep"); w1 = pg2.inner_text("#gdw")
     print("GD step w:", w0, "->", w1); assert w0 != w1
     pg2.locator("#gdSurf").scroll_into_view_if_needed(); pg2.screenshot(path=str(SHOTS / "desktop_12_ai_gd.png"))
@@ -741,7 +760,7 @@ with sync_playwright() as p:
     assert "Correct" in answer(pg2, "q3.2")
     assert "Correct" in answer(pg2, "q3.3")
     assert "Correct" in answer(pg2, "q3.4")
-    pg2.click('#clist [data-c="4"]'); assert pg2.is_visible("#c4")
+    dismiss_fun(pg2); pg2.click('#clist [data-c="4"]'); assert pg2.is_visible("#c4")
     out0 = pg2.inner_text("#aout")
     pg2.locator("#s1").evaluate("el => { el.value = 5; el.dispatchEvent(new Event('input',{bubbles:true})); }")
     out1 = pg2.inner_text("#aout"); print("Attention out:", out0, "->", out1); assert out0 != out1

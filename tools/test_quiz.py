@@ -153,8 +153,25 @@ PARSE_JS = r"""() => {
 def watch(pg, errors):
     pg.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
     pg.on("console", lambda m: m.type == "error" and errors.append(f"console: {m.text}"))
+    def _hide_fun():
+        try:
+            pg.evaluate("() => document.querySelectorAll('.fun-overlay').forEach(el=>el.setAttribute('hidden',''))")
+        except Exception:
+            pass
+    try:
+        pg.add_locator_handler(pg.locator(".fun-overlay:not([hidden])"), _hide_fun)
+    except Exception:
+        pass
+
+
+def dismiss_fun(pg):
+    try:
+        pg.evaluate("() => document.querySelectorAll('.fun-overlay').forEach(el=>el.setAttribute('hidden',''))")
+    except Exception:
+        pass
 
 def goto_concept(pg, c):
+    dismiss_fun(pg)
     pg.click("#conceptsBtn")
     pg.wait_for_timeout(150)
     pg.click(f'#clist [data-c="{c}"]')
@@ -162,6 +179,7 @@ def goto_concept(pg, c):
     assert pg.is_visible(f"#c{c}"), f"concept {c} not visible"
 
 def goto_slide(pg, data_id):
+    dismiss_fun(pg)
     pg.evaluate("""() => {
       document.querySelectorAll('.drawer.on, .drawer-back.on').forEach(el => el.classList.remove('on'));
     }""")
