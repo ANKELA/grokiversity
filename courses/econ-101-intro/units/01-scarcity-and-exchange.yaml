@@ -1,0 +1,282 @@
+# Grokeversity — Introduction to Economics — ECON 101 — Unit 1
+# License: CC BY-SA 4.0 (course content). All prose and problems are original.
+# They are written to the topic lists of MIT OCW 14.01 / 14.02 and OpenStax
+# Principles of Economics 3e (CC BY 4.0); those works are cited, not copied.
+# The playable quiz randomizes numbers with a seeded generator; values below
+# are a verified reference instance. tools/verify_quiz_random.py must stay green.
+id: econ-101-u01
+course_id: econ-101-intro
+title: "Unit 1 — Scarcity, Choice, and Exchange"
+version: 0.1.0
+status: draft-needs-human-review
+estimated_hours: 16
+mastery_threshold: 0.80
+conventions:
+  units: "Money uses $ (US dollars). Prices may use $/unit. Physical quantities of a good use units. Shares and rates use %. Time uses hours. Enter a whole number when the problem says to round; more precise answers within 1% still count. The playable quiz shows a unit menu on money, price, quantity, time, and percent fields."
+  opportunity_cost: "Opportunity cost is the value of the next-best alternative given up, including both explicit (out-of-pocket) costs and implicit (foregone) costs. Costs you would pay either way are not incremental and are not part of the opportunity cost of the choice."
+  ppf: "A production possibilities frontier (PPF) shows the maximum combinations of two goods that can be produced with given resources and technology. Points on the frontier are efficient, points inside are feasible but inefficient, and points outside are unattainable. A linear PPF has constant opportunity cost; a bowed-out PPF has increasing opportunity cost."
+  comparative_advantage: "Absolute advantage is the ability to produce more of a good with the same resources (or the same amount with fewer resources). Comparative advantage is the ability to produce a good at a lower opportunity cost. Mutually beneficial trade occurs at a relative price strictly between the two opportunity costs."
+  markets: "Price is drawn on the vertical axis and quantity on the horizontal axis. Market equilibrium is the price at which quantity demanded equals quantity supplied. Consumer surplus is the area under demand and above the price, up to the quantity traded. Producer surplus is the area above supply and below the price, up to the quantity traded."
+  significant_figures: "Report whole numbers when the answer is a whole number of dollars or units. Answers within ±1% (or the stated absolute tolerance) are accepted."
+references:
+  - "MIT OCW 14.01 Principles of Microeconomics, Fall 2018, https://ocw.mit.edu/courses/14-01-principles-of-microeconomics-fall-2018/"
+  - "MIT OCW 14.02 Principles of Macroeconomics, Spring 2014, https://ocw.mit.edu/courses/14-02-principles-of-macroeconomics-spring-2014/"
+  - "OpenStax, Principles of Economics 3e, CC BY 4.0, https://openstax.org/details/books/principles-economics-3e"
+prerequisites:
+  - "High-school algebra (lines, slopes, areas of triangles, rearranging equations)"
+  - "Comfortable with percentages and with reading a graph of two quantities"
+
+concepts:
+  # ------------------------------------------------------------------ 1
+  - id: c1-scarcity
+    title: "Scarcity, trade-offs, and opportunity cost"
+    prerequisites: []
+    objectives:
+      - "Explain scarcity as the condition that wants exceed available resources, so every choice has a trade-off."
+      - "Compute opportunity cost, including explicit and implicit costs, and leave out costs that are paid either way."
+      - "Distinguish accounting profit from economic profit."
+      - "Read a simple two-good trade-off (hours or a linear resource constraint) and state the opportunity cost of one more unit."
+    explanation_outline:
+      - "Scarcity: resources (time, money, labor, machines, land) are limited; wants are not. Economics studies how people make choices under scarcity."
+      - "A trade-off is what you give up when you use a resource in one way rather than another."
+      - "Opportunity cost of a choice = explicit costs of that choice + the value of the next-best alternative you give up. Ignore sunk or shared costs you would pay either way."
+      - "Accounting profit = revenue − explicit costs. Economic profit = revenue − explicit costs − implicit costs (economic profit = accounting profit − opportunity cost of the owner's resources)."
+      - "If all of a fixed resource can make X_max of good X or Y_max of good Y, the opportunity cost of one more X is Y_max/X_max units of Y (constant when the trade-off is linear)."
+    explanation_prompts:
+      - "What is the next-best thing this person could have done with the same time or money?"
+      - "Would they still pay this cost if they chose the other option? If yes, it is not incremental."
+    quiz:
+      - id: q1.1
+        difficulty: easy
+        type: numeric
+        prompt: "Maya can work an evening shift and earn $80, or she can go to a concert with a $25 ticket. She would have spent $15 on dinner either way. What is the opportunity cost, in dollars, of going to the concert?"
+        answers:
+          - {quantity: "opportunity cost", value: 105, unit: "$", tolerance_abs: 0.5}
+        hints:
+          - "Opportunity cost includes the ticket and the wages she gives up."
+          - "Dinner is paid either way, so it is not part of the cost of choosing the concert."
+        solution: "Explicit cost = $25. Implicit cost = $80 of foregone wages. Dinner ($15) is not incremental. Opportunity cost = 25 + 80 = $105."
+      - id: q1.2
+        difficulty: medium
+        type: numeric
+        prompt: "Jordan currently earns $40,000 in a job. He is considering opening a workshop. The workshop would bring in $90,000 of revenue and $30,000 of explicit costs, and he would leave the job. What is his accounting profit, and what is his economic profit, in dollars?"
+        answers:
+          - {quantity: "accounting profit", value: 60000, unit: "$", tolerance_abs: 0.5}
+          - {quantity: "economic profit", value: 20000, unit: "$", tolerance_abs: 0.5}
+        hints:
+          - "Accounting profit subtracts only explicit costs from revenue."
+          - "Economic profit also subtracts the implicit cost of the job he would leave."
+        solution: "Accounting profit = 90,000 − 30,000 = $60,000. Implicit cost = $40,000 of foregone wages. Economic profit = 60,000 − 40,000 = $20,000."
+      - id: q1.3
+        difficulty: medium
+        type: numeric
+        prompt: "A workshop can use all of a day's resources to make 8 tables or 24 chairs (or any linear mix of the two). What is the opportunity cost of making one more table?"
+        answers:
+          - {quantity: "OC of one table", value: 3, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "The opportunity cost of one table is how many chairs you give up."
+          - "That ratio is constant on a linear trade-off: 24/8."
+        solution: "All resources → 8 tables or 24 chairs. Opportunity cost of 1 table = 24/8 = 3 chairs (enter 3 units)."
+      - id: q1.4
+        difficulty: hard
+        type: numeric
+        prompt: "A year of college costs $12,000 in tuition and $800 in books. The dorm is $9,000; she would have paid $9,000 in rent either way. If she does not attend she would earn $18,000 at a job. What is the opportunity cost, in dollars, of attending college this year?"
+        answers:
+          - {quantity: "opportunity cost", value: 30800, unit: "$", tolerance_abs: 0.5}
+        hints:
+          - "Add tuition, books, and foregone wages."
+          - "Housing is $9,000 either way, so it does not add to the opportunity cost."
+        solution: "Incremental costs = tuition $12,000 + books $800 + foregone wages $18,000. Extra housing = 9,000 − 9,000 = 0. Opportunity cost = $30,800."
+
+  # ------------------------------------------------------------------ 2
+  - id: c2-ppf
+    title: "The production possibilities frontier"
+    prerequisites: ["c1-scarcity"]
+    objectives:
+      - "Sketch a PPF and classify a point as inefficient, efficient, or unattainable."
+      - "Compute output of one good on a linear PPF given output of the other."
+      - "Compute the opportunity cost of moving along a linear PPF and along a bowed-out (increasing-cost) PPF given a table."
+      - "Measure unused capacity: how much more of one good can be produced without cutting the other."
+    explanation_outline:
+      - "The PPF is the boundary of feasible production. On the frontier: efficient (no unused resources). Inside: feasible but inefficient. Outside: unattainable with current resources and technology."
+      - "A linear PPF has constant opportunity cost: Y = Y_max − (Y_max/X_max) X, so the opportunity cost of one more X is Y_max/X_max units of Y."
+      - "A bowed-out PPF (concave from the origin) has increasing opportunity cost: each extra unit of X costs more Y than the last, because resources are not equally well suited to both goods."
+      - "Growth in resources or technology shifts the PPF outward. A point inside the current PPF means some resources are idle or misallocated."
+    explanation_prompts:
+      - "Is this point on, inside, or outside the frontier?"
+      - "What do you give up to get one more unit of X from here?"
+    quiz:
+      - id: q2.1
+        difficulty: easy
+        type: numeric
+        prompt: "A linear PPF runs from 10 units of wheat (and no cloth) to 20 units of cloth (and no wheat). If the economy produces 4 units of wheat and is on the frontier, how many units of cloth does it produce?"
+        answers:
+          - {quantity: "cloth", value: 12, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "On a linear PPF, cloth = 20 − (20/10) × wheat."
+          - "Each unit of wheat costs 2 units of cloth."
+        solution: "Cloth = 20 − 2 × 4 = 12 units."
+      - id: q2.2
+        difficulty: medium
+        type: numeric
+        prompt: "A linear PPF runs from 8 computers (and no phones) to 24 phones (and no computers). What is the opportunity cost of producing one more computer?"
+        answers:
+          - {quantity: "OC of one computer", value: 3, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "The constant slope is phones given up per computer."
+          - "That ratio is 24/8."
+        solution: "Opportunity cost of 1 computer = 24/8 = 3 phones (enter 3 units)."
+      - id: q2.3
+        difficulty: medium
+        type: numeric
+        prompt: "A bowed-out PPF for robots (X) and pizzas (Y) has the feasible efficient points (robots, pizzas) = (0, 20), (1, 19), (2, 17), (3, 14), (4, 10), (5, 5), (6, 0). What is the opportunity cost of the 3rd robot (moving from 2 robots to 3)?"
+        answers:
+          - {quantity: "OC of the 3rd robot", value: 3, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "The opportunity cost of the 3rd robot is the pizzas you lose between 2 and 3 robots."
+          - "Read the two pizza totals in the table and subtract."
+        solution: "At 2 robots, pizzas = 17. At 3 robots, pizzas = 14. Opportunity cost of the 3rd robot = 17 − 14 = 3 pizzas (enter 3 units)."
+      - id: q2.4
+        difficulty: hard
+        type: numeric
+        prompt: "The same linear PPF as in q2.1: 10 wheat or 20 cloth. The economy is at (4 wheat, 8 cloth). Holding wheat at 4, how many more units of cloth can it produce if it reaches the frontier?"
+        answers:
+          - {quantity: "additional cloth", value: 4, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "First find the maximum cloth at 4 wheat on the frontier."
+          - "Subtract the cloth they already make."
+        solution: "On the frontier at 4 wheat, cloth = 20 − 2 × 4 = 12. They make 8, so they can add 12 − 8 = 4 units of cloth without cutting wheat. The starting point is inside the PPF (inefficient)."
+
+  # ------------------------------------------------------------------ 3
+  - id: c3-comparative-advantage
+    title: "Comparative advantage and trade"
+    prerequisites: ["c2-ppf"]
+    objectives:
+      - "Distinguish absolute advantage from comparative advantage."
+      - "Compute each party's opportunity cost of a good from a productivity table."
+      - "State the range of mutually beneficial terms of trade."
+      - "Compute the gains from specialization and trade relative to a stated autarky (no-trade) basket."
+    explanation_outline:
+      - "Absolute advantage: produce more of a good with the same resources (or use fewer resources for the same output)."
+      - "Comparative advantage: produce a good at a lower opportunity cost than the other party. A party can have the absolute advantage in both goods and still have a comparative advantage in only one."
+      - "The opportunity cost of one unit of X is (productivity in Y) / (productivity in X) units of Y."
+      - "Mutually beneficial terms of trade for X, measured in units of Y per unit of X, lie strictly between the two opportunity costs. The low-cost producer of X exports X."
+      - "Specialize according to comparative advantage, then trade. Gains from trade are extra consumption of each good relative to autarky."
+    explanation_prompts:
+      - "Who gives up less of the other good to make one more unit of this one?"
+      - "Is this relative price between the two opportunity costs?"
+    quiz:
+      - id: q3.1
+        difficulty: easy
+        type: numeric
+        prompt: "In a week, Ava can assemble 40 computers and Ben can assemble 24 computers, each working the same number of hours. How many more computers per week does Ava produce than Ben? (This gap is her absolute advantage in computers, in units per week.)"
+        answers:
+          - {quantity: "Ava's extra computers", value: 16, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "Absolute advantage is about who produces more with the same resources."
+          - "Subtract Ben's weekly output from Ava's."
+        solution: "Ava produces 40 − 24 = 16 more computers per week than Ben. She has the absolute advantage in computers."
+      - id: q3.2
+        difficulty: medium
+        type: numeric
+        prompt: "Ava can bake 2 loaves of bread per hour or weave 4 bolts of cloth per hour. Ben can bake 1 loaf per hour or weave 5 bolts per hour. What is each person's opportunity cost of one loaf of bread, in bolts of cloth?"
+        answers:
+          - {quantity: "Ava's OC of one loaf", value: 2, unit: "units", tolerance_abs: 0.05}
+          - {quantity: "Ben's OC of one loaf", value: 5, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "Ava's opportunity cost of 1 loaf is how much cloth she could have woven in that hour, divided by her loaves per hour."
+          - "Do the same ratio for Ben. The lower opportunity cost identifies comparative advantage in bread."
+        solution: "Ava: 4/2 = 2 bolts of cloth per loaf. Ben: 5/1 = 5 bolts per loaf. Ava has the comparative advantage in bread (and Ben in cloth)."
+      - id: q3.3
+        difficulty: medium
+        type: numeric
+        prompt: "Using the opportunity costs from q3.2 (Ava 2 cloth per loaf, Ben 5 cloth per loaf), mutually beneficial trade occurs when one loaf of bread trades for more than how many bolts of cloth, and fewer than how many bolts of cloth?"
+        answers:
+          - {quantity: "more than", value: 2, unit: "units", tolerance_abs: 0.05}
+          - {quantity: "fewer than", value: 5, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "The terms of trade must beat each trader's opportunity cost."
+          - "Ava will export bread only if she gets more cloth per loaf than she can make herself. Ben will import bread only if he pays less cloth than it would cost him to bake it."
+        solution: "Ava's OC is 2 and Ben's is 5, so a mutually beneficial price satisfies 2 < cloth per loaf < 5. Enter 2 and 5."
+      - id: q3.4
+        difficulty: hard
+        type: numeric
+        prompt: "Ava has 8 hours and can make 4 loaves of bread per hour or 2 bolts of cloth per hour. Ben has 8 hours and can make 1 loaf per hour or 2 bolts of cloth per hour. In autarky each spends 4 hours on each good. Then they specialize according to comparative advantage and trade 10 loaves for 10 bolts of cloth. How many more loaves and how many more bolts of cloth does Ava consume than in autarky?"
+        answers:
+          - {quantity: "Ava's extra loaves", value: 6, unit: "units", tolerance_abs: 0.05}
+          - {quantity: "Ava's extra cloth", value: 2, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "Ava's opportunity cost of bread is 2/4 = 0.5 cloth; Ben's is 2/1 = 2 cloth. Ava specializes in bread, Ben in cloth."
+          - "Ava's autarky basket is 16 loaves and 8 cloth. After trade she keeps 32 − 10 = 22 loaves and receives 10 cloth."
+        solution: "Ava specializes in bread: 8 × 4 = 32 loaves. She trades away 10 loaves and receives 10 cloth, so she consumes 22 loaves and 10 cloth. Autarky: 4 × 4 = 16 loaves and 4 × 2 = 8 cloth. Gains: 22 − 16 = 6 loaves and 10 − 8 = 2 cloth."
+
+  # ------------------------------------------------------------------ 4
+  - id: c4-markets
+    title: "Markets: a first look at supply and demand"
+    prerequisites: ["c3-comparative-advantage"]
+    objectives:
+      - "Find the equilibrium price and quantity of a linear market."
+      - "Compute a shortage or surplus at a price other than equilibrium (quantity demanded minus quantity supplied)."
+      - "Show how a parallel shift of demand or supply changes equilibrium price and quantity."
+      - "Compute consumer surplus and producer surplus at equilibrium for linear curves (triangle areas)."
+    explanation_outline:
+      - "The demand curve slopes down: at a higher price, buyers want less. The supply curve slopes up: at a higher price, sellers offer more. Price is on the vertical axis; quantity is on the horizontal axis."
+      - "Equilibrium (P*, Q*) is where Qd(P*) = Qs(P*). For Qd = A − B P and Qs = C + D P, P* = (A − C)/(B + D) and Q* = A − B P*."
+      - "If a posted price is below P*, Qd > Qs: a shortage of Qd − Qs. If it is above P*, Qs > Qd: a surplus of Qs − Qd (equivalently, Qd − Qs is negative)."
+      - "An increase in demand (Qd shifts right) raises P* and Q*. An increase in supply (Qs shifts right) lowers P* and raises Q*."
+      - "For linear demand P = a − b Q and linear supply P = c + d Q, consumer surplus at equilibrium is (1/2)(a − P*) Q* and producer surplus is (1/2)(P* − c) Q*."
+    explanation_prompts:
+      - "At this price, who wants more — buyers or sellers?"
+      - "If this curve shifts, which way do P* and Q* move?"
+    quiz:
+      - id: q4.1
+        difficulty: easy
+        type: numeric
+        prompt: "Demand is Qd = 100 − 2P and supply is Qs = 20 + 2P, with P in dollars per unit. Find the equilibrium price, in dollars per unit, and the equilibrium quantity."
+        answers:
+          - {quantity: "P*", value: 20, unit: "$/unit", tolerance_abs: 0.05}
+          - {quantity: "Q*", value: 60, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "Set quantity demanded equal to quantity supplied and solve for P."
+          - "Then plug P* back into either equation to get Q*."
+        solution: "100 − 2P = 20 + 2P ⇒ 80 = 4P ⇒ P* = $20 per unit. Q* = 100 − 2 × 20 = 60 units."
+      - id: q4.2
+        difficulty: medium
+        type: numeric
+        prompt: "In the same market (Qd = 100 − 2P, Qs = 20 + 2P), the posted price is $15 per unit. What is Qd − Qs at that price? (A positive number is a shortage; a negative number is a surplus.)"
+        answers:
+          - {quantity: "Qd − Qs", value: 20, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "Plug P = 15 into both equations."
+          - "Subtract quantity supplied from quantity demanded."
+        solution: "Qd = 100 − 30 = 70. Qs = 20 + 30 = 50. Qd − Qs = 20 units (a shortage of 20)."
+      - id: q4.3
+        difficulty: medium
+        type: numeric
+        prompt: "Start from Qd = 100 − 2P and Qs = 20 + 2P. Demand increases so the new demand is Qd = 120 − 2P. Supply is unchanged. Find the new equilibrium price, in dollars per unit, and the new equilibrium quantity."
+        answers:
+          - {quantity: "new P*", value: 25, unit: "$/unit", tolerance_abs: 0.05}
+          - {quantity: "new Q*", value: 70, unit: "units", tolerance_abs: 0.05}
+        hints:
+          - "Set the new demand equal to the original supply."
+          - "An increase in demand should raise both P* and Q*."
+        solution: "120 − 2P = 20 + 2P ⇒ 100 = 4P ⇒ P* = $25 per unit. Q* = 120 − 2 × 25 = 70 units."
+      - id: q4.4
+        difficulty: hard
+        type: numeric
+        prompt: "In the original market of q4.1, demand can be written P = 50 − (1/2) Q and supply P = −10 + (1/2) Q, with P in dollars per unit. At the equilibrium you found (P* = 20, Q* = 60), what is consumer surplus and what is producer surplus, in dollars?"
+        answers:
+          - {quantity: "consumer surplus", value: 900, unit: "$", tolerance_abs: 0.5}
+          - {quantity: "producer surplus", value: 900, unit: "$", tolerance_abs: 0.5}
+        hints:
+          - "Consumer surplus is the triangle (1/2) × (demand intercept − P*) × Q*."
+          - "Producer surplus is the triangle (1/2) × (P* − supply intercept) × Q*. The demand intercept is 50; the supply intercept is −10."
+        solution: "CS = (1/2) × (50 − 20) × 60 = (1/2) × 30 × 60 = $900. PS = (1/2) × (20 − (−10)) × 60 = (1/2) × 30 × 60 = $900."
+
+unit_exam:
+  timed_minutes: 75
+  closed_book: true
+  allowed: ["scientific calculator", "one handwritten formula sheet"]
+  draw: "6 problems from a randomized bank of parametrized items (new numbers each attempt): 1 opportunity-cost or economic-profit item, 1 linear or bowed PPF item, 1 unused-capacity or growth item, 1 comparative-advantage or terms-of-trade item, 1 gains-from-trade item, 1 supply-demand equilibrium or surplus/shortage or CS/PS item."
+  pass_threshold: 0.80
+  retake_policy: "New randomized form after 24 h and a targeted review of missed concepts."

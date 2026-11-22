@@ -173,6 +173,20 @@ const AI_TRACK = {
 if($('#aiGrid')){
   $('#aiGrid').innerHTML = Object.entries(AI_TRACK).map(([y,cs])=>`<div class="year"><h4>${y}</h4>${cs.map(c=> `<div class="course"><span>${c.includes('Unit 1')?'AI 101 · '+c:c}</span><span class="badge">Coming soon</span></div>`).join('')}</div>`).join('');
 }
+function econLessonUrl(){
+  const base=asset('econ/unit-1.html');
+  return ASSET_V ? base+'?v='+ASSET_V : base;
+}
+const ECON_TRACK = {
+  'Foundations': ['Scarcity, Choice, and Exchange (Unit 1)','Supply and Demand','Elasticity','Government Intervention'],
+  'Microeconomics': ['Consumer Choice','Costs and Production','Market Structures','Externalities and Public Goods'],
+  'Macroeconomics': ['GDP and Measurement','Inflation and Unemployment','Money, Monetary Policy, and Fiscal Policy']
+};
+if($('#econGrid')){
+  $('#econGrid').innerHTML = Object.entries(ECON_TRACK).map(([y,cs])=>`<div class="year"><h4>${y}</h4>${cs.map(c=> c.includes('Unit 1')
+    ? `<a class="course live" href="${econLessonUrl()}"><span>ECON 101 · ${c}</span><span class="badge">Play now</span></a>`
+    : `<div class="course"><span>${c}</span><span class="badge">Coming soon</span></div>`).join('')}</div>`).join('');
+}
 
 /* ---------- copy tutor prompt ---------- */
 async function copyPrompt(){

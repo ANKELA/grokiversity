@@ -1,0 +1,31 @@
+id: econ-101-intro
+degree: introduction-to-economics
+title: "ECON 101 — Introduction to Economics"
+credits_equivalent: 3
+study_hours: 120-150
+prerequisites: []
+corequisites: []
+benchmark_syllabi:
+  - "MIT 14.01 Principles of Microeconomics — https://ocw.mit.edu/courses/14-01-principles-of-microeconomics-fall-2018/"
+  - "MIT 14.02 Principles of Macroeconomics — https://ocw.mit.edu/courses/14-02-principles-of-macroeconomics-spring-2014/"
+  - "OpenStax Principles of Economics 3e (CC BY 4.0) — https://openstax.org/details/books/principles-economics-3e"
+textbooks:
+  - "OpenStax, Principles of Economics 3e (CC BY 4.0) — https://openstax.org/details/books/principles-economics-3e"
+  - "Mankiw, Principles of Economics (Cengage) — cited as a common university standard, not copied"
+units:
+  - {id: econ-101-u01, file: units/01-scarcity-and-exchange.yaml, hours: 16, status: draft-needs-human-review}
+  - {id: econ-101-u02, title: "Supply and demand", hours: 12, status: planned}
+  - {id: econ-101-u03, title: "Elasticity", hours: 10, status: planned}
+  - {id: econ-101-u04, title: "Government intervention: price controls, taxes, and deadweight loss", hours: 12, status: planned}
+  - {id: econ-101-u05, title: "Consumer choice", hours: 10, status: planned}
+  - {id: econ-101-u06, title: "Costs and production", hours: 12, status: planned}
+  - {id: econ-101-u07, title: "Market structures", hours: 12, status: planned}
+  - {id: econ-101-u08, title: "Externalities and public goods", hours: 10, status: planned}
+  - {id: econ-101-u09, title: "GDP and measurement", hours: 10, status: planned}
+  - {id: econ-101-u10, title: "Inflation and unemployment", hours: 10, status: planned}
+  - {id: econ-101-u11, title: "Money, monetary policy, and fiscal policy", hours: 12, status: planned}
+  - {id: econ-101-u12, title: "Open-economy introduction and review", hours: 8, status: planned}
+assessment:
+  problem_sets: "One graded set per unit, 10-15 end-of-chapter-level problems, ≥80% to pass."
+  unit_exams: "Timed, closed-book, randomized; ≥80%."
+  final_exam: "Cumulative, 3 h, randomized; ≥80%; identity-checked for certificate."

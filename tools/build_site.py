@@ -34,6 +34,7 @@ def embed(html_path, prompt_src, dest_md=None):
 
 n_me = embed(SITE / "statics" / "unit-1.html", ROOT / "tutor/TUTOR_PROMPT.md", SITE / "tutor-prompt.md")
 n_ai = embed(SITE / "intro-ai.html", ROOT / "tutor/TUTOR_PROMPT_AI.md", SITE / "tutor-prompt-ai.md")
+n_econ = embed(SITE / "econ" / "unit-1.html", ROOT / "tutor/TUTOR_PROMPT_ECON.md", SITE / "tutor-prompt-econ.md")
 # Landing has no tutor prompt; still rewrite absolute OG URLs when --base-url is set.
 index = SITE / "index.html"
 index.write_text(rewrite_meta(index, index.read_text()))
@@ -43,17 +44,18 @@ index.write_text(rewrite_meta(index, index.read_text()))
 import hashlib
 def asset_ver():
     h=hashlib.sha256()
-    for p in (SITE/'app.css', SITE/'app.js', SITE/'ai.js', SITE/'fun.js', SITE/'quiz-rand.js'):
+    for p in (SITE/'app.css', SITE/'app.js', SITE/'ai.js', SITE/'econ.js', SITE/'fun.js', SITE/'quiz-rand.js'):
         h.update(p.read_bytes())
     return h.hexdigest()[:8]
 def stamp_assets(html_path, ver):
     html=html_path.read_text()
-    html=re.sub(r'((?:href|src)=")([^"]*(?:app\.(?:css|js)|ai\.js|fun\.js|quiz-rand\.js))(?:\?v=[^"]*)?(")', rf'\1\2?v={ver}\3', html)
+    html=re.sub(r'((?:href|src)=")([^"]*(?:app\.(?:css|js)|ai\.js|econ\.js|fun\.js|quiz-rand\.js))(?:\?v=[^"]*)?(")', rf'\1\2?v={ver}\3', html)
     html=re.sub(r'(statics/unit-1\.html)\?v=[^"\'&]+', rf'\1?v={ver}', html)
+    html=re.sub(r'(econ/unit-1\.html)\?v=[^"\'&]+', rf'\1?v={ver}', html)
     html=re.sub(r'(href=")(intro-ai\.html)(?:\?v=[^"]*)?(")', rf'\1\2?v={ver}\3', html)
     html_path.write_text(html)
 _ver=asset_ver()
-for _p in (SITE/'statics'/'unit-1.html', SITE/'index.html', SITE/'intro-ai.html', SITE/'about.html'):
+for _p in (SITE/'statics'/'unit-1.html', SITE/'econ'/'unit-1.html', SITE/'index.html', SITE/'intro-ai.html', SITE/'about.html'):
     stamp_assets(_p, _ver)
 
 
@@ -82,4 +84,4 @@ for (dx, dy), c in [((-50, -120), "#ff8a65"), ((130, -50), "#4dd0e1"), ((85, -16
     d.line([ox, oy, ox + dx, oy + dy], fill=c, width=9)
 d.ellipse([ox - 10, oy - 10, ox + 10, oy + 10], fill="#e8eaf6")
 d.text((70, 560), "Community project · not affiliated with xAI · not an accredited degree", font=f("DejaVuSans.ttf", 21), fill="#7a83b5")
-im.save(A / "og.png"); print("built:", [p.name for p in A.iterdir()], "| prompts:", n_me, n_ai, "| base-url:", args.base_url or "(relative)")
+im.save(A / "og.png"); print("built:", [p.name for p in A.iterdir()], "| prompts:", n_me, n_ai, n_econ, "| base-url:", args.base_url or "(relative)")

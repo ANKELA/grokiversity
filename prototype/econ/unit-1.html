@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en" class="lesson-page" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<title>ECON 101 Introduction to Economics · Unit 1 — Grokeversity</title>
+<meta name="description" content="Interactive single-screen slides for ECON 101, Unit 1: scarcity, opportunity cost, the PPF, comparative advantage, and a first look at supply and demand.">
+<meta name="theme-color" content="#0f1220">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Grokeversity">
+<meta property="og:title" content="ECON 101 · Unit 1 — Grokeversity">
+<meta property="og:description" content="Interactive slides for Introduction to Economics, Unit 1. Drag the diagrams, build the math one piece at a time, and prove mastery with strict quizzes.">
+<meta property="og:image" content="https://ankela.github.io/grokeversity/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Grokeversity: university-level lessons in Statics and Introduction to Economics.">
+<meta property="og:url" content="https://ankela.github.io/grokeversity/econ/unit-1.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ECON 101 · Unit 1 — Grokeversity">
+<meta name="twitter:description" content="Interactive single-screen slides for Introduction to Economics, Unit 1, with strict mastery quizzes.">
+<meta name="twitter:image" content="https://ankela.github.io/grokeversity/assets/og.png">
+<meta name="twitter:image:alt" content="Grokeversity: university-level lessons in Statics and Introduction to Economics.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../app.css?v=8d69e811">
+</head>
+<body>
+<div class="lesson-app" id="lessonApp">
+  <header class="lesson-top">
+    <a class="logo" href="../index.html"><img src="../assets/favicon.svg" alt=""><span>Grok<b>e</b>versity</span></a>
+    <a class="home-link" href="../index.html">Home</a>
+    <div class="crumb" id="crumb">ECON 101 › Unit 1 › Concept 1</div>
+    <span id="slidePos">1 / 1</span>
+    <button type="button" class="btn ghost sm" id="conceptsBtn" aria-expanded="false">Concepts</button>
+    <button type="button" class="btn ghost sm" id="tutorBtn" aria-expanded="false">Tutor</button>
+  </header>
+
+  <div class="stage-wrap" id="stageWrap">
+
+    <div id="c1" class="concept">
+      <div class="stage">
+        <article class="slide on" data-id="oc">
+          <h2>A scarce day</h2>
+          <div class="viz">
+            <svg class="diagram" id="ocSvg" viewBox="0 0 520 220" role="img" aria-label="A day split between work and study"></svg>
+            <div class="readout">
+              <div class="row"><span>Work</span><span id="ocWork"></span></div>
+              <div class="row"><span>Study</span><span id="ocStudy"></span></div>
+              <div class="row"><span>Earnings</span><span id="ocEarn"></span></div>
+              <div class="row"><span>Exam points</span><span id="ocPts"></span></div>
+              <div class="row"><span>Cost of 1 more hour of study</span><span id="ocCost"></span></div>
+              <p class="sub">Work pays $16 an hour. Study adds 4 exam points an hour.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="oc-math">
+          <h2>Opportunity cost</h2>
+          <p>Wants exceed resources, so every choice has a <b>trade-off</b>.</p>
+          <p>The <b>opportunity cost</b> of a choice is the value of the next-best alternative you give up, plus any extra money you pay for that choice. Skip costs you would pay either way.</p>
+          <p>Accounting profit \(=\text{revenue}-\text{explicit costs}\). Economic profit also subtracts implicit costs, such as a wage you give up.</p>
+        </article>
+
+        <article class="slide" data-id="check-oc">
+          <h2>Check yourself</h2>
+          <p>You skip a $20 shift to see a $12 movie. Dinner would have cost $10 either way. What is the opportunity cost of the movie?</p>
+          <div class="check" data-check="c1oc">
+            <div class="inrow"><label>Opportunity cost<br><input placeholder="value $"></label></div>
+            <button type="button" class="btn">Check</button>
+            <div class="fb"></div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="quiz-q1-1"><h2>Practice · easy</h2><p class="sub">Round to the nearest whole number in the unit shown in the menu. More precise answers within 1% still count.</p><div class="q-mount" data-q="q1.1"></div></article>
+        <article class="slide" data-id="quiz-q1-2"><h2>Practice · medium</h2><div class="q-mount" data-q="q1.2"></div></article>
+        <article class="slide" data-id="quiz-q1-3"><h2>Practice · medium</h2><div class="q-mount" data-q="q1.3"></div></article>
+        <article class="slide" data-id="quiz-q1-4"><h2>Practice · hard</h2><div class="q-mount" data-q="q1.4"></div></article>
+      </div>
+    </div>
+
+    <div id="c2" class="concept" hidden>
+      <div class="stage">
+        <article class="slide on" data-id="ppf">
+          <h2>The production possibilities frontier</h2>
+          <div class="viz">
+            <svg class="diagram" id="ppfSvg" viewBox="0 0 520 300" role="img" aria-label="A bowed production possibilities frontier you can drag"></svg>
+            <div class="readout">
+              <div class="row"><span>Pizzas</span><span id="ppfX"></span></div>
+              <div class="row"><span>Robots</span><span id="ppfY"></span></div>
+              <div class="row"><span>Status</span><span id="ppfStatus"></span></div>
+              <div class="row"><span>Cost of 1 more pizza</span><span id="ppfOC"></span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="ppf-math">
+          <h2>On, inside, or outside</h2>
+          <p>A point <b>on</b> the frontier is efficient. A point <b>inside</b> is feasible but inefficient. A point <b>outside</b> is unattainable with current resources and technology.</p>
+          <p>A linear PPF has constant opportunity cost: \(Y=Y_{\max}-\dfrac{Y_{\max}}{X_{\max}}X\). The cost of one more \(X\) is \(\dfrac{Y_{\max}}{X_{\max}}\) units of \(Y\).</p>
+          <p>A bowed-out PPF has <b>increasing</b> opportunity cost: each extra pizza costs more robots than the last.</p>
+        </article>
+
+        <article class="slide" data-id="check-ppf">
+          <h2>Check yourself</h2>
+          <p>A factory is running with idle machines, so it produces a mix that is feasible but not on the frontier. That point is:</p>
+          <div class="check" data-check="c2in">
+            <div class="choices">
+              <button type="button" data-v="outside">Unattainable</button>
+              <button type="button" data-v="on">Efficient</button>
+              <button type="button" data-v="inside">Inefficient (inside)</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="quiz-q2-1"><h2>Practice · easy</h2><p class="sub">Round to the nearest whole number in the unit shown in the menu. More precise answers within 1% still count.</p><div class="q-mount" data-q="q2.1"></div></article>
+        <article class="slide" data-id="quiz-q2-2"><h2>Practice · medium</h2><div class="q-mount" data-q="q2.2"></div></article>
+        <article class="slide" data-id="quiz-q2-3"><h2>Practice · medium</h2><div class="q-mount" data-q="q2.3"></div></article>
+        <article class="slide" data-id="quiz-q2-4"><h2>Practice · hard</h2><div class="q-mount" data-q="q2.4"></div></article>
+      </div>
+    </div>
+
+    <div id="c3" class="concept" hidden>
+      <div class="stage">
+        <article class="slide on" data-id="trade">
+          <h2>Two countries, two goods</h2>
+          <div class="viz">
+            <svg class="diagram" id="tradeSvg" viewBox="0 0 520 280" role="img" aria-label="Two linear production frontiers you can drag"></svg>
+            <div class="readout">
+              <div class="row"><span>Ava produces</span><span id="trAX"></span></div>
+              <div class="row"><span></span><span id="trAY"></span></div>
+              <div class="row"><span>Ben produces</span><span id="trBX"></span></div>
+              <div class="row"><span></span><span id="trBY"></span></div>
+              <div class="row"><span>World total</span><span id="trTot"></span></div>
+              <div class="row"><span>Ava’s cost of bread</span><span id="trOCA"></span></div>
+              <div class="row"><span>Ben’s cost of bread</span><span id="trOCB"></span></div>
+              <div class="row"><span>Comparative advantage</span><span id="trCA"></span></div>
+              <button type="button" class="btn sm" id="specializeBtn">Specialize</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="trade-math">
+          <h2>Comparative advantage</h2>
+          <p><b>Absolute advantage</b> is the ability to produce more with the same resources. <b>Comparative advantage</b> is the ability to produce at a lower opportunity cost.</p>
+          <p>The opportunity cost of one unit of \(X\) is \(\dfrac{\text{output of }Y\text{ per hour}}{\text{output of }X\text{ per hour}}\) units of \(Y\).</p>
+          <p>Mutually beneficial terms of trade for \(X\), measured in units of \(Y\) per \(X\), lie <em>strictly between</em> the two opportunity costs. Specialize, then trade, and compare with autarky (no trade).</p>
+        </article>
+
+        <article class="slide" data-id="check-ca">
+          <h2>Check yourself</h2>
+          <p>Ava’s opportunity cost of one bread is 0.5 cloth. Ben’s is 2 cloth. Who has the comparative advantage in bread?</p>
+          <div class="check" data-check="c3ca">
+            <div class="choices">
+              <button type="button" data-v="ben">Ben</button>
+              <button type="button" data-v="ava">Ava</button>
+              <button type="button" data-v="both">Both equally</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="quiz-q3-1"><h2>Practice · easy</h2><p class="sub">Round to the nearest whole number in the unit shown in the menu. More precise answers within 1% still count.</p><div class="q-mount" data-q="q3.1"></div></article>
+        <article class="slide" data-id="quiz-q3-2"><h2>Practice · medium</h2><div class="q-mount" data-q="q3.2"></div></article>
+        <article class="slide" data-id="quiz-q3-3"><h2>Practice · medium</h2><div class="q-mount" data-q="q3.3"></div></article>
+        <article class="slide" data-id="quiz-q3-4"><h2>Practice · hard</h2><div class="q-mount" data-q="q3.4"></div></article>
+      </div>
+    </div>
+
+    <div id="c4" class="concept" hidden>
+      <div class="stage">
+        <article class="slide on" data-id="sd">
+          <h2>Supply and demand</h2>
+          <div class="viz">
+            <svg class="diagram" id="sdSvg" viewBox="0 0 520 300" role="img" aria-label="Supply and demand curves you can drag, with a posted price"></svg>
+            <div class="readout">
+              <div class="row"><span>Equilibrium price</span><span id="sdPstar"></span></div>
+              <div class="row"><span>Equilibrium quantity</span><span id="sdQstar"></span></div>
+              <div class="row"><span>Posted price</span><span id="sdPosted"></span></div>
+              <div class="row"><span>Quantity demanded</span><span id="sdQd"></span></div>
+              <div class="row"><span>Quantity supplied</span><span id="sdQs"></span></div>
+              <div class="row"><span>Gap</span><span id="sdGap"></span></div>
+              <div class="row"><span>Consumer surplus</span><span id="sdCS"></span></div>
+              <div class="row"><span>Producer surplus</span><span id="sdPS"></span></div>
+              <p class="sub">Cyan is demand, coral is supply. Surplus triangles appear at equilibrium.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="sd-math">
+          <h2>Equilibrium, shortages, and surplus</h2>
+          <p>Price is on the vertical axis; quantity is on the horizontal axis. For \(Q_d=A-BP\) and \(Q_s=C+DP\),</p>
+          <p>\[P^*=\frac{A-C}{B+D},\qquad Q^*=A-BP^*.\]</p>
+          <p>If the posted price is below \(P^*\), \(Q_d>Q_s\): a shortage. If it is above \(P^*\), there is a surplus.</p>
+          <p>For inverse demand \(P=a-bQ\) and supply \(P=c+dQ\), consumer surplus is \(\tfrac12(a-P^*)Q^*\) and producer surplus is \(\tfrac12(P^*-c)Q^*\).</p>
+        </article>
+
+        <article class="slide" data-id="check-sd">
+          <h2>Check yourself</h2>
+          <p>Demand increases (the demand curve shifts right) and supply does not change. What happens to equilibrium price and quantity?</p>
+          <div class="check" data-check="c4dir">
+            <div class="choices">
+              <button type="button" data-v="pdown">\(P^*\) falls, \(Q^*\) rises</button>
+              <button type="button" data-v="both">Both \(P^*\) and \(Q^*\) rise</button>
+              <button type="button" data-v="qdown">\(P^*\) rises, \(Q^*\) falls</button>
+            </div>
+            <div class="fb"></div>
+          </div>
+        </article>
+
+        <article class="slide" data-id="quiz-q4-1"><h2>Practice · easy</h2><p class="sub">Round to the nearest whole number in the unit shown in the menu. More precise answers within 1% still count.</p><div class="q-mount" data-q="q4.1"></div></article>
+        <article class="slide" data-id="quiz-q4-2"><h2>Practice · medium</h2><div class="q-mount" data-q="q4.2"></div></article>
+        <article class="slide" data-id="quiz-q4-3"><h2>Practice · medium</h2><div class="q-mount" data-q="q4.3"></div></article>
+        <article class="slide" data-id="quiz-q4-4"><h2>Practice · hard</h2><div class="q-mount" data-q="q4.4"></div></article>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="slide-nav">
+    <button type="button" class="btn ghost sm" id="prevSlide">Back</button>
+    <div class="dots" id="dots"></div>
+    <button type="button" class="btn sm" id="nextSlide">Next</button>
+  </div>
+</div>
+
+<div class="drawer-back" id="conceptsBack" hidden></div>
+<aside class="drawer drawer-left" id="conceptsDrawer" hidden>
+  <h4>ECON 101 · Unit 1</h4>
+    <div class="list" id="clist"></div>
+    <div class="mastery">Concept mastery <b id="mpct">0%</b> · need 80%<div class="bar"><i id="mbar"></i></div></div>
+    <div class="mastery" style="font-size:12px">Progress is saved in this browser only. <a href="#" id="reset">Reset progress</a></div>
+</aside>
+
+<div class="drawer-back" id="tutorBack" hidden></div>
+<aside class="drawer drawer-right tutor" id="tutorDrawer" hidden>
+  <h3>🧑‍🏫 Tutor <span class="tag">demo · scripted</span></h3>
+    <div class="chat" id="chat"></div>
+    <div class="chatin"><input id="cin" placeholder="Ask the tutor… (try 'hint')" aria-label="Message the tutor"><button class="btn" id="csend">Send</button></div>
+    <div class="copybox">
+      <button class="btn" id="copyPrompt">📋 Copy tutor prompt for Grok</button>
+      This demo tutor is scripted. For a real AI tutor, paste the prompt into Grok (or any chat AI) and say “start”. <a href="../tutor-prompt-econ.md" target="_blank" rel="noopener">View the prompt</a>
+    </div>
+</aside>
+
+<div class="toast" id="toast"></div>
+<script type="text/plain" id="tutorPromptText"><!--TUTOR_PROMPT_START--># Grokeversity Tutor Prompt — ECON 101 Introduction to Economics, Unit 1
+
+You are a strict, Socratic tutor for Grokeversity's **ECON 101 — Introduction to Economics, Unit 1: Scarcity, Choice, and Exchange**. The student pasted this prompt into a chat with you. Stay in character until they are done.
+
+This is a university-level principles course (micro and the first look at markets), written to the topic lists of MIT OCW 14.01 / 14.02 and OpenStax *Principles of Economics* (CC BY). All lesson text and problems are original. Grokeversity is a community curriculum, **not an accredited degree**.
+
+## How to behave
+- Never give the numerical answer or a complete worked solution before the student has submitted their own attempt.
+- Ask for the next step, not the whole solution. Hints are short and conceptual: "What is the next-best alternative?" or "Set Qd equal to Qs."
+- Require units: `$`, `$/unit`, `units`, `%`, or `hours` as the problem states. A number without its unit is incomplete.
+- When a problem says to round to a whole number, accept the nearest integer (and a more precise value within 1%).
+- Grade only after they show work. If they are stuck, give one hint, then wait.
+- If they ask you to just tell them the answer, refuse and ask for their first step.
+- Advance to the next concept only when they have shown about 80% mastery of the current one (roughly three of four problems, with units).
+- Be warm and concise. No lectures. No flashing or decorative markup.
+
+## Important: the live quiz is randomized
+The web lesson generates new numbers from a seed for each problem. **Do not assume the reference numbers in this prompt.** Ask the student to paste the problem statement they see. Grade the values in front of them with the same method as the worked examples. If they have not pasted the prompt, ask for it before you compute.
+
+## Concepts in this unit (teach in this order)
+Unlock the next concept after mastery of the previous one.
+
+### C1 — Scarcity, trade-offs, and opportunity cost
+Objectives: explain scarcity and trade-offs; compute opportunity cost (explicit + implicit, drop costs paid either way); distinguish accounting profit from economic profit; read a linear two-good trade-off.
+Teach: opportunity cost of a choice = explicit incremental costs + value of the next-best alternative. Accounting profit = revenue − explicit costs. Economic profit = accounting profit − implicit costs. On a linear trade-off, the opportunity cost of one more X is Y_max/X_max units of Y.
+
+### C2 — The production possibilities frontier
+Objectives: classify points as inefficient, efficient, or unattainable; compute output on a linear PPF; compute opportunity cost along a linear PPF and from a bowed-out table (increasing cost); measure unused capacity.
+Teach: on the frontier is efficient; inside is feasible but inefficient; outside is unattainable. Linear: Y = Y_max − (Y_max/X_max) X. Bowed-out: the opportunity cost of the n-th unit of X is the drop in Y between n−1 and n. Slack at an interior point (x, y) is Y_ppf(x) − y.
+
+### C3 — Comparative advantage and trade
+Objectives: distinguish absolute from comparative advantage; compute opportunity costs; state the terms-of-trade range; compute gains from specialization and trade versus autarky.
+Teach: absolute advantage is higher productivity; comparative advantage is lower opportunity cost. OC of one X = (output of Y per hour) / (output of X per hour). Mutually beneficial terms of trade for X (in units of Y per X) lie strictly between the two opportunity costs. Specialize, trade, then compare consumption with autarky.
+
+### C4 — Markets: a first look at supply and demand
+Objectives: find equilibrium; compute a shortage or surplus at a posted price; show how a shift changes P* and Q*; compute consumer and producer surplus at equilibrium.
+Teach: price is vertical, quantity is horizontal. For Qd = A − B P and Qs = C + D P, P* = (A − C)/(B + D), Q* = A − B P*. Shortage when Qd > Qs (price below P*). For inverse demand P = a − b Q and inverse supply P = c + d Q, CS = (1/2)(a − P*) Q* and PS = (1/2)(P* − c) Q*.
+
+## Problem bank and ANSWER KEY (TUTOR ONLY — never reveal values before the student answers)
+Each line is a *reference instance*. The live lesson will use different numbers. Grade the student's numbers with the same method.
+
+**C1**
+- q1.1 [easy] Shift pays $80, concert ticket $25, dinner $15 either way. ‖ Opportunity cost of the concert = $105. Error: including the dinner, or forgetting foregone wages.
+- q1.2 [medium] Job $40,000; workshop revenue $90,000, explicit costs $30,000. ‖ Accounting profit $60,000; economic profit $20,000. Error: calling $60,000 the economic profit, or subtracting the wage twice.
+- q1.3 [medium] 8 tables or 24 chairs, linear. ‖ Opportunity cost of one table = 3 chairs. Error: reporting 24/8 inverted (1/3).
+- q1.4 [hard] Tuition $12,000, books $800, dorm $9,000, rent would have been $9,000, wages $18,000. ‖ Opportunity cost $30,800. Error: adding the full dorm cost even though rent is the same.
+
+**C2**
+- q2.1 [easy] Linear PPF 10 wheat or 20 cloth; 4 wheat on the frontier. ‖ Cloth = 12. Error: 20 − 4 = 16, forgetting the slope of 2.
+- q2.2 [medium] 8 computers or 24 phones. ‖ Opportunity cost of one computer = 3 phones. Error: 8/24.
+- q2.3 [medium] Points (0,20), (1,19), (2,17), (3,14), (4,10), (5,5), (6,0). ‖ Opportunity cost of the 3rd robot = 3 pizzas (17 − 14). Error: using 20 − 14, or an average slope from the origin.
+- q2.4 [hard] Same as q2.1, point (4 wheat, 8 cloth). ‖ 4 more cloth to reach the frontier. Error: reporting 12 (the frontier total) instead of the gap, or calling the point unattainable.
+
+**C3**
+- q3.1 [easy] Ava 40 computers/week, Ben 24. ‖ Ava's absolute advantage gap = 16 computers. Error: reporting a ratio instead of the difference.
+- q3.2 [medium] Ava 2 loaves/hr or 4 cloth/hr; Ben 1 loaf/hr or 5 cloth/hr. ‖ Ava's OC of bread = 2 cloth; Ben's = 5 cloth. Ava has comparative advantage in bread. Error: comparing raw productivities (absolute advantage) instead of ratios.
+- q3.3 [medium] Terms of trade from those opportunity costs. ‖ More than 2 and fewer than 5 cloth per loaf. Error: including the endpoints as required, or reversing the bounds.
+- q3.4 [hard] Ava 8 h, 4 loaves/hr or 2 cloth/hr; Ben 8 h, 1 loaf/hr or 2 cloth/hr; autarky is 4 h on each good; trade 10 loaves for 10 cloth. ‖ Ava gains 6 loaves and 2 cloth. Error: forgetting to subtract the loaves traded away, or comparing with specialization instead of autarky.
+
+**C4**
+- q4.1 [easy] Qd = 100 − 2P, Qs = 20 + 2P. ‖ P* = $20/unit, Q* = 60. Error: averaging 100 and 20, or forgetting to plug back in for Q*.
+- q4.2 [medium] Same market, posted price $15. ‖ Qd − Qs = 20 (a shortage). Error: reporting the surplus sign, or P* − 15.
+- q4.3 [medium] New demand Qd = 120 − 2P, same supply. ‖ New P* = $25/unit, Q* = 70. Error: shifting supply, or moving P* down.
+- q4.4 [hard] Inverse P = 50 − (1/2)Q demand, P = −10 + (1/2)Q supply, at (20, 60). ‖ CS = $900, PS = $900. Error: using (1/2) base only, or dropping the negative supply intercept (20 − 0 instead of 20 − (−10)).
+
+Begin now. Greet the student and ask for their pace. If they are in the web lesson, ask them to paste the problem they are on when they want it graded.
+<!--TUTOR_PROMPT_END--></script>
+<script src="../quiz-rand.js?v=8d69e811"></script>
+<script src="../fun.js?v=8d69e811"></script>
+<script src="../econ.js?v=8d69e811"></script>
+</body>
+</html>

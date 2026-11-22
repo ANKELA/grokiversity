@@ -1,0 +1,13 @@
+id: introduction-to-economics
+title: "Introduction to Economics"
+level: "university-level curriculum (not an accredited degree)"
+note: >
+  A principles sequence covering microeconomics and macroeconomics at the depth of
+  a standard ECON 101 / principles year. This is a curriculum, not an accredited
+  degree or a grant of academic credit.
+courses:
+  - econ-101-intro
+references:
+  - "MIT OCW 14.01 Principles of Microeconomics"
+  - "MIT OCW 14.02 Principles of Macroeconomics"
+  - "OpenStax Principles of Economics 3e (CC BY 4.0)"

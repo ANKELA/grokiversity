@@ -201,7 +201,50 @@ def calc(key, g):
         al = softmax(sc)
         out = sum(ai * vi for ai, vi in zip(al, v))
         return sc + al + [out]
+
+    if key == "e:q1.1":
+        return [g["W"] + g["T"]]
+    if key == "e:q1.2":
+        acc = g["R"] - g["C"]
+        return [acc, acc - g["A"]]
+    if key == "e:q1.3":
+        return [g["ymax"] / g["xmax"]]
+    if key == "e:q1.4":
+        return [g["T"] + g["B"] + g["W"] + g["extra"]]
+    if key == "e:q2.1":
+        return [g["ymax"] - g["k"] * g["x"]]
+    if key == "e:q2.2":
+        return [g["ymax"] / g["xmax"]]
+    if key == "e:q2.3":
+        ys, n = g["ys"], g["n"]
+        return [ys[n - 1] - ys[n]]
+    if key == "e:q2.4":
+        return [g["ymax"] - g["k"] * g["x"] - g["y"]]
+    if key == "e:q3.1":
+        return [g["high"] - g["low"]]
+    if key == "e:q3.2":
+        return [g["aY"] / g["aX"], g["bY"] / g["bX"]]
+    if key == "e:q3.3":
+        return [g["lo"], g["hi"]]
+    if key == "e:q3.4":
+        auto_ax = (g["Ha"] / 2) * g["aX"]
+        auto_ay = (g["Ha"] / 2) * g["aY"]
+        spec_ax = g["Ha"] * g["aX"]
+        return [spec_ax - g["T"] - auto_ax, g["T"] * g["price"] - auto_ay]
+    if key == "e:q4.1":
+        P = (g["A"] - g["C"]) / (g["B"] + g["D"])
+        Q = g["A"] - g["B"] * P
+        return [P, Q]
+    if key == "e:q4.2":
+        return [(g["A"] - g["B"] * g["P0"]) - (g["C"] + g["D"] * g["P0"])]
+    if key == "e:q4.3":
+        P = (g["A2"] - g["C2"]) / (g["B"] + g["D"])
+        Q = g["A2"] - g["B"] * P
+        return [P, Q]
+    if key == "e:q4.4":
+        return [0.5 * (g["a"] - g["P"]) * g["Q"], 0.5 * (g["P"] - g["c"]) * g["Q"]]
     raise KeyError("no independent calc for " + key)
+
 
 DUMP_JS = r"""
 const R = require('./prototype/quiz-rand.js');

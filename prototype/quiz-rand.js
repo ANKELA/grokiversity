@@ -1,6 +1,6 @@
 /* Grokeversity parameterized quiz bank.
    Seeded variants, shuffle helpers, and worked solutions for Statics Unit 1
-   and Intro AI Unit 1. Loaded before app.js / ai.js. */
+   Intro AI Unit 1, and ECON 101 Unit 1. Loaded before app.js / ai.js / econ.js. */
 (function (root) {
   "use strict";
 
@@ -973,6 +973,432 @@
       sol: "<div class=\"q-sol\">Scores \\((" + fmt(sc[0], 5) + ",\\," + fmt(sc[1], 5) + ",\\," + fmt(sc[2], 5) + ")\\), weights \\((" + fmt(al[0], 5) + ",\\," + fmt(al[1], 5) + ",\\," + fmt(al[2], 5) + ")\\), output \\(" + fmt(out, 4) + "\\).</div>"
     };
   };
+
+
+  /* ---- ECON 101 Unit 1 ---- */
+  GENS['e:q1.1'] = function (rng) {
+    var W = pick(rng, [40, 48, 56, 64, 72, 80, 96, 120, 150]);
+    var T = pick(rng, [12, 15, 18, 20, 25, 30, 35, 40, 45, 50]);
+    var D = pick(rng, [8, 10, 12, 15, 18, 20]);
+    var oc = W + T;
+    var name = pick(rng, ['Maya', 'Luis', 'Priya', 'Owen']);
+    return {
+      ok: true,
+      givens: {W: W, T: T, D: D},
+      text: name + ' can work an evening shift and earn \\($' + W + '\\), or go to a concert with a \\($' + T + '\\) ticket. ' + name + ' would have spent \\($' + D + '\\) on dinner either way. What is the opportunity cost, in dollars, of going to the concert?',
+      ans: [{q: 'opportunity cost', v: oc, u: '$', tp: 1}],
+      hints: [
+        'Opportunity cost includes the ticket and the wages given up.',
+        'Dinner is paid either way, so it is not part of the cost of choosing the concert.'
+      ],
+      sol: '<div class="q-sol">Explicit cost = \\($' + T + '\\). Implicit cost = \\($' + W + '\\) of foregone wages. Dinner (\\($' + D + '\\)) is not incremental. Opportunity cost = ' + T + ' + ' + W + ' = \\($' + oc + '\\).</div>'
+    };
+  };
+
+  GENS['e:q1.2'] = function (rng) {
+    var A = pick(rng, [30000, 36000, 40000, 45000, 48000, 50000, 60000]);
+    var C = pick(rng, [20000, 25000, 30000, 35000, 40000]);
+    var acc = pick(rng, [20000, 25000, 30000, 40000, 50000, 60000, 70000]);
+    var R = acc + C;
+    var econ = acc - A;
+    var name = pick(rng, ['Jordan', 'Sam', 'Riley', 'Chen']);
+    return {
+      ok: true,
+      givens: {A: A, R: R, C: C},
+      text: name + ' currently earns \\($' + A.toLocaleString('en-US') + '\\) in a job. Opening a workshop would bring in \\($' + R.toLocaleString('en-US') + '\\) of revenue and \\($' + C.toLocaleString('en-US') + '\\) of explicit costs, and ' + name + ' would leave the job. What is the accounting profit, and what is the economic profit, in dollars?',
+      ans: [
+        {q: 'accounting profit', v: acc, u: '$', tp: 1},
+        {q: 'economic profit', v: econ, u: '$', tp: 1}
+      ],
+      hints: [
+        'Accounting profit subtracts only explicit costs from revenue.',
+        'Economic profit also subtracts the implicit cost of the job that would be left.'
+      ],
+      sol: '<div class="q-sol">Accounting profit = ' + R + ' − ' + C + ' = \\($' + acc + '\\). Implicit cost = \\($' + A + '\\). Economic profit = ' + acc + ' − ' + A + ' = \\($' + econ + '\\).</div>'
+    };
+  };
+
+  GENS['e:q1.3'] = function (rng) {
+    var k = pick(rng, [2, 3, 4, 5, 6]);
+    var xmax = pick(rng, [4, 5, 6, 8, 10, 12]);
+    var ymax = k * xmax;
+    var pair = pick(rng, [
+      ['tables', 'chairs'], ['bikes', 'scooters'], ['coats', 'hats'], ['loaves', 'cakes']
+    ]);
+    return {
+      ok: true,
+      givens: {xmax: xmax, ymax: ymax, k: k},
+      text: 'A workshop can use all of a day\u2019s resources to make ' + xmax + ' ' + pair[0] + ' or ' + ymax + ' ' + pair[1] + ' (or any linear mix of the two). What is the opportunity cost of making one more ' + pair[0].replace(/s$/, '') + '?',
+      ans: [{q: 'OC of one ' + pair[0].replace(/s$/, ''), v: k, u: 'units', tp: 1}],
+      hints: [
+        'The opportunity cost of one ' + pair[0].replace(/s$/, '') + ' is how many ' + pair[1] + ' you give up.',
+        'That ratio is constant on a linear trade-off: ' + ymax + '/' + xmax + '.'
+      ],
+      sol: '<div class="q-sol">All resources \u2192 ' + xmax + ' ' + pair[0] + ' or ' + ymax + ' ' + pair[1] + '. Opportunity cost of 1 ' + pair[0].replace(/s$/, '') + ' = ' + ymax + '/' + xmax + ' = ' + k + ' ' + pair[1] + ' (enter ' + k + ' units).</div>'
+    };
+  };
+
+  GENS['e:q1.4'] = function (rng) {
+    var T = pick(rng, [8000, 10000, 12000, 15000, 18000, 20000]);
+    var B = pick(rng, [400, 600, 800, 1000, 1200]);
+    var W = pick(rng, [12000, 15000, 18000, 20000, 24000, 30000]);
+    var rent = pick(rng, [6000, 7200, 8000, 9000, 10000, 12000]);
+    var extra = pick(rng, [0, 0, 0, 500, 1000, 1500, 2000]);
+    var D = rent + extra;
+    var oc = T + B + W + extra;
+    return {
+      ok: true,
+      givens: {T: T, B: B, W: W, D: D, rent: rent, extra: extra},
+      text: 'A year of college costs \\($' + T.toLocaleString('en-US') + '\\) in tuition and \\($' + B.toLocaleString('en-US') + '\\) in books. The dorm is \\($' + D.toLocaleString('en-US') + '\\); the student would have paid \\($' + rent.toLocaleString('en-US') + '\\) in rent either way. If the student does not attend, the alternative is a job paying \\($' + W.toLocaleString('en-US') + '\\). What is the opportunity cost, in dollars, of attending college this year?',
+      ans: [{q: 'opportunity cost', v: oc, u: '$', tp: 1}],
+      hints: [
+        'Add tuition, books, and foregone wages.',
+        'Count only the extra housing cost above the rent that would be paid anyway.'
+      ],
+      sol: '<div class="q-sol">Incremental costs = tuition \\($' + T + '\\) + books \\($' + B + '\\) + foregone wages \\($' + W + '\\) + extra housing \\($' + extra + '\\) = \\($' + oc + '\\).</div>'
+    };
+  };
+
+  GENS['e:q2.1'] = function (rng) {
+    var xmax = pick(rng, [6, 8, 10, 12, 15, 16, 20]);
+    var k = pick(rng, [2, 3, 4, 5]);
+    var ymax = k * xmax;
+    var xs = [];
+    var i;
+    for (i = 1; i < xmax; i++) if ((ymax * i) % xmax === 0) xs.push(i);
+    if (!xs.length) return {ok: false};
+    var x = pick(rng, xs);
+    var y = ymax - k * x;
+    var pair = pick(rng, [['wheat', 'cloth'], ['cars', 'trucks'], ['corn', 'soy'], ['computers', 'phones']]);
+    return {
+      ok: y > 0,
+      givens: {xmax: xmax, ymax: ymax, x: x, k: k},
+      text: 'A linear PPF runs from ' + xmax + ' units of ' + pair[0] + ' (and no ' + pair[1] + ') to ' + ymax + ' units of ' + pair[1] + ' (and no ' + pair[0] + '). If the economy produces ' + x + ' units of ' + pair[0] + ' and is on the frontier, how many units of ' + pair[1] + ' does it produce?',
+      ans: [{q: pair[1], v: y, u: 'units', tp: 1}],
+      hints: [
+        'On a linear PPF, ' + pair[1] + ' = ' + ymax + ' − (' + ymax + '/' + xmax + ') × ' + pair[0] + '.',
+        'Each unit of ' + pair[0] + ' costs ' + k + ' units of ' + pair[1] + '.'
+      ],
+      sol: '<div class="q-sol">' + pair[1] + ' = ' + ymax + ' − ' + k + ' × ' + x + ' = ' + y + ' units.</div>'
+    };
+  };
+
+  GENS['e:q2.2'] = function (rng) {
+    var k = pick(rng, [2, 3, 4, 5, 6]);
+    var xmax = pick(rng, [4, 5, 6, 8, 10, 12]);
+    var ymax = k * xmax;
+    var pair = pick(rng, [['computers', 'phones'], ['tables', 'chairs'], ['trucks', 'cars'], ['ships', 'planes']]);
+    return {
+      ok: true,
+      givens: {xmax: xmax, ymax: ymax, k: k},
+      text: 'A linear PPF runs from ' + xmax + ' ' + pair[0] + ' (and no ' + pair[1] + ') to ' + ymax + ' ' + pair[1] + ' (and no ' + pair[0] + '). What is the opportunity cost of producing one more ' + pair[0].replace(/s$/, '') + '?',
+      ans: [{q: 'OC of one ' + pair[0].replace(/s$/, ''), v: k, u: 'units', tp: 1}],
+      hints: [
+        'The constant slope is ' + pair[1] + ' given up per ' + pair[0].replace(/s$/, '') + '.',
+        'That ratio is ' + ymax + '/' + xmax + '.'
+      ],
+      sol: '<div class="q-sol">Opportunity cost of 1 ' + pair[0].replace(/s$/, '') + ' = ' + ymax + '/' + xmax + ' = ' + k + ' ' + pair[1] + ' (enter ' + k + ' units).</div>'
+    };
+  };
+
+  GENS['e:q2.3'] = function (rng) {
+    var y0 = pick(rng, [18, 20, 22, 24, 25, 30]);
+    var drops = [];
+    var d = pick(rng, [1, 1, 2]);
+    var nPts = pick(rng, [6, 7, 8]);
+    var i, y = y0, ys = [y0];
+    for (i = 1; i < nPts; i++) {
+      d += pick(rng, [1, 1, 2]);
+      drops.push(d);
+      y -= d;
+      if (y < 0) return {ok: false};
+      ys.push(y);
+    }
+    if (ys[ys.length - 1] !== 0 && rng() < 0.5) {
+      /* leave a leftover; still fine */
+    }
+    var n = 1 + randInt(rng, 1, drops.length - 1);
+    var oc = drops[n - 1];
+    var rows = ys.map(function (v, j) { return '(' + j + ', ' + v + ')'; }).join(', ');
+    return {
+      ok: oc > 0 && n >= 2,
+      givens: {ys: ys, n: n, oc: oc},
+      text: 'A bowed-out PPF for robots (\\(X\\)) and pizzas (\\(Y\\)) has the efficient points (robots, pizzas) = ' + rows + '. What is the opportunity cost of the ' + n + nth(n) + ' robot (moving from ' + (n - 1) + ' robots to ' + n + ')?',
+      ans: [{q: 'OC of the ' + n + nth(n) + ' robot', v: oc, u: 'units', tp: 1}],
+      hints: [
+        'The opportunity cost of the ' + n + nth(n) + ' robot is the pizzas you lose between ' + (n - 1) + ' and ' + n + ' robots.',
+        'Read the two pizza totals in the table and subtract.'
+      ],
+      sol: '<div class="q-sol">At ' + (n - 1) + ' robots, pizzas = ' + ys[n - 1] + '. At ' + n + ' robots, pizzas = ' + ys[n] + '. Opportunity cost = ' + ys[n - 1] + ' − ' + ys[n] + ' = ' + oc + ' pizzas (enter ' + oc + ' units).</div>'
+    };
+  };
+
+  GENS['e:q2.4'] = function (rng) {
+    var xmax = pick(rng, [6, 8, 10, 12, 16, 20]);
+    var k = pick(rng, [2, 3, 4]);
+    var ymax = k * xmax;
+    var xs = [];
+    var i;
+    for (i = 1; i < xmax; i++) if ((k * i) === Math.round(k * i)) xs.push(i);
+    var x = pick(rng, xs);
+    var yFront = ymax - k * x;
+    if (yFront < 3) return {ok: false};
+    var slack = pick(rng, [2, 3, 4, 5, 6, 8].filter(function (s) { return s < yFront; }));
+    if (!slack) return {ok: false};
+    var y = yFront - slack;
+    var pair = pick(rng, [['wheat', 'cloth'], ['corn', 'beans'], ['cars', 'bikes']]);
+    return {
+      ok: true,
+      givens: {xmax: xmax, ymax: ymax, x: x, y: y, k: k, slack: slack},
+      text: 'A linear PPF runs from ' + xmax + ' ' + pair[0] + ' to ' + ymax + ' ' + pair[1] + '. The economy is at (' + x + ' ' + pair[0] + ', ' + y + ' ' + pair[1] + '). Holding ' + pair[0] + ' at ' + x + ', how many more units of ' + pair[1] + ' can it produce if it reaches the frontier?',
+      ans: [{q: 'additional ' + pair[1], v: slack, u: 'units', tp: 1}],
+      hints: [
+        'First find the maximum ' + pair[1] + ' at ' + x + ' ' + pair[0] + ' on the frontier.',
+        'Subtract the ' + pair[1] + ' already being made.'
+      ],
+      sol: '<div class="q-sol">On the frontier at ' + x + ' ' + pair[0] + ', ' + pair[1] + ' = ' + ymax + ' − ' + k + ' × ' + x + ' = ' + yFront + '. They make ' + y + ', so they can add ' + slack + ' units without cutting ' + pair[0] + '. The starting point is inside the PPF.</div>'
+    };
+  };
+
+  GENS['e:q3.1'] = function (rng) {
+    var low = pick(rng, [12, 16, 18, 20, 24, 30, 36]);
+    var gap = pick(rng, [6, 8, 10, 12, 16, 18, 20, 24]);
+    var high = low + gap;
+    var goods = pick(rng, ['computers', 'bicycles', 'coats', 'phones']);
+    var names = rng() < 0.5 ? ['Ava', 'Ben'] : ['Costa', 'Delia'];
+    return {
+      ok: true,
+      givens: {high: high, low: low, gap: gap},
+      text: 'In a week, ' + names[0] + ' can assemble ' + high + ' ' + goods + ' and ' + names[1] + ' can assemble ' + low + ' ' + goods + ', each working the same number of hours. How many more ' + goods + ' per week does ' + names[0] + ' produce than ' + names[1] + '?',
+      ans: [{q: names[0] + "'s extra " + goods, v: gap, u: 'units', tp: 1}],
+      hints: [
+        'Absolute advantage is about who produces more with the same resources.',
+        'Subtract ' + names[1] + "'s weekly output from " + names[0] + "'s."
+      ],
+      sol: '<div class="q-sol">' + names[0] + ' produces ' + high + ' − ' + low + ' = ' + gap + ' more ' + goods + ' per week than ' + names[1] + '.</div>'
+    };
+  };
+
+  GENS['e:q3.2'] = function (rng) {
+    var aX = pick(rng, [1, 2, 3, 4]);
+    var ocA = pick(rng, [1, 2, 3, 4, 5]);
+    var aY = aX * ocA;
+    var ocB;
+    var guard = 0;
+    do { ocB = pick(rng, [1, 2, 3, 4, 5, 6]); guard++; } while (ocB === ocA && guard < 10);
+    if (ocB === ocA) return {ok: false};
+    var bX = pick(rng, [1, 2, 3]);
+    var bY = bX * ocB;
+    return {
+      ok: true,
+      givens: {aX: aX, aY: aY, bX: bX, bY: bY, ocA: ocA, ocB: ocB},
+      text: 'Ava can bake ' + aX + ' loaf' + (aX === 1 ? '' : 'ves') + ' of bread per hour or weave ' + aY + ' bolts of cloth per hour. Ben can bake ' + bX + ' loaf' + (bX === 1 ? '' : 'ves') + ' per hour or weave ' + bY + ' bolts per hour. What is each person\u2019s opportunity cost of one loaf of bread, in bolts of cloth?',
+      ans: [
+        {q: "Ava's OC of one loaf", v: ocA, u: 'units', tp: 1},
+        {q: "Ben's OC of one loaf", v: ocB, u: 'units', tp: 1}
+      ],
+      hints: [
+        'Ava\u2019s opportunity cost of 1 loaf is cloth per hour divided by loaves per hour.',
+        'Do the same ratio for Ben. The lower opportunity cost identifies comparative advantage in bread.'
+      ],
+      sol: '<div class="q-sol">Ava: ' + aY + '/' + aX + ' = ' + ocA + ' bolts per loaf. Ben: ' + bY + '/' + bX + ' = ' + ocB + ' bolts per loaf.</div>'
+    };
+  };
+
+  GENS['e:q3.3'] = function (rng) {
+    var lo = pick(rng, [1, 2, 3, 4]);
+    var hi = lo + pick(rng, [1, 2, 3, 4, 5]);
+    return {
+      ok: true,
+      givens: {lo: lo, hi: hi},
+      text: 'Ava\u2019s opportunity cost of one loaf of bread is ' + lo + ' bolts of cloth, and Ben\u2019s is ' + hi + ' bolts of cloth. Mutually beneficial trade occurs when one loaf trades for more than how many bolts of cloth, and fewer than how many bolts of cloth?',
+      ans: [
+        {q: 'more than', v: lo, u: 'units', tp: 1},
+        {q: 'fewer than', v: hi, u: 'units', tp: 1}
+      ],
+      hints: [
+        'The terms of trade must beat each trader\u2019s opportunity cost.',
+        'Ava will export bread only if she gets more cloth per loaf than she can make herself.'
+      ],
+      sol: '<div class="q-sol">A mutually beneficial price satisfies ' + lo + ' < cloth per loaf < ' + hi + '. Enter ' + lo + ' and ' + hi + '.</div>'
+    };
+  };
+
+  GENS['e:q3.4'] = function (rng) {
+    var Ha = pick(rng, [6, 8, 10, 12]);
+    var Hb = pick(rng, [6, 8, 10, 12]);
+    var aX = pick(rng, [2, 3, 4]);
+    var aY = pick(rng, [1, 2]);
+    if (aY / aX >= 1) return {ok: false};
+    var bX = 1;
+    var bY = pick(rng, [2, 3, 4]);
+    var ocA = aY / aX, ocB = bY / bX;
+    if (!(ocA < ocB)) return {ok: false};
+    if (Ha % 2 || Hb % 2) return {ok: false};
+    var autoAX = (Ha / 2) * aX, autoAY = (Ha / 2) * aY;
+    var specAX = Ha * aX;
+    var pChoices = [];
+    var p;
+    for (p = ocA + 0.5; p < ocB - 1e-9; p += 0.5) {
+      if (Math.abs(p * 2 - Math.round(p * 2)) < 1e-9) pChoices.push(p);
+    }
+    if (!pChoices.length) return {ok: false};
+    var price = pick(rng, pChoices);
+    var tmax = specAX - 1;
+    var T, gX, gY, found = false, tries = 0;
+    while (tries++ < 30) {
+      T = randInt(rng, 2, Math.max(2, Math.min(24, tmax - 1)));
+      if (T * price !== Math.round(T * price)) continue;
+      gX = (specAX - T) - autoAX;
+      gY = (T * price) - autoAY;
+      if (gX > 0 && gY > 0 && gX === Math.round(gX) && gY === Math.round(gY)) { found = true; break; }
+    }
+    if (!found) return {ok: false};
+    return {
+      ok: true,
+      givens: {Ha: Ha, Hb: Hb, aX: aX, aY: aY, bX: bX, bY: bY, T: T, price: price, gX: gX, gY: gY},
+      text: 'Ava has ' + Ha + ' hours and can make ' + aX + ' loaves of bread per hour or ' + aY + ' bolts of cloth per hour. Ben has ' + Hb + ' hours and can make ' + bX + ' loaf' + (bX === 1 ? '' : 'ves') + ' per hour or ' + bY + ' bolts of cloth per hour. In autarky each spends half of their hours on each good. Then they specialize according to comparative advantage and trade ' + T + ' loaves for ' + fmt(T * price) + ' bolts of cloth. How many more loaves and how many more bolts of cloth does Ava consume than in autarky?',
+      ans: [
+        {q: "Ava's extra loaves", v: gX, u: 'units', tp: 1},
+        {q: "Ava's extra cloth", v: gY, u: 'units', tp: 1}
+      ],
+      hints: [
+        'Ava\u2019s opportunity cost of bread is ' + fmt(ocA) + ' cloth; Ben\u2019s is ' + fmt(ocB) + '. Ava specializes in bread, Ben in cloth.',
+        'Compare Ava\u2019s consumption after the trade with her autarky basket.'
+      ],
+      sol: '<div class="q-sol">Ava specializes: ' + specAX + ' loaves. After trading away ' + T + ' loaves for ' + fmt(T * price) + ' cloth she consumes ' + (specAX - T) + ' loaves and ' + fmt(T * price) + ' cloth. Autarky: ' + autoAX + ' loaves and ' + autoAY + ' cloth. Gains: ' + gX + ' loaves and ' + gY + ' cloth.</div>'
+    };
+  };
+
+  GENS['e:q4.1'] = function (rng) {
+    var B = pick(rng, [1, 2, 3, 4, 5]);
+    var D = pick(rng, [1, 2, 3, 4, 5]);
+    var P = pick(rng, [8, 10, 12, 15, 16, 18, 20, 24, 25]);
+    var C = pick(rng, [0, 5, 10, 16, 20, 24]);
+    var Q = C + D * P;
+    var A = Q + B * P;
+    if (A <= C || Q <= 0) return {ok: false};
+    return {
+      ok: true,
+      givens: {A: A, B: B, C: C, D: D, P: P, Q: Q},
+      text: 'Demand is \\(Q_d = ' + A + ' - ' + B + 'P\\) and supply is \\(Q_s = ' + C + ' + ' + D + 'P\\), with \\(P\\) in dollars per unit. Find the equilibrium price, in dollars per unit, and the equilibrium quantity.',
+      ans: [
+        {q: 'P*', v: P, u: '$/unit', tp: 1},
+        {q: 'Q*', v: Q, u: 'units', tp: 1}
+      ],
+      hints: [
+        'Set quantity demanded equal to quantity supplied and solve for \\(P\\).',
+        'Then plug \\(P^*\\) back into either equation to get \\(Q^*\\).'
+      ],
+      sol: '<div class="q-sol">' + A + ' − ' + B + 'P = ' + C + ' + ' + D + 'P \\(\\Rightarrow\\) P* = \\($' + P + '\\) per unit. Q* = ' + Q + ' units.</div>'
+    };
+  };
+
+  GENS['e:q4.2'] = function (rng) {
+    var B = pick(rng, [1, 2, 3, 4]);
+    var D = pick(rng, [1, 2, 3, 4]);
+    var Pstar = pick(rng, [10, 12, 15, 16, 18, 20, 24]);
+    var C = pick(rng, [0, 4, 8, 10, 16, 20]);
+    var Qstar = C + D * Pstar;
+    var A = Qstar + B * Pstar;
+    if (Qstar <= 0) return {ok: false};
+    var delta = pick(rng, [-8, -6, -5, -4, -3, 3, 4, 5, 6, 8]);
+    var P0 = Pstar + delta;
+    if (P0 <= 0) return {ok: false};
+    var Qd = A - B * P0, Qs = C + D * P0;
+    var gap = Qd - Qs;
+    if (gap === 0) return {ok: false};
+    return {
+      ok: true,
+      givens: {A: A, B: B, C: C, D: D, P0: P0, gap: gap},
+      text: 'Demand is \\(Q_d = ' + A + ' - ' + B + 'P\\) and supply is \\(Q_s = ' + C + ' + ' + D + 'P\\). The posted price is \\($' + P0 + '\\) per unit. What is \\(Q_d - Q_s\\) at that price? (A positive number is a shortage; a negative number is a surplus.)',
+      ans: [{q: 'Qd − Qs', v: gap, u: 'units', tp: 1}],
+      hints: [
+        'Plug \\(P = ' + P0 + '\\) into both equations.',
+        'Subtract quantity supplied from quantity demanded.'
+      ],
+      sol: '<div class="q-sol">\\(Q_d = ' + Qd + '\\), \\(Q_s = ' + Qs + '\\), so \\(Q_d - Q_s = ' + gap + '\\) units.</div>'
+    };
+  };
+
+  GENS['e:q4.3'] = function (rng) {
+    var B = pick(rng, [1, 2, 3, 4]);
+    var D = pick(rng, [1, 2, 3, 4]);
+    var P0 = pick(rng, [8, 10, 12, 15, 16, 20]);
+    var C = pick(rng, [0, 5, 10, 16, 20]);
+    var Q0 = C + D * P0;
+    var A = Q0 + B * P0;
+    if (Q0 <= 0) return {ok: false};
+    var shiftD = rng() < 0.6;
+    var delta = pick(rng, [8, 10, 12, 16, 20, 24]) * (rng() < 0.75 ? 1 : -1);
+    var A2 = A, C2 = C;
+    if (shiftD) A2 = A + delta; else C2 = C + delta;
+    if (A2 <= C2) return {ok: false};
+    var den = B + D;
+    if ((A2 - C2) % den !== 0) return {ok: false};
+    var P2 = (A2 - C2) / den;
+    var Q2 = A2 - B * P2;
+    if (P2 <= 0 || Q2 <= 0) return {ok: false};
+    var text = shiftD
+      ? 'Start from \\(Q_d = ' + A + ' - ' + B + 'P\\) and \\(Q_s = ' + C + ' + ' + D + 'P\\). Demand changes so the new demand is \\(Q_d = ' + A2 + ' - ' + B + 'P\\). Supply is unchanged. Find the new equilibrium price, in dollars per unit, and the new equilibrium quantity.'
+      : 'Start from \\(Q_d = ' + A + ' - ' + B + 'P\\) and \\(Q_s = ' + C + ' + ' + D + 'P\\). Supply changes so the new supply is \\(Q_s = ' + C2 + ' + ' + D + 'P\\). Demand is unchanged. Find the new equilibrium price, in dollars per unit, and the new equilibrium quantity.';
+    return {
+      ok: true,
+      givens: {A: A, B: B, C: C, D: D, A2: A2, C2: C2, P2: P2, Q2: Q2, shiftD: shiftD ? 1 : 0},
+      text: text,
+      ans: [
+        {q: 'new P*', v: P2, u: '$/unit', tp: 1},
+        {q: 'new Q*', v: Q2, u: 'units', tp: 1}
+      ],
+      hints: [
+        'Set the new curve equal to the unchanged curve and solve for \\(P\\).',
+        'Then plug back in to get the new \\(Q^*\\).'
+      ],
+      sol: '<div class="q-sol">New equilibrium: \\(P^* = \\)$' + P2 + '/unit, \\(Q^* = ' + Q2 + '\\) units.</div>'
+    };
+  };
+
+  GENS['e:q4.4'] = function (rng) {
+    var b = pick(rng, [0.5, 1, 2]);
+    var d = pick(rng, [0.5, 1, 2]);
+    var Q = pick(rng, [20, 24, 30, 40, 50, 60]);
+    var c = pick(rng, [0, 2, 4, 5, -4, -10]);
+    var P = c + d * Q;
+    var a = P + b * Q;
+    if (P <= 0 || a <= P) return {ok: false};
+    var CS = 0.5 * (a - P) * Q;
+    var PS = 0.5 * (P - c) * Q;
+    if (CS !== Math.round(CS) || PS !== Math.round(PS) || CS <= 0 || PS <= 0) return {ok: false};
+    function frac(v) {
+      if (v === 0.5) return '1/2';
+      return String(v);
+    }
+    var dem = (b === 0.5) ? ('P = ' + fmt(a) + ' - (1/2)Q') : ('P = ' + fmt(a) + ' - ' + fmt(b) + 'Q');
+    var sup = (d === 0.5) ? ('P = ' + fmt(c) + ' + (1/2)Q') : ('P = ' + fmt(c) + ' + ' + fmt(d) + 'Q');
+    return {
+      ok: true,
+      givens: {a: a, b: b, c: c, d: d, P: P, Q: Q, CS: CS, PS: PS},
+      text: 'Demand is \\(' + dem.replace('P = ', 'P=') + '\\) and supply is \\(' + sup.replace('P = ', 'P=') + '\\), with \\(P\\) in dollars per unit. At equilibrium (\\(P^* = ' + fmt(P) + '\\), \\(Q^* = ' + fmt(Q) + '\\)), what is consumer surplus and what is producer surplus, in dollars?',
+      ans: [
+        {q: 'consumer surplus', v: CS, u: '$', tp: 1},
+        {q: 'producer surplus', v: PS, u: '$', tp: 1}
+      ],
+      hints: [
+        'Consumer surplus is the triangle \\((1/2)\\times(\\text{demand intercept} - P^*)\\times Q^*\\).',
+        'Producer surplus is \\((1/2)\\times(P^* - \\text{supply intercept})\\times Q^*\\).'
+      ],
+      sol: '<div class="q-sol">CS = (1/2)(' + fmt(a) + ' − ' + fmt(P) + ')(' + fmt(Q) + ') = \\($' + fmt(CS) + '\\). PS = (1/2)(' + fmt(P) + ' − (' + fmt(c) + '))(' + fmt(Q) + ') = \\($' + fmt(PS) + '\\).</div>'
+    };
+  };
+
+  function nth(n) {
+    if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+    if (n % 10 === 1) return 'st';
+    if (n % 10 === 2) return 'nd';
+    if (n % 10 === 3) return 'rd';
+    return 'th';
+  }
+
 
   function instantiate(id, seed, course, template) {
     course = course || _course || "s";

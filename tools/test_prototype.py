@@ -397,6 +397,11 @@ with sync_playwright() as p:
     assert pe == "none"
     assert cur in ("default", "auto")
     assert "Coming soon" in text and "Introduction to AI" in text
+    econ = pg.locator("#card-econ")
+    assert econ.count() == 1
+    etag, ehref, etext = econ.evaluate("""el => [el.tagName, el.getAttribute('href') || '', el.innerText]""")
+    assert etag == "A" and "econ/unit-1.html" in ehref, f"econ card should be a live lesson link: {etag} {ehref}"
+    assert "Play now" in etext and "Economics" in etext
     home_hrefs = pg.evaluate("[...document.querySelectorAll('a')].map(a => a.getAttribute('href') || '')")
     joined = " ".join(home_hrefs)
     assert all("intro-ai.html" not in (h or "") for h in home_hrefs), f"home still links to intro-ai.html: {home_hrefs}"
@@ -413,6 +418,8 @@ with sync_playwright() as p:
     pg.screenshot(path=str(SHOTS / "desktop_01_landing.png"))
     pg.goto(f"http://127.0.0.1:{port}/about.html"); pg.wait_for_load_state("networkidle")
     assert "Play now" in pg.inner_text("#trackGrid")
+    assert "Play now" in pg.inner_text("#econGrid")
+    assert "Coming soon" in pg.inner_text("#econGrid")
     assert "Coming soon" in pg.inner_text("#aiGrid")
     about_hrefs = pg.evaluate("[...document.querySelectorAll('a')].map(a => a.getAttribute('href') || '')")
     assert all("intro-ai.html" not in (h or "") for h in about_hrefs), f"about still links to intro-ai.html: {about_hrefs}"

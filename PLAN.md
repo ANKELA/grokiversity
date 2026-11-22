@@ -68,6 +68,21 @@ MIT's 2.005, 2.006, 2.671 and 2.009 did not have a current OCW page that we coul
 
 Subtotals: math and basic science ≈ 33 (calculus ×3, DiffEq, linear algebra, physics ×2, chemistry, statistics); engineering topics ≈ 69, including design and capstone; general education ≈ 18. Total ≈ 120. This meets ABET's 30/45 minimums [abet].
 
+
+## 3b. Introduction to Economics (ECON 101)
+
+A second playable track, **Introduction to Economics**, is a university-level principles course (microeconomics plus an introduction to macroeconomics), not an accredited degree. The syllabus is mapped to:
+
+- MIT OCW [14.01 Principles of Microeconomics](https://ocw.mit.edu/courses/14-01-principles-of-microeconomics-fall-2018/)
+- MIT OCW [14.02 Principles of Macroeconomics](https://ocw.mit.edu/courses/14-02-principles-of-macroeconomics-spring-2014/)
+- [OpenStax *Principles of Economics* 3e](https://openstax.org/details/books/principles-economics-3e) (CC BY 4.0)
+
+Those works are **cited as topic-list standards**, not copied. All lesson prose and problems are original and released under CC BY-SA 4.0.
+
+Planned units: (1) scarcity, opportunity cost, and the PPF; (2) comparative advantage and trade; (3) supply and demand; (4) elasticity; (5) government intervention (price controls, taxes, deadweight loss); (6) consumer choice; (7) costs and production; (8) market structures; (9) externalities and public goods; (10) GDP and measurement; (11) inflation and unemployment; (12) money, monetary policy, and fiscal policy. Unit 1 is playable and teaches scarcity, the PPF, comparative advantage, and a first look at supply and demand.
+
+See `courses/econ-101-intro/` and `tutor/TUTOR_PROMPT_ECON.md`.
+
 ## 4. How "uses your Grok account" actually works
 
 **What exists (verified 21 Nov 2026):**

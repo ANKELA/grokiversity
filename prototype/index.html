@@ -6,34 +6,34 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <title>Grokeversity — university-level curricula, one concept at a time</title>
-<meta name="description" content="Free, open-source, mastery-based curricula in Mechanical Engineering and Introduction to AI. Interactive visuals, strict quizzes, and a copy-paste AI tutor prompt. Community project; not an accredited degree.">
+<meta name="description" content="Free, open-source, mastery-based curricula in Mechanical Engineering, Introduction to Economics, and Introduction to AI. Interactive visuals, strict quizzes, and a copy-paste AI tutor prompt. Community project; not an accredited degree.">
 <meta name="theme-color" content="#0f1220">
 <!-- Open Graph / X card. On deploy, tools/build_site.py --base-url rewrites these to absolute URLs (X requires absolute image URLs). -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Grokeversity">
 <meta property="og:title" content="Grokeversity — university-level curricula, one concept at a time">
-<meta property="og:description" content="Mechanical Engineering and Introduction to AI, with interactive math and strict mastery quizzes. Free and open source.">
+<meta property="og:description" content="Mechanical Engineering, Introduction to Economics, and Introduction to AI, with interactive math and strict mastery quizzes. Free and open source.">
 <meta property="og:image" content="https://ankela.github.io/grokeversity/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Grokeversity: Mechanical Engineering and Introduction to AI. Interactive, university-level lessons.">
+<meta property="og:image:alt" content="Grokeversity: Mechanical Engineering, Introduction to Economics, and Introduction to AI. Interactive, university-level lessons.">
 <meta property="og:url" content="https://ankela.github.io/grokeversity/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Grokeversity — university-level curricula, one concept at a time">
-<meta name="twitter:description" content="Interactive lessons in Statics and Introduction to AI, with strict mastery quizzes and an AI tutor prompt.">
+<meta name="twitter:description" content="Interactive lessons in Statics and Introduction to Economics, with strict mastery quizzes and an AI tutor prompt.">
 <meta name="twitter:image" content="https://ankela.github.io/grokeversity/assets/og.png">
 <meta name="twitter:image:alt" content="Grokeversity: Mechanical Engineering and Introduction to AI.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="app.css?v=bf78855e">
+<link rel="stylesheet" href="app.css?v=8d69e811">
 <script>
 (function(){
   function go(){
     var h=(location.hash||'').replace(/^#/,'').toLowerCase();
     if(h==='learn' || h.indexOf('learn')===0 || /^c[1-5]/.test(h)){
       var c=(h.match(/c([1-5])/)||[])[1]||'1';
-      location.replace('statics/unit-1.html?v=bf78855e&c='+c);
+      location.replace('statics/unit-1.html?v=8d69e811&c='+c);
     }
   }
   go();
@@ -48,13 +48,13 @@
     <a class="home-link" href="./">Home</a>
     <a href="about.html">About</a>
     <a href="https://github.com/ANKELA/grokeversity" rel="noopener noreferrer">GitHub</a>
-    <a class="btn sm" href="statics/unit-1.html?v=bf78855e">Start Statics</a>
+    <a class="btn sm" href="statics/unit-1.html?v=8d69e811">Start Statics</a>
   </nav>
 </header>
 
 <main class="home-main">
   <h1>University-level curricula, one concept at a time.</h1>
-  <p class="lead">A free, open-source, degree-level curriculum. Try a live lesson, then start Statics.</p>
+  <p class="lead">A free, open-source, degree-level curriculum. Try a live lesson in Statics or Economics.</p>
   <div class="card home-demo" id="homeDemo">
     <div class="viz">
       <svg class="diagram" id="ropeSvg" viewBox="0 0 520 260" role="img" aria-label="A box you can drag, pulled by a rope"></svg>
@@ -66,13 +66,20 @@
       </div>
     </div>
   </div>
-  <p class="home-cta"><a class="btn btn-lg" href="statics/unit-1.html?v=bf78855e">Start Statics</a></p>
+  <p class="home-cta"><a class="btn btn-lg" href="statics/unit-1.html?v=8d69e811">Start Statics</a></p>
   <ul class="course-list">
     <li>
-      <a class="course-card is-live" href="statics/unit-1.html?v=bf78855e" id="card-me">
+      <a class="course-card is-live" href="statics/unit-1.html?v=8d69e811" id="card-me">
         <span class="badge">Play now</span>
         <h2>ME 201 Statics</h2>
         <p>Forces, free-body diagrams, and equilibrium.</p>
+      </a>
+    </li>
+    <li>
+      <a class="course-card is-live" href="econ/unit-1.html?v=8d69e811" id="card-econ">
+        <span class="badge">Play now</span>
+        <h2>Intro to Economics</h2>
+        <p>Scarcity, the PPF, trade, and markets.</p>
       </a>
     </li>
     <li>
@@ -91,6 +98,6 @@
   <div class="disc">Not an accredited degree. Community project, not affiliated with xAI.</div>
   <div>Code: MIT License · Course content: CC BY-SA 4.0 · Prototype v0.2</div>
 </footer>
-<script src="app.js?v=bf78855e"></script>
+<script src="app.js?v=8d69e811"></script>
 </body>
 </html>
