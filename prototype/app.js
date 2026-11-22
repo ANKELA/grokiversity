@@ -379,19 +379,56 @@ $('#trigSl').addEventListener('input',drawTrig);
 })();
 
 /* ---------- C1: rope hook ---------- */
-const rope={th:35};
+const rope=(function(){
+  const boxX=200, hx=boxX+110, hy=190, th=Math.PI/180*35, L=170;
+  return {boxX, tipX:hx+L*Math.cos(th), tipY:hy-L*Math.sin(th), th:35};
+})();
+function ropeHitch(){ return {x:rope.boxX+110, y:190}; }
+function ropeAngle(hx,hy,tx,ty){ return deg(Math.atan2(hy-ty, tx-hx)); }
+function clampRopeBoxX(x, tipX, tipY){
+  const minX=16, maxX=Math.min(360, tipX-110-28);
+  x=Math.max(minX, Math.min(maxX, x));
+  const th=ropeAngle(x+110, 190, tipX, tipY);
+  if(th<8 || th>75){
+    const t=Math.max(8, Math.min(75, th));
+    const hx=tipX-(190-tipY)/Math.tan(rad(t));
+    x=Math.max(minX, Math.min(maxX, hx-110));
+  }
+  return x;
+}
+function clampRopeTip(tx,ty,boxX){
+  const hx=boxX+110, hy=190;
+  tx=Math.max(hx+24, Math.min(510, tx));
+  ty=Math.max(10, Math.min(hy-12, ty));
+  let th=ropeAngle(hx,hy,tx,ty);
+  if(th<8 || th>75){
+    th=Math.max(8, Math.min(75, th));
+    const L=Math.max(80, Math.hypot(tx-hx, hy-ty));
+    tx=hx+L*Math.cos(rad(th));
+    ty=hy-L*Math.sin(rad(th));
+  }
+  return {tx, ty};
+}
 function drawRope(){
-  const th=rad(rope.th), F=100, fx=F*Math.cos(th), fy=F*Math.sin(th);
-  const box={x:200,y:170,w:110,h:70}, hx=box.x+box.w, hy=box.y+20;
-  const L=170, tx=hx+L*Math.cos(th), ty=hy-L*Math.sin(th);
+  const box={x:rope.boxX,y:170,w:110,h:70}, hx=box.x+box.w, hy=box.y+20;
+  const tx=rope.tipX, ty=rope.tipY;
+  const th=Math.max(8, Math.min(75, ropeAngle(hx,hy,tx,ty)));
+  rope.th=th;
+  const F=100, fx=F*Math.cos(rad(th)), fy=F*Math.sin(rad(th));
   const svg=$('#ropeSvg');
+  const cx=box.x+box.w/2;
   svg.innerHTML=`<defs><marker id="ropeArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker></defs>
     <line x1="20" y1="240" x2="500" y2="240" stroke="#3d4680" stroke-width="6" data-tap="floor"/>
-    <rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="6" fill="#3a4170" stroke="#7c86c9" stroke-width="2" data-tap="box"/>
+    <rect id="ropeBoxHit" class="handle" x="${box.x-18}" y="${box.y-22}" width="${box.w+36}" height="${box.h+36}" rx="12" fill="transparent"/>
+    <rect id="ropeBox" class="handle" x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="6" fill="#3a4170" stroke="#7c86c9" stroke-width="2" data-tap="box"/>
     <line x1="${hx}" y1="${hy}" x2="${tx}" y2="${ty}" stroke="#ff8a65" stroke-width="5" stroke-linecap="round" marker-end="url(#ropeArrow)" data-tap="rope"/>
     ${hitHandle("ropeH",tx,ty,"#ff8a65")}
-    <circle class="rope-nudge-glow" cx="${tx}" cy="${ty}" r="20" fill="#ff8a65" fill-opacity=".22" stroke="#ffccbc" stroke-width="2" pointer-events="none"/>
-    <g class="rope-nudge" pointer-events="none" transform="translate(${tx+16},${ty+10}) rotate(18)">
+    <rect class="rope-nudge-glow" x="${box.x-6}" y="${box.y-6}" width="${box.w+12}" height="${box.h+12}" rx="10" fill="none" stroke="#ffccbc" stroke-width="3" pointer-events="none"/>
+    <g class="rope-drag-hint" pointer-events="none">
+      <rect x="${cx-86}" y="${box.y-40}" width="172" height="30" rx="9" fill="#121528" fill-opacity=".9"/>
+      <text x="${cx}" y="${box.y-19}" text-anchor="middle" fill="#f3f4ff" font-size="22" font-weight="700" font-family="system-ui,-apple-system,sans-serif">Drag the box</text>
+    </g>
+    <g class="rope-nudge" pointer-events="none" transform="translate(${cx+10},${box.y+22}) rotate(18)">
       <path fill="#f3f4ff" stroke="#1a1f38" stroke-width="1.1" stroke-linejoin="round" d="M7.2 2.4c.9 0 1.5.7 1.5 1.6V12c.3-.4.8-.9 1.6-.9.9 0 1.5.7 1.5 1.5v2.2c.3-.3.8-.7 1.5-.7.9 0 1.5.7 1.5 1.6v1.6c.3-.2.8-.5 1.5-.5.9 0 1.5.8 1.5 1.7v4.4c0 3.2-2.3 5.8-6.4 5.8h-1.2c-3.3 0-5.7-2.1-7.1-4.9L1.6 14.7c-.5-.9.2-1.9 1.2-1.9.4 0 .8.2 1 .6L6.2 17V4c0-.9.6-1.6 1-1.6z"/>
     </g>
     <text x="30" y="232" fill="#5c6390" font-size="13">floor</text>`;
@@ -400,22 +437,42 @@ function drawRope(){
   const share=Math.abs(fx)+Math.abs(fy)||1;
   $('#ropeFloorBar').style.width=(Math.abs(fx)/share*100)+'%';
   $('#ropeLiftBar').style.width=(Math.abs(fy)/share*100)+'%';
-  $('#ropeHint').textContent = rope.th<25 ? 'A flatter rope pulls more along the floor.' : 'A steeper rope lifts more, and pulls the box along the floor less.';
+  $('#ropeHint').textContent = th<25 ? 'A flatter rope pulls more along the floor.' : 'A steeper rope lifts more, and pulls the box along the floor less.';
   svg.querySelectorAll('[data-tap]').forEach(el=>el.addEventListener('click',()=>{
     const n={box:'The box is what you are trying to move.',rope:'The rope can only pull — it is in tension. Because it is angled, only part of that pull goes along the floor.',floor:'The floor is our reference. Angles here are measured up from the floor.'};
     $('#ropeHint').textContent=n[el.getAttribute('data-tap')];
   }));
 }
 (function(){
-  const svg=$('#ropeSvg'); let drag=false;
-  svg.addEventListener('pointerdown',e=>{ svg.classList.add('hint-seen'); if(e.target.id==='ropeH'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
-  svg.addEventListener('pointermove',e=>{
-    if(!drag) return;
-    const q=svgPt(svg,e), hx=310, hy=190;
-    let a=deg(Math.atan2(hy-q.y, q.x-hx));
-    rope.th=Math.max(8,Math.min(75,a)); drawRope();
+  const svg=$('#ropeSvg'); let mode=null, grabDX=0;
+  function isBoxTarget(t){
+    if(!t || !t.id) return false;
+    return t.id==='ropeBox' || t.id==='ropeBoxHit';
+  }
+  svg.addEventListener('pointerdown',e=>{
+    const t=e.target;
+    if(t && t.id==='ropeH'){ mode='handle'; svg.setPointerCapture(e.pointerId); e.preventDefault(); }
+    else if(isBoxTarget(t)){
+      mode='box';
+      const q=svgPt(svg,e);
+      grabDX=q.x-rope.boxX;
+      svg.setPointerCapture(e.pointerId); e.preventDefault();
+    }
   });
-  svg.addEventListener('pointerup',()=>drag=false); svg.addEventListener('pointercancel',()=>drag=false);
+  svg.addEventListener('pointermove',e=>{
+    if(!mode) return;
+    const q=svgPt(svg,e);
+    if(mode==='handle'){
+      const p=clampRopeTip(q.x, q.y, rope.boxX);
+      rope.tipX=p.tx; rope.tipY=p.ty;
+    } else {
+      rope.boxX=clampRopeBoxX(q.x-grabDX, rope.tipX, rope.tipY);
+    }
+    svg.classList.add('hint-seen');
+    drawRope();
+  });
+  const clear=()=>{ mode=null; };
+  svg.addEventListener('pointerup',clear); svg.addEventListener('pointercancel',clear);
 })();
 
 /* ---------- C1: one arrow + split ---------- */

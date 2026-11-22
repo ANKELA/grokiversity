@@ -313,21 +313,31 @@ def statics_dom_pass(pg, label, shots=False):
     assert "tap the box" not in low, f"{label} hook still shows tap-the-box hint: {hook_copy['text']!r}"
     assert "drag the end" not in low, f"{label} hook still shows drag-the-end hint: {hook_copy['text']!r}"
     assert "to name them" not in low, f"{label} hook still shows name-them hint: {hook_copy['text']!r}"
-    assert hook_copy["hasNudge"], f"{label} hook should have a static handle cue: {hook_copy}"
-    assert "hint-seen" not in hook_copy["hintClass"], f"{label} handle cue should be visible before first touch: {hook_copy}"
-    pg.locator("#ropeSvg").evaluate("""el => el.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, pointerId:1, pointerType:'touch'}))""")
-    pg.locator("#ropeSvg").evaluate("""el => el.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, cancelable:true, pointerId:1, pointerType:'touch'}))""")
+    assert "drag the box" in low, f"{label} hook should say Drag the box: {hook_copy['text']!r}"
+    assert hook_copy["hasNudge"], f"{label} hook should have a hand cue on the box: {hook_copy}"
+    assert pg.locator("#ropeSvg .rope-drag-hint").count() == 1, f"{label} missing Drag the box hint"
+    assert "hint-seen" not in hook_copy["hintClass"], f"{label} box cue should be visible before first drag: {hook_copy}"
+    floor0, lift0 = pg.inner_text("#ropeFloor"), pg.inner_text("#ropeLift")
+    # local drag helper (same as test_prototype)
+    box = pg.locator("#ropeBox").bounding_box(); assert box, f"{label}: no #ropeBox"
+    x, y = box["x"] + box["width"]/2, box["y"] + box["height"]/2
+    pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.move(x - 80, y, steps=10); pg.mouse.up()
     pg.wait_for_timeout(650)
+    floor1, lift1 = pg.inner_text("#ropeFloor"), pg.inner_text("#ropeLift")
+    assert (floor0, lift0) != (floor1, lift1), f"{label} dragging the box should change readouts: {floor0},{lift0} -> {floor1},{lift1}"
     after = pg.evaluate("""() => {
       const svg = document.getElementById('ropeSvg');
       const nudge = svg && svg.querySelector('.rope-nudge');
+      const hint = svg && svg.querySelector('.rope-drag-hint');
       return {
         hintClass: svg ? svg.className.baseVal || svg.getAttribute('class') || '' : '',
-        nudgeOp: nudge ? getComputedStyle(nudge).opacity : null
+        nudgeOp: nudge ? getComputedStyle(nudge).opacity : null,
+        hintOp: hint ? getComputedStyle(hint).opacity : null
       };
     }""")
-    assert "hint-seen" in after["hintClass"], f"{label} first touch should dismiss the handle cue: {after}"
-    assert after["nudgeOp"] is not None and float(after["nudgeOp"]) <= 0.05, f"{label} handle cue should fade after first touch: {after}"
+    assert "hint-seen" in after["hintClass"], f"{label} first box drag should dismiss the cue: {after}"
+    assert after["nudgeOp"] is not None and float(after["nudgeOp"]) <= 0.05, f"{label} hand cue should fade after first drag: {after}"
+    assert after["hintOp"] is not None and float(after["hintOp"]) <= 0.05, f"{label} Drag the box hint should fade after first drag: {after}"
     assert_header_pinned(pg, label + " hook")
     recover_from_simulated_shift(pg, label + " hook shift")
     rounding_pass(pg, label, "statics")

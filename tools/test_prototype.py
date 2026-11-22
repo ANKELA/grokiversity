@@ -142,7 +142,7 @@ def height_tour(pg, label, width_limit=None):
 # Every concept slide that has an svg.diagram must render it (non-zero size,
 # non-empty markup, a valid getScreenCTM) and respond to a drag, slider, or tap.
 INTERACT = {
-    "hook": ("#ropeH", "drag"),
+    "hook": ("#ropeBox", "drag"),
     "force": ("#oneH", "drag"),
     "split": ("#splitH", "drag"),
     "triangle": ("#triH", "drag"),
@@ -367,9 +367,19 @@ with sync_playwright() as p:
     assert pg.locator('.slide[data-id="hook"]').evaluate("el => el.classList.contains('on')")
     hook_txt = pg.evaluate("() => (document.querySelector('[data-id=hook]')?.innerText || '').toLowerCase()")
     assert "tap the box" not in hook_txt and "drag the end" not in hook_txt and "to name them" not in hook_txt, hook_txt
+    assert "drag the box" in hook_txt, hook_txt
     assert pg.locator("#ropeSvg .rope-nudge").count() == 1
-    drag(pg, "#ropeH", -20, -80)
+    assert pg.locator("#ropeSvg .rope-drag-hint").count() == 1
+    floor0, lift0 = pg.inner_text("#ropeFloor"), pg.inner_text("#ropeLift")
+    drag(pg, "#ropeBox", -80, 0)
+    floor1, lift1 = pg.inner_text("#ropeFloor"), pg.inner_text("#ropeLift")
+    print("Drag box:", floor0, lift0, "->", floor1, lift1)
+    assert (floor0, lift0) != (floor1, lift1), "dragging the box should change floor/lift readouts"
     assert "hint-seen" in (pg.locator("#ropeSvg").get_attribute("class") or "")
+    # rope-end handle still works
+    floor2 = pg.inner_text("#ropeFloor")
+    drag(pg, "#ropeH", -20, -80)
+    assert pg.inner_text("#ropeFloor") != floor2 or pg.inner_text("#ropeLift") != lift1
     pg.screenshot(path=str(SHOTS / "desktop_03b_hook_rope.png"))
     assert_header_pinned(pg, "desktop after rope drag")
     recover_from_simulated_shift(pg, "desktop after rope drag shift")
@@ -542,10 +552,10 @@ with sync_playwright() as p:
     assert_header_pinned(m, "mobile hook")
     recover_from_simulated_shift(m, "mobile hook shift")
     try:
-        drag(m, "#ropeH", -20, -80)
+        drag(m, "#ropeBox", -80, 0)
     except Exception:
         pass
-    assert_header_pinned(m, "mobile after rope drag")
+    assert_header_pinned(m, "mobile after box drag")
     m.screenshot(path=str(SHOTS / "mobile_02_lesson.png"))
     goto_concept(m, 5); goto_slide(m, "beam"); m.wait_for_timeout(500)
     assert_fits(m, "mobile beam", check_width=392)
