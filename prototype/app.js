@@ -1276,28 +1276,39 @@ function buildQuiz(q){
   const box=document.querySelector('.q-mount[data-q="'+q.id+'"]');
   if(!box) return;
   const c=+q.id[1];
+  const R=window.GrokeQuizRand;
+  if(R) R.apply(q);
+  const inst=R?R.get(q.id):null;
+  const canFresh=inst && !inst.fixed;
   const d=document.createElement('div'); d.className='q'; d.id='Q'+q.id.replace('.','_');
   const inpAttrs='type="text" inputmode="decimal" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
-  d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>${quizRoundHint(q)}
+  const fig=q.diagram?'<div class="q-fig">'+q.diagram+'</div>':'';
+  d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>${fig}${quizRoundHint(q)}
     <div class="inrow">${q.ans.map((a,i)=>fieldHTML(a,i,inpAttrs)).join('')}</div>
     <div class="q-actions">
       <button type="button" class="btn" data-act="check">Check</button>
       <button type="button" class="btn ghost" data-act="hint">Hint</button>
       <button type="button" class="btn ghost" data-act="skip">Skip</button>
       <button type="button" class="btn ghost" data-act="sol">Show solution</button>
+      <button type="button" class="btn ghost" data-act="again" hidden>Try a new one</button>
     </div>
     <div class="fb"></div><div class="hints"></div>`;
-  let hintN=0, tries=0;
+  let hintN=0, tries=R?R.getTries(q.id):0;
   const chk=d.querySelector('[data-act="check"]'), hb=d.querySelector('[data-act="hint"]');
   const skip=d.querySelector('[data-act="skip"]'), sol=d.querySelector('[data-act="sol"]');
+  const again=d.querySelector('[data-act="again"]');
   const fb=d.querySelector('.fb');
   if(store.score[c][q.id]!==undefined){ d.classList.add('correct'); fb.className='fb ok'; fb.textContent='✓ Solved earlier (saved on this device).'; }
   function blurQuiz(){ const a=document.activeElement; if(a && a.blur) a.blur(); }
-  hb.addEventListener('click',()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say('Those are all the hints for this problem. Tell me your first step and I’ll check it.'); });
-  sol.addEventListener('click',()=>{
+  function solHTML(){
     const lines=q.ans.map(function(a){ return a.q+': '+formatAns(a); }).join('; ');
+    return (q.sol||'')+'<div><b>Answers:</b> '+lines+'  You can keep trying, skip, or go to the next problem — you are not locked here.</div>';
+  }
+  hb.addEventListener('click',()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say('Those are all the hints for this problem. Tell me your first step and I will check it.'); });
+  sol.addEventListener('click',()=>{
     fb.className='fb';
-    fb.textContent='Solution: '+lines+'  You can keep trying, skip, or go to the next problem — you are not locked here.';
+    fb.innerHTML=solHTML();
+    renderMath(fb);
   });
   skip.addEventListener('click',()=>{
     blurQuiz();
@@ -1307,8 +1318,16 @@ function buildQuiz(q){
     if(nxt && !nxt.disabled) nxt.click();
     else if($('#prevSlide') && !$('#prevSlide').disabled) say('This is the last slide of the concept. Tap Back, or open Concepts, whenever you want to leave.');
   });
+  if(again){
+    again.addEventListener('click',function(){
+      if(!R || !canFresh) return;
+      R.fresh(q.id);
+      R.apply(q);
+      buildQuiz(q);
+    });
+  }
   chk.addEventListener('click',()=>{
-    tries++; let all=true; const msgs=[];
+    tries=R?R.bumpTries(q.id):(tries+1); let all=true; const msgs=[];
     q.ans.forEach((a,i)=>{ const inp=d.querySelector('input[data-i="'+i+'"]'), sel=d.querySelector('select[data-i="'+i+'"]');
       if(sel) syncTypedUnit(inp, sel, a.u);
       const g=gradeAns(a, inp.value, sel?sel.value:undefined);
@@ -1316,17 +1335,18 @@ function buildQuiz(q){
       if(g.err){ all=false; msgs.push(a.q+': '+g.err); inp.style.borderColor='var(--bad)'; return; }
       inp.style.borderColor=g.ok?'var(--ok)':'var(--bad)'; if(!g.ok){ all=false; msgs.push(a.q+" isn't right yet."); } });
     d.classList.toggle('correct',all); d.classList.toggle('wrong',!all); fb.className='fb '+(all?'ok':'no');
-    fb.innerHTML = all ? '✓ Correct'+(tries>1?' (after '+tries+' tries; first-try answers count more toward mastery)':'')+'.' : msgs.join(' ')+' Try again, take a hint, skip, or show the solution — you can always move on with Next or Back.';
+    fb.innerHTML = all ? '✓ Correct'+(tries>1?' (after '+tries+' tries; first-try answers count more toward mastery)':'')+'.' : msgs.join(' ')+' Try again, take a hint, skip, show the solution'+(canFresh?', or try a new one':'')+' — you can always move on with Next or Back.';
+    if(again) again.hidden=!(!all && canFresh && store.score[c][q.id]===undefined);
     if(all) blurQuiz();
     const first=all && store.score[c][q.id]===undefined;
     let mastered=false;
     if(first){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
       mastered=before<80 && mastery(c)>=80;
       if(mastered){
-        say(c<5?'Nice — this concept is mastered (80% or better). The next one is unlocked. Go on when you are ready.':'You’ve finished Statics Unit 1 on this device. For a harder review, copy the tutor prompt into Grok.');
+        say(c<5?'Nice — this concept is mastered (80% or better). The next one is unlocked. Go on when you are ready.':'You have finished Statics Unit 1 on this device. For a harder review, copy the tutor prompt into Grok.');
       }
     }
-    if(!all && tries===2) say('Not quite yet. Write out your first equation, with signs and units, and I’ll help you find the slip. You can also skip or show the solution — Next and Back still work.');
+    if(!all && tries===2) say('Not quite yet. Write out your first equation, with signs and units, and I will help you find the slip. You can also skip or show the solution — Next and Back still work.');
     try{ if(window.GrokeFun){ if(all) window.GrokeFun.report('correct',{first:first,tries:tries,qid:q.id,concept:c,mastered:mastered}); else window.GrokeFun.report('wrong',{qid:q.id}); } }catch(e){}
   });
   d.querySelectorAll('input').forEach(function(inp){
@@ -1337,7 +1357,28 @@ function buildQuiz(q){
     inp.addEventListener('focus',function(){ revealQuizControls(inp); });
   });
   box.innerHTML=''; box.appendChild(d);
+  renderMath(d);
 }
+
+function shuffleQuizSlides(){
+  const R=window.GrokeQuizRand;
+  if(!R) return;
+  [1,2,3,4,5].forEach(function(c){
+    const stage=$('#c'+c);
+    if(!stage) return;
+    const qs=[...stage.querySelectorAll('.slide')].filter(function(s){ return (s.dataset.id||'').startsWith('quiz-'); });
+    if(qs.length<2) return;
+    const ids=qs.map(function(s){ const m=s.querySelector('.q-mount'); return m&&m.dataset.q; }).filter(Boolean);
+    const order=R.orderOf('s'+c, ids);
+    const byId={};
+    qs.forEach(function(s){ const m=s.querySelector('.q-mount'); if(m) byId[m.dataset.q]=s; });
+    const last=qs[qs.length-1];
+    const parent=last.parentNode;
+    const after=last.nextSibling;
+    order.forEach(function(id){ if(byId[id]) parent.insertBefore(byId[id], after); });
+  });
+}
+
 
 const MICRO={
   c1fx:[{v:86.6025,u:'N',tp:1}],
@@ -1407,6 +1448,13 @@ function bindChecks(){
       });
     }
     if(MICRO_MC[key]){
+      const choices=box.querySelector('.choices');
+      if(choices && window.GrokeQuizRand){
+        const btns=[...choices.querySelectorAll('button')];
+        const ids=btns.map(function(b,i){ return String(i); });
+        const order=window.GrokeQuizRand.orderOf('mc-'+key, ids);
+        order.forEach(function(i){ if(btns[+i]) choices.appendChild(btns[+i]); });
+      }
       const fb=box.querySelector('.fb');
       box.querySelectorAll('.choices button').forEach(b=>{
         b.addEventListener('click',()=>{
@@ -1722,11 +1770,13 @@ function boot(){
     return;
   }
   if(!document.querySelector('html.lesson-page, #lessonApp')) return;
+  if(window.GrokeQuizRand) window.GrokeQuizRand.attachStore(store, save, 's');
   prepareThumbLayout();
   wireKeyboard();
 
   bindChecks();
   Object.values(Q).forEach(list=>list.forEach(buildQuiz));
+  shuffleQuizSlides();
   const r=readRoute();
   go(r.c, r.i);
   renderMath(document.body);
@@ -1737,5 +1787,5 @@ function boot(){
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
-try{ window.GrokeversityQuiz={prepareThumbLayout:prepareThumbLayout,bootHome:bootHome,drawRope:drawRope,applyKeyboardInset:applyKeyboardInset,clearKeyboardInset:clearKeyboardInset,resetPageScroll:resetPageScroll,parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
+try{ window.GrokeversityQuiz={prepareThumbLayout:prepareThumbLayout,shuffleQuizSlides:shuffleQuizSlides,buildQuiz:buildQuiz,bootHome:bootHome,drawRope:drawRope,applyKeyboardInset:applyKeyboardInset,clearKeyboardInset:clearKeyboardInset,resetPageScroll:resetPageScroll,parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
 })();

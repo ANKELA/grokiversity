@@ -7,7 +7,10 @@ OG tags, #learn redirect, the Intro to AI lesson (unchanged), and a 46-slide gra
 every interactive must have a non-empty, non-zero SVG and respond to a drag or slider."""
 import http.server, json, pathlib, socketserver, sys, threading, functools
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from test_home_links import home_links_pass, assert_home_header
 ROOT = pathlib.Path(__file__).resolve().parents[1]; SITE = ROOT / "prototype"; SHOTS = SITE / "screenshots"; SHOTS.mkdir(exist_ok=True)
+home_links_pass(SITE)
 for old in SHOTS.glob("*.png"): old.unlink()
 class Q(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
@@ -38,9 +41,23 @@ def watch(pg):
     pg.on("console", lambda m: m.type == "error" and errors.append(f"console: {m.text}"))
     pg.on("requestfailed", req_failed)
     pg.on("response", lambda r: r.status >= 400 and not skip_net(r.url) and "fonts/KaTeX_" not in r.url and errors.append(f"HTTP {r.status}: {r.url}"))
-def answer(pg, qid, vals):
+def live_exact(pg, qid):
+    return pg.evaluate("""(qid) => {
+      const api=window.GrokeversityQuiz;
+      const q=(window.GrokeQuizRand && window.GrokeQuizRand.get(qid)) || Object.values(api.Q).flat().find(x => x.id===qid);
+      return q.ans.map(a => api.formatExact(a));
+    }""", qid)
+
+def answer(pg, qid, vals=None):
+    if vals is None:
+        vals = live_exact(pg, qid)
     loc = pg.locator("#Q" + qid.replace(".", "_"))
-    for i, v in enumerate(vals): loc.locator("input").nth(i).fill(v)
+    loc.scroll_into_view_if_needed()
+    for i, v in enumerate(vals):
+        inp = loc.locator("input").nth(i)
+        inp.scroll_into_view_if_needed()
+        inp.wait_for(state="visible", timeout=8000)
+        inp.fill(v)
     loc.locator('[data-act="check"], button.btn').first.click(); return loc.locator(".fb").inner_text()
 def drag(pg, sel, dx, dy):
     pg.evaluate(f"document.querySelector('{sel}').scrollIntoView({{block:'center',behavior:'instant'}})"); pg.wait_for_timeout(150)
@@ -448,14 +465,20 @@ with sync_playwright() as p:
     pg.screenshot(path=str(SHOTS / "desktop_03_concept1_vectors.png"))
 
     goto_slide(pg, "quiz-q1-1")
-    fb = answer(pg, "q1.1", ["512", "100.5 deg"]); print("default-unit menu:", fb); assert "Correct" in fb
-    pg.locator("#Qq1_1 button").nth(1).click()
-    fb = answer(pg, "q1.1", ["0.5122 kN", "100.5 deg"]); print("kN accepted:", fb); assert "Correct" in fb
-    fb = answer(pg, "q1.1", ["512 N", "101 deg"]); print("integer round:", fb); assert "Correct" in fb
-    fb = answer(pg, "q1.1", ["512 N", "100 deg"]); print("half-even other side:", fb); assert "Correct" in fb
+    fb = answer(pg, "q1.1"); print("default-unit menu:", fb); assert "Correct" in fb
+    conv = pg.evaluate("""() => {
+      const api=window.GrokeversityQuiz;
+      const q=window.GrokeQuizRand.get('q1.1');
+      const kn=api.convertToWanted(q.ans[0].v, q.ans[0].u, 'kN').v;
+      return {kn, th:q.ans[1].v, i0:api.intTargets(q.ans[0].v), i1:api.intTargets(q.ans[1].v)};
+    }""")
+    fb = answer(pg, "q1.1", [str(conv["kn"])+" kN", str(conv["th"])+" deg"]); print("kN accepted:", fb); assert "Correct" in fb
+    fb = answer(pg, "q1.1", [str(conv["i0"][0])+" N", str(conv["i1"][0])+" deg"]); print("integer round:", fb); assert "Correct" in fb
+    if len(conv["i1"])==2:
+        fb = answer(pg, "q1.1", [str(conv["i0"][0])+" N", str(conv["i1"][1])+" deg"]); print("half-even other side:", fb); assert "Correct" in fb
     pg.locator("#Qq1_1").scroll_into_view_if_needed(); pg.screenshot(path=str(SHOTS / "desktop_04_quiz_feedback.png"))
-    goto_slide(pg, "quiz-q1-4"); assert "Correct" in answer(pg, "q1.4", ["245 N", "65.9 deg"])
-    goto_slide(pg, "quiz-q1-3"); assert "Correct" in answer(pg, "q1.3", ["371.8 N", "-27.4 deg"])
+    goto_slide(pg, "quiz-q1-4"); assert "Correct" in answer(pg, "q1.4")
+    goto_slide(pg, "quiz-q1-3"); assert "Correct" in answer(pg, "q1.3")
     print("C1 mastery:", pg.inner_text("#mpct"))
     assert_header_pinned(pg, "desktop after C1 quizzes")
     recover_from_simulated_shift(pg, "desktop after C1 quizzes shift")
@@ -473,9 +496,9 @@ with sync_playwright() as p:
     goto_slide(pg, "ring")
     t1 = pg.inner_text("#eT1"); drag(pg, "#ringH", 80, 60); t1b = pg.inner_text("#eT1"); print("Ring drag T1:", t1, "->", t1b); assert t1 != t1b
     pg.screenshot(path=str(SHOTS / "desktop_06_concept3_equilibrium.png"))
-    goto_slide(pg, "quiz-q3-1"); assert "Correct" in answer(pg, "q3.1", ["359.1 N", "439.8 N"])
-    goto_slide(pg, "quiz-q3-2"); fb = answer(pg, "q3.2", ["156.96 N", "135.9 N", "169.9 mm"]); print("q3.2 (mm→m):", fb); assert "Correct" in fb
-    goto_slide(pg, "quiz-q3-3"); assert "Correct" in answer(pg, "q3.3", ["509.1 N", "339.4 N", "568.1 N"])
+    goto_slide(pg, "quiz-q3-1"); assert "Correct" in answer(pg, "q3.1")
+    goto_slide(pg, "quiz-q3-2"); fb = answer(pg, "q3.2"); print("q3.2 (mm→m):", fb); assert "Correct" in fb
+    goto_slide(pg, "quiz-q3-3"); assert "Correct" in answer(pg, "q3.3")
 
     goto_concept(pg, 4)
     goto_slide(pg, "wrench")
@@ -489,11 +512,11 @@ with sync_playwright() as p:
     pg.locator('[data-check="c4m"] [data-act="check"], [data-check="c4m"] button.btn').first.click()
     print("micro moment N.m:", pg.locator('[data-check="c4m"] .fb').inner_text())
     assert "Right" in pg.locator('[data-check="c4m"] .fb').inner_text()
-    goto_slide(pg, "quiz-q4-1"); assert "Correct" in answer(pg, "q4.1", ["69.28 N·m"])
-    goto_slide(pg, "quiz-q4-2"); assert "Correct" in answer(pg, "q4.2", ["-149.5 Nm"])
-    goto_slide(pg, "quiz-q4-5"); assert "Correct" in answer(pg, "q4.5", ["-400 N", "-1200 N·m"])
-    goto_slide(pg, "quiz-q4-3"); assert "Correct" in answer(pg, "q4.3", ["0 N·m", "-979.8 N·m", "489.9 N·m", "1095.4 N·m"])
-    goto_slide(pg, "quiz-q4-4"); assert "Correct" in answer(pg, "q4.4", ["391.9 N·m"])
+    goto_slide(pg, "quiz-q4-1"); assert "Correct" in answer(pg, "q4.1")
+    goto_slide(pg, "quiz-q4-2"); assert "Correct" in answer(pg, "q4.2")
+    goto_slide(pg, "quiz-q4-5"); assert "Correct" in answer(pg, "q4.5")
+    goto_slide(pg, "quiz-q4-3"); assert "Correct" in answer(pg, "q4.3")
+    goto_slide(pg, "quiz-q4-4"); assert "Correct" in answer(pg, "q4.4")
     chat = pg.inner_text("#chat")
     print("Tutor chat (should be human, no q4.1):", chat.replace("\\n"," | ")[:300])
     assert "q4.1" not in chat and "q4.2" not in chat
@@ -519,11 +542,11 @@ with sync_playwright() as p:
     box = pg.locator('[data-check="c5ab"]')
     box.locator("input").nth(0).fill("9 kN"); box.locator("input").nth(1).fill("3 kN"); box.locator('[data-act="check"], button.btn').first.click()
     print("micro beam:", box.locator(".fb").inner_text()); assert "Right" in box.locator(".fb").inner_text()
-    goto_slide(pg, "quiz-q5-1"); assert "Correct" in answer(pg, "q5.1", ["6.667 kN", "3.333 kN"])
-    goto_slide(pg, "quiz-q5-2"); assert "Correct" in answer(pg, "q5.2", ["6.0 kN", "12.0 kN"])
-    goto_slide(pg, "quiz-q5-3"); assert "Correct" in answer(pg, "q5.3", ["5.543 kN", "2.771 kN", "3.2 kN"])
-    goto_slide(pg, "quiz-q5-4"); assert "Correct" in answer(pg, "q5.4", ["3.111 kN", "1.736 kN", "4 kN", "0 kN", "0 kN"])
-    goto_slide(pg, "quiz-q5-5"); assert "Correct" in answer(pg, "q5.5", ["22.22 kN", "-17.78 kN", "-3.333 kN", "18.09 kN", "11.25 kN"])
+    goto_slide(pg, "quiz-q5-1"); assert "Correct" in answer(pg, "q5.1")
+    goto_slide(pg, "quiz-q5-2"); assert "Correct" in answer(pg, "q5.2")
+    goto_slide(pg, "quiz-q5-3"); assert "Correct" in answer(pg, "q5.3")
+    goto_slide(pg, "quiz-q5-4"); assert "Correct" in answer(pg, "q5.4")
+    goto_slide(pg, "quiz-q5-5"); assert "Correct" in answer(pg, "q5.5")
     print("C5 mastery:", pg.inner_text("#mpct"))
 
     pg.click("#tutorBtn"); pg.wait_for_timeout(200)
@@ -573,6 +596,7 @@ with sync_playwright() as p:
     ctxI.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
     gi = ctxI.new_page(); watch(gi)
     gi.goto(LESSON); gi.wait_for_load_state("networkidle"); gi.wait_for_timeout(400)
+    assert_home_header(gi, "chrome-iphone-390x844 lesson")
     graphic_tour(gi, "chrome-iphone-390x844")
     thumb_tour(gi, "chrome-iphone-390x844 thumb")
     ctxI.close()
@@ -582,6 +606,7 @@ with sync_playwright() as p:
         ctxW.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
         gw = ctxW.new_page(); watch(gw)
         gw.goto(LESSON); gw.wait_for_load_state("networkidle"); gw.wait_for_timeout(400)
+        assert_home_header(gw, "webkit-iphone-390x844 lesson")
         graphic_tour(gw, "webkit-iphone-390x844")
         thumb_tour(gw, "webkit-iphone-390x844 thumb")
         ctxW.close()
@@ -619,7 +644,10 @@ with sync_playwright() as p:
     print("home iPhone scrollHeight:", hmob)
     assert hmob <= 980, f"home should fit about one iPhone screen with at most a small scroll (980px), got {hmob}"
     assert_header_pinned(mL, "home iPhone")
+    assert_home_header(mL, "chrome-iphone-390x844 home")
     home_demo_pass(mL, "chrome-iphone-390x844 home", thumb=True)
+    mL.goto(URL.replace("index.html", "about.html")); mL.wait_for_load_state("networkidle"); mL.wait_for_timeout(200)
+    assert_home_header(mL, "chrome-iphone-390x844 about")
     mL.screenshot(path=str(SHOTS / "mobile_01_landing.png"))
     mL.locator("footer").scroll_into_view_if_needed(); mL.screenshot(path=str(SHOTS / "mobile_04_footer.png"))
 
@@ -644,37 +672,41 @@ with sync_playwright() as p:
     pg2.screenshot(path=str(SHOTS / "desktop_10_ai_c1.png"))
     before = pg2.inner_text("#tTot"); pg2.fill("#dRange", "7"); pg2.locator("#dRange").evaluate("el => { el.value = 7; el.dispatchEvent(new Event('input',{bubbles:true})); }")
     after = pg2.inner_text("#tTot"); print("Tree nodes:", before, "->", after); assert before != after
-    fb = answer(pg2, "q1.4", ["60", "75"]); print("q1.4 default % menu:", fb); assert "Correct" in fb
-    pg2.locator("#Qq1_4 button").nth(1).click()
-    assert "Correct" in answer(pg2, "q1.1", ["7", "6.8", "6.5"])
-    assert "Correct" in answer(pg2, "q1.2", ["1365"])
-    assert "Correct" in answer(pg2, "q1.3", ["11 %", "9 %"])
-    assert "Correct" in answer(pg2, "q1.3", ["10.85 %", "8.756 %"])
-    assert "Correct" in answer(pg2, "q1.4", ["60 %", "75 %"])
+    fb = answer(pg2, "q1.4"); print("q1.4 default % menu:", fb); assert "Correct" in fb
+    assert "Correct" in answer(pg2, "q1.1")
+    assert "Correct" in answer(pg2, "q1.2")
+    q13 = pg2.evaluate("""() => {
+      const api=window.GrokeversityQuiz;
+      const q=window.GrokeQuizRand.get('q1.3');
+      return {exact:q.ans.map(a=>api.formatExact(a)), ints:q.ans.map(a=>api.intTargets(a.v)[0])};
+    }""")
+    assert "Correct" in answer(pg2, "q1.3", [str(q13["ints"][0])+" %", str(q13["ints"][1])+" %"])
+    assert "Correct" in answer(pg2, "q1.3", q13["exact"])
+    assert "Correct" in answer(pg2, "q1.4")
     print("AI C1 mastery:", pg2.inner_text("#mpct"))
     pg2.click('#clist [data-c="2"]'); assert pg2.is_visible("#c2")
     before = pg2.inner_text("#rmse"); drag(pg2, "#hW", 0, -40); after = pg2.inner_text("#rmse")
     print("Regression drag MSE:", before, "->", after); assert before != after
     pg2.click("#olsBtn"); print("OLS snap MSE:", pg2.inner_text("#rmse")); assert "0.450" in pg2.inner_text("#rmse") or "0.45" in pg2.inner_text("#rmse")
     pg2.locator("#reg").scroll_into_view_if_needed(); pg2.screenshot(path=str(SHOTS / "desktop_11_ai_regression.png"))
-    assert "Correct" in answer(pg2, "q2.1", ["0.75"])
-    assert "Correct" in answer(pg2, "q2.2", ["1.2", "0.5", "0.45"])
-    assert "Correct" in answer(pg2, "q2.3", ["1.3667", "0.49167"])
-    assert "Correct" in answer(pg2, "q2.4", ["-0.5", "0"])
+    assert "Correct" in answer(pg2, "q2.1")
+    assert "Correct" in answer(pg2, "q2.2")
+    assert "Correct" in answer(pg2, "q2.3")
+    assert "Correct" in answer(pg2, "q2.4")
     pg2.click('#clist [data-c="3"]'); assert pg2.is_visible("#c3")
     w0 = pg2.inner_text("#gdw"); pg2.click("#gdStep"); w1 = pg2.inner_text("#gdw")
     print("GD step w:", w0, "->", w1); assert w0 != w1
     pg2.locator("#gdSurf").scroll_into_view_if_needed(); pg2.screenshot(path=str(SHOTS / "desktop_12_ai_gd.png"))
-    assert "Correct" in answer(pg2, "q3.1", ["1.2", "1.92"])
-    assert "Correct" in answer(pg2, "q3.2", ["-20.5", "-7", "0.205", "0.07"])
-    assert "Correct" in answer(pg2, "q3.3", ["1", "1", "5"])
-    assert "Correct" in answer(pg2, "q3.4", ["1.1", "1", "0.525"])
+    assert "Correct" in answer(pg2, "q3.1")
+    assert "Correct" in answer(pg2, "q3.2")
+    assert "Correct" in answer(pg2, "q3.3")
+    assert "Correct" in answer(pg2, "q3.4")
     pg2.click('#clist [data-c="4"]'); assert pg2.is_visible("#c4")
     out0 = pg2.inner_text("#aout")
     pg2.locator("#s1").evaluate("el => { el.value = 5; el.dispatchEvent(new Event('input',{bubbles:true})); }")
     out1 = pg2.inner_text("#aout"); print("Attention out:", out0, "->", out1); assert out0 != out1
     pg2.locator("#attn").scroll_into_view_if_needed(); pg2.screenshot(path=str(SHOTS / "desktop_13_ai_attention.png"))
-    assert "Correct" in answer(pg2, "q4.1", ["-0.5", "0.37754"])
+    assert "Correct" in answer(pg2, "q4.1")
     pg2.click("#copyPrompt"); clip = pg2.evaluate("navigator.clipboard.readText()"); print("AI clipboard chars:", len(clip)); assert "AI 101" in clip and clip.startswith("# Grokeversity Tutor Prompt")
     pg2.reload(); pg2.wait_for_load_state("networkidle")
     print("AI after reload c4 visible:", pg2.is_visible("#c4"), "| q1.1:", pg2.locator("#Qq1_1 .fb").inner_text())
@@ -696,6 +728,7 @@ with sync_playwright() as p:
     }""")
     print("AI mobile tree thumb:", ai_thumb)
     assert ai_thumb.get("ready") and ai_thumb.get("ok"), f"AI tree card should put numbers above sliders: {ai_thumb}"
+    assert_home_header(m2, "chrome-iphone-390x844 intro-ai")
     m2.screenshot(path=str(SHOTS / "mobile_05_ai_landing.png"))
     m2.locator("#learn").scroll_into_view_if_needed(); m2.wait_for_timeout(200); m2.screenshot(path=str(SHOTS / "mobile_06_ai_lesson.png"))
     m2.locator("footer").scroll_into_view_if_needed(); m2.screenshot(path=str(SHOTS / "mobile_07_ai_footer.png"))

@@ -44,7 +44,18 @@ def goto_q11(pg):
     pg.locator("#dots .dot").nth(i).click()
     pg.wait_for_timeout(200)
 
-def answer_q11(pg, a="512 N", b="101 deg"):
+def live_exact(pg, qid):
+    return pg.evaluate("""(qid) => {
+      const api=window.GrokeversityQuiz;
+      const q=window.GrokeQuizRand.get(qid);
+      return q.ans.map(a => api.formatExact(a));
+    }""", qid)
+
+def answer_q11(pg, a=None, b=None):
+    if a is None or b is None:
+        vals = live_exact(pg, "q1.1")
+        if a is None: a = vals[0]
+        if b is None: b = vals[1]
     box = pg.locator("#Qq1_1")
     box.locator("input").nth(0).fill(a)
     box.locator("input").nth(1).fill(b)
@@ -145,8 +156,9 @@ def run_browser(p, engine, iphone, shots=False):
     assert p3.evaluate("() => !!(window.GrokeFun && document.getElementById('funBar'))"), f"{label}: AI fun bar missing"
     p3.locator("#Qq1_4").scroll_into_view_if_needed()
     box = p3.locator("#Qq1_4")
-    box.locator("input").nth(0).fill("60 %")
-    box.locator("input").nth(1).fill("75 %")
+    vals = live_exact(p3, "q1.4")
+    box.locator("input").nth(0).fill(vals[0])
+    box.locator("input").nth(1).fill(vals[1])
     box.locator('[data-act="check"]').click()
     p3.wait_for_timeout(200)
     xp = p3.evaluate("() => window.GrokeFun.state().xp")

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Regression: Statics + Intro AI quizzes accept iOS-typed answers and never lock the learner in."""
-import functools, http.server, json, pathlib, socketserver, sys, threading
+import functools, http.server, json, pathlib, socketserver, sys, threading, traceback
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from test_home_links import home_links_pass, assert_home_header
 from playwright.sync_api import sync_playwright
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -159,25 +161,45 @@ def goto_concept(pg, c):
     assert pg.is_visible(f"#c{c}"), f"concept {c} not visible"
 
 def goto_slide(pg, data_id):
+    pg.evaluate("""() => {
+      document.querySelectorAll('.drawer.on, .drawer-back.on').forEach(el => el.classList.remove('on'));
+    }""")
     i = pg.evaluate("""(id) => {
       const c = [...document.querySelectorAll(".concept")].find(x => !x.hidden);
       return [...c.querySelectorAll(".slide")].findIndex(s => s.dataset.id === id);
     }""", data_id)
     assert i >= 0, f"slide {data_id} not in current concept"
     pg.locator("#dots .dot").nth(i).click()
-    pg.wait_for_timeout(180)
-    on = pg.locator(f'.slide[data-id="{data_id}"]').evaluate("el => el.classList.contains('on')")
+    slide = pg.locator(f'.slide[data-id="{data_id}"]')
+    pg.wait_for_function(
+        """(id) => { const s=document.querySelector('.slide[data-id="'+id+'"]'); return !!(s && s.classList.contains('on') && getComputedStyle(s).visibility!=='hidden' && getComputedStyle(s).opacity!=='0'); }""",
+        arg=data_id,
+        timeout=8000,
+    )
+    pg.wait_for_timeout(80)
+    on = slide.evaluate("el => el.classList.contains('on')")
     assert on, f"slide {data_id} did not become active"
 
 def qbox(pg, qid):
     return pg.locator("#Q" + qid.replace(".", "_"))
 
+def reveal_el(pg, locator):
+    """Scroll a quiz field into view inside the overflow:auto lesson slide (needed on WebKit)."""
+    handle = locator.element_handle()
+    if handle:
+        pg.evaluate("(el) => { el.scrollIntoView({block:'center', inline:'nearest', behavior:'instant'}); }", handle)
+    locator.scroll_into_view_if_needed()
+    locator.wait_for(state="visible", timeout=8000)
+
 def check_click(box):
     box.locator('[data-act="check"]').click()
 
 def fill_forms(box, vals):
+    pg = box.page
     for i, v in enumerate(vals):
-        box.locator("input").nth(i).fill(v)
+        inp = box.locator("input").nth(i)
+        reveal_el(pg, inp)
+        inp.fill(v)
 
 
 
@@ -265,6 +287,92 @@ def rounding_pass(pg, label, course):
     assert not res["fails"], f"{label}: {len(res['fails'])} rounding failures"
     return res
 
+
+def random_quiz_pass(pg, label, course="statics"):
+    """Seed persistence, Try a new one, shuffle is a stored permutation, diagrams follow values."""
+    api = "window.GrokeQuizRand"
+    assert pg.evaluate(f"() => !!({api} && {api}.get)"), f"{label}: GrokeQuizRand missing"
+    if course == "statics":
+        qid = "q1.1"
+        goto_concept(pg, 1)
+        goto_slide(pg, "quiz-q1-1")
+        box = qbox(pg, qid)
+        first = pg.evaluate(f"() => {api}.get('{qid}')").get("givens") if False else pg.evaluate("""() => {
+          const inst=window.GrokeQuizRand.get('q1.1');
+          return {givens: inst.givens, seed: inst.seed, text: inst.text};
+        }""")
+        # Refresh mid-problem keeps the same numbers
+        pg.reload(wait_until="domcontentloaded")
+        pg.wait_for_timeout(400)
+        goto_concept(pg, 1)
+        goto_slide(pg, "quiz-q1-1")
+        box = qbox(pg, qid)
+        again = pg.evaluate("""() => {
+          const inst=window.GrokeQuizRand.get('q1.1');
+          return {givens: inst.givens, seed: inst.seed, text: inst.text, body: document.querySelector('#Qq1_1 p') && document.querySelector('#Qq1_1 p').innerText};
+        }""")
+        assert again["seed"] == first["seed"], f"{label}: seed changed on refresh {first['seed']} -> {again['seed']}"
+        assert again["givens"] == first["givens"], f"{label}: givens changed on refresh {first['givens']} vs {again['givens']}"
+        assert str(int(first["givens"]["F1"])) in (again["body"] or ""), f"{label}: page text missing drawn F1 after refresh: {again['body']}"
+        # UNLOCK scripts pre-mark quizzes solved; clear q1.1 so Try a new one can appear
+        pg.evaluate("""() => {
+          const raw=JSON.parse(localStorage.getItem('grokeversity.v1')||'{}');
+          if(raw.score && raw.score['1']) delete raw.score['1']['q1.1'];
+          localStorage.setItem('grokeversity.v1', JSON.stringify(raw));
+        }""")
+        pg.reload(wait_until="domcontentloaded")
+        pg.wait_for_timeout(400)
+        goto_concept(pg, 1)
+        goto_slide(pg, "quiz-q1-1")
+        box = qbox(pg, qid)
+        kept = pg.evaluate("""() => window.GrokeQuizRand.get('q1.1').givens""")
+        assert kept == first["givens"], f"{label}: clearing score changed the seed/givens {kept} vs {first['givens']}"
+        # Wrong answer reveals Try a new one, which draws a fresh variant
+        fill_forms(box, ["0", "0"])
+        check_click(box)
+        again_btn = box.locator('[data-act="again"]')
+        assert again_btn.count() == 1 and again_btn.is_visible(), f"{label}: Try a new one should appear after a wrong answer"
+        again_btn.click()
+        pg.wait_for_timeout(200)
+        box = qbox(pg, qid)
+        fresh = pg.evaluate("""() => {
+          const inst=window.GrokeQuizRand.get('q1.1');
+          return {givens: inst.givens, seed: inst.seed, body: document.querySelector('#Qq1_1 p') && document.querySelector('#Qq1_1 p').innerText};
+        }""")
+        assert fresh["seed"] != first["seed"] or fresh["givens"] != first["givens"], f"{label}: Try a new one did not change the variant"
+        assert str(int(fresh["givens"]["F1"])) in (fresh["body"] or ""), f"{label}: new variant text missing F1 {fresh}"
+        # diagram present for q1.1
+        assert box.locator("svg.q-diagram").count() == 1, f"{label}: q1.1 should show a value-driven diagram"
+        # Shuffle is a stored permutation of the concept's quiz ids
+        perm = pg.evaluate("""() => {
+          const ids=[...document.querySelectorAll('#c1 .q-mount')].map(el => el.dataset.q);
+          const stored=(JSON.parse(localStorage.getItem('grokeversity.v1')||'{}').quiz||{}).order||{};
+          return {ids, stored: stored.s1};
+        }""")
+        assert perm["stored"] and sorted(perm["stored"])==sorted(perm["ids"]), f"{label}: stored quiz order is not a permutation {perm}"
+        assert perm["ids"] == perm["stored"], f"{label}: DOM order != stored order {perm}"
+        print(f"{label}: random quiz ok (seed persist, try-a-new-one, shuffle {perm['stored']})")
+    else:
+        # AI: self-contained text + try a new one on q2.2 (mentions its own points)
+        pg.evaluate("""() => {
+          const raw=JSON.parse(localStorage.getItem('grokeversity.ai101.v1')||'{}');
+          if(raw.score && raw.score['2']) delete raw.score['2']['q2.2'];
+          localStorage.setItem('grokeversity.ai101.v1', JSON.stringify(raw));
+        }""")
+        pg.reload(wait_until="domcontentloaded")
+        pg.wait_for_timeout(400)
+        pg.click('#clist [data-c="2"]')
+        pg.wait_for_timeout(200)
+        box = qbox(pg, "q2.2")
+        box.scroll_into_view_if_needed()
+        text = box.locator("p").first.inner_text()
+        assert "(" in text and "y" in text.lower(), f"{label}: AI q2.2 should state its own data: {text}"
+        fill_forms(box, ["0", "0", "0"])
+        check_click(box)
+        again_btn = box.locator('[data-act="again"]')
+        assert again_btn.count()==1 and again_btn.is_visible(), f"{label}: AI Try a new one missing after a wrong answer"
+        print(f"{label}: AI random quiz ok ({text[:90]!r})")
+
 def typography_pass(pg, label):
     res = pg.evaluate(PARSE_JS)
     if res.get("error"):
@@ -349,7 +457,7 @@ def statics_dom_pass(pg, label, shots=False):
         assert box.locator(f'[data-act="{act}"]').count() == 1, f"{label}: missing {act} on q1.1"
     # Tapping the input must focus it (not swallowed by touch guards)
     inp = box.locator("input").first
-    inp.scroll_into_view_if_needed()
+    reveal_el(pg, inp)
     pg.wait_for_timeout(80)
     try:
         inp.tap()
@@ -368,44 +476,78 @@ def statics_dom_pass(pg, label, shots=False):
         assert bb and bb["height"] >= 44, f"{label}: unit menu {i} height {bb}"
         im = box.locator("input").nth(i).get_attribute("inputmode")
         assert im == "decimal", f"{label}: inputmode should be decimal, got {im}"
-    fill_forms(box, ["512.2", "100.5"])
+    conv = pg.evaluate("""() => {
+      const api=window.GrokeversityQuiz;
+      const q=window.GrokeQuizRand.get('q1.1');
+      const kn=api.convertToWanted(q.ans[0].v, q.ans[0].u, 'kN').v;
+      const rad=api.convertToWanted(q.ans[1].v, q.ans[1].u, 'rad').v;
+      const lbf=api.convertToWanted(q.ans[0].v, q.ans[0].u, 'lbf').v;
+      const i1=api.intTargets(q.ans[1].v);
+      return {bare:[String(q.ans[0].v), String(q.ans[1].v)], kn, rad, lbf, th:q.ans[1].v, i1, exact:q.ans.map(a=>api.formatExact(a))};
+    }""")
+    fill_forms(box, conv["bare"])
     check_click(box)
     fb = box.locator(".fb").inner_text()
     assert "Correct" in fb, f"{label}: bare number with default units should be accepted: {fb}"
     # Pick kN and type the converted value
     box.locator("select").nth(0).select_option("kN")
-    fill_forms(box, ["0.512", "100.5"])
+    fill_forms(box, [str(conv["kn"]), str(conv["th"])])
     check_click(box)
     fb = box.locator(".fb").inner_text()
-    assert "Correct" in fb, f"{label}: 0.512 kN via dropdown rejected: {fb}"
+    assert "Correct" in fb, f"{label}: kN via dropdown rejected: {fb}"
     # Typed unit in the number box syncs the menu
-    fill_forms(box, ["512 N", "1.754 rad"])  # 100.5 deg ≈ 1.75406 rad
+    fill_forms(box, [str(conv["bare"][0])+" N", str(conv["rad"])+" rad"])
     check_click(box)
     fb = box.locator(".fb").inner_text()
     assert "Correct" in fb, f"{label}: typed unit / radians rejected: {fb}"
     synced = box.locator("select").nth(0).input_value()
-    assert synced == "N", f"{label}: typing 512 N should sync menu to N, got {synced}"
-    # lbf conversion (512.2 N ≈ 115.15 lbf)
+    assert synced == "N", f"{label}: typing a value in N should sync menu to N, got {synced}"
+    # lbf conversion + integer angle
     box.locator("select").nth(0).select_option("lbf")
     box.locator("select").nth(1).select_option("°")
-    fill_forms(box, ["115.15", "101"])
+    fill_forms(box, [str(conv["lbf"]), str(conv["i1"][0])])
     check_click(box)
     fb = box.locator(".fb").inner_text()
-    assert "Correct" in fb, f"{label}: 115.15 lbf / 101° rejected: {fb}"
-    # Next / Back must work while unanswered (not locked)
-    assert not pg.is_disabled("#nextSlide"), f"{label}: Next disabled on mid-concept quiz"
-    pg.click("#nextSlide")
-    pg.wait_for_timeout(200)
-    sid = pg.evaluate("() => document.querySelector('.concept:not([hidden]) .slide.on')?.dataset.id")
-    assert sid == "quiz-q1-4", f"{label}: Next did not leave quiz-q1-1, now {sid}"
-    assert not pg.is_disabled("#prevSlide")
-    pg.click("#prevSlide")
-    pg.wait_for_timeout(200)
-    sid = pg.evaluate("() => document.querySelector('.concept:not([hidden]) .slide.on')?.dataset.id")
-    assert sid == "quiz-q1-1", f"{label}: Back did not return to quiz-q1-1, now {sid}"
+    assert "Correct" in fb, f"{label}: lbf / integer deg rejected: {fb}"
+    # Next / Back must work while unanswered (not locked). Quiz order is shuffled,
+    # so start from a non-final quiz slide rather than assuming q1.1 has a Next.
+    nav = pg.evaluate("""() => {
+      const ss=[...document.querySelectorAll('#c1 .slide')];
+      const quizzes=ss.filter(s => (s.dataset.id||'').startsWith('quiz-')).map(s => s.dataset.id);
+      const start = quizzes.find((id,i) => i < quizzes.length-1 || ss.findIndex(s=>s.dataset.id===id) < ss.length-1) || quizzes[0];
+      const idx=ss.findIndex(s=>s.dataset.id===start);
+      return {start, next: idx>=0 && ss[idx+1] && ss[idx+1].dataset.id, last: idx===ss.length-1, n:ss.length};
+    }""")
+    assert nav["start"], f"{label}: no quiz slides in concept 1"
+    goto_slide(pg, nav["start"])
+    if nav["last"] or not nav["next"]:
+        assert not pg.is_disabled("#prevSlide"), f"{label}: last quiz should still allow Back: {nav}"
+        pg.click("#prevSlide")
+        pg.wait_for_timeout(200)
+        sid = pg.evaluate("() => document.querySelector('.concept:not([hidden]) .slide.on')?.dataset.id")
+        assert sid and sid != nav["start"], f"{label}: Back did not leave {nav['start']}, now {sid}"
+        assert not pg.is_disabled("#nextSlide")
+        pg.click("#nextSlide")
+        pg.wait_for_timeout(200)
+        sid = pg.evaluate("() => document.querySelector('.concept:not([hidden]) .slide.on')?.dataset.id")
+        assert sid == nav["start"], f"{label}: Next did not return to {nav['start']}, now {sid}"
+    else:
+        assert not pg.is_disabled("#nextSlide"), f"{label}: Next disabled on mid-concept quiz {nav}"
+        pg.click("#nextSlide")
+        pg.wait_for_timeout(200)
+        sid = pg.evaluate("() => document.querySelector('.concept:not([hidden]) .slide.on')?.dataset.id")
+        assert sid == nav["next"], f"{label}: Next from {nav['start']} did not go to {nav['next']}, now {sid}"
+        assert not pg.is_disabled("#prevSlide")
+        pg.click("#prevSlide")
+        pg.wait_for_timeout(200)
+        sid = pg.evaluate("() => document.querySelector('.concept:not([hidden]) .slide.on')?.dataset.id")
+        assert sid == nav["start"], f"{label}: Back did not return to {nav['start']}, now {sid}"
+    # Return to q1.1 — shuffle may have left us on a different problem, which hides #Qq1_1.
+    goto_slide(pg, "quiz-q1-1")
+    box = qbox(pg, "q1.1")
     assert_field_font(pg, label + " q1.1 fonts")
     inp = box.locator("input").first
-    inp.scroll_into_view_if_needed()
+    reveal_el(pg, inp)
     try:
         inp.tap()
     except Exception:
@@ -431,33 +573,51 @@ def statics_dom_pass(pg, label, shots=False):
     # Show solution + still movable
     box.locator('[data-act="sol"]').click()
     fb = box.locator(".fb").inner_text()
-    assert "Solution" in fb and "512" in fb and "512.2" in fb, f"{label}: Show solution failed: {fb}"
-    assert not pg.is_disabled("#nextSlide")
+    assert "Solution" in fb or "Answers:" in fb, f"{label}: Show solution failed: {fb}"
+    shown = pg.evaluate("""() => window.GrokeQuizRand.get('q1.1').ans.map(a => window.GrokeversityQuiz.formatExact(a))""")
+    for piece in shown:
+        num = "".join(ch for ch in piece if ch.isdigit() or ch=='.' or ch=='-')
+        # at least the leading digits of the exact value should appear
+        head = num.split('.')[0] if num else ""
+        assert head and head in fb.replace(",",""), f"{label}: Show solution missing {piece}: {fb}"
+    # If shuffle put q1.1 last, Next is correctly disabled; Back should still work.
+    assert (not pg.is_disabled("#nextSlide")) or (not pg.is_disabled("#prevSlide")), f"{label}: both Next and Back disabled after Show solution"
     # Enter / Go submits an iOS-flavored correct answer
-    fill_forms(box, ["512,2 Kn", "100.5°"])  # 512.2 kN would be wrong; 512,2 Kn = 512.2 kN = 512200 N? WAIT
-    # 512,2 Kn means 512.2 kN = 512200 N which is NOT 512.2 N. Use 0,5122 kN or 512,2 N
-    fill_forms(box, ["512,2 N.", "100.5°"])
+    ios = pg.evaluate("""() => {
+      const api=window.GrokeversityQuiz;
+      const q=window.GrokeQuizRand.get('q1.1');
+      const n0=String(q.ans[0].v).replace('.', ',');
+      const n1=String(q.ans[1].v);
+      const ints0=api.intTargets(q.ans[0].v);
+      const ints1=api.intTargets(q.ans[1].v);
+      return {comma: [n0+' N.', n1+'°'], i0:ints0, i1:ints1};
+    }""")
+    fill_forms(box, ios["comma"])
     box.locator("input").nth(1).press("Enter")
     pg.wait_for_timeout(150)
     fb = box.locator(".fb").inner_text()
-    assert "Correct" in fb, f"{label}: Enter did not accept 512,2 N. / 100.5° : {fb}"
-    fill_forms(box, ["512 N", "100 deg"])
+    assert "Correct" in fb, f"{label}: Enter did not accept comma-decimal form {ios['comma']}: {fb}"
+    fill_forms(box, [str(ios["i0"][0])+" N", str(ios["i1"][0])+" deg"])
     check_click(box)
     fb = box.locator(".fb").inner_text()
-    assert "Correct" in fb, f"{label}: 512 N / 100 deg ( .5 edge ) rejected: {fb}"
-    fill_forms(box, ["512 N", "101 deg"])
-    check_click(box)
-    fb = box.locator(".fb").inner_text()
-    assert "Correct" in fb, f"{label}: 512 N / 101 deg rejected: {fb}"
+    assert "Correct" in fb, f"{label}: integer-round form rejected: {fb}"
+    if len(ios["i1"])==2:
+        fill_forms(box, [str(ios["i0"][0])+" N", str(ios["i1"][1])+" deg"])
+        check_click(box)
+        fb = box.locator(".fb").inner_text()
+        assert "Correct" in fb, f"{label}: half-integer other side rejected: {fb}"
     if shots:
         pg.screenshot(path=str(SHOTS / "quiz_iphone_q1_1_accepted.png"), full_page=False)
         print("wrote", SHOTS / "quiz_iphone_q1_1_accepted.png")
 
-    # Swipe left on a later unanswered quiz should advance
-    goto_slide(pg, "quiz-q1-4")
-    box = qbox(pg, "q1.4")
+    # Swipe left on a mid unanswered quiz should advance (order is shuffled)
+    order = pg.evaluate("""() => [...document.querySelectorAll('#c1 .slide')].filter(s => (s.dataset.id||'').startsWith('quiz-')).map(s => s.dataset.id)""")
+    assert len(order) >= 2, f"{label}: expected multiple concept-1 quizzes, got {order}"
+    mid, nxt = order[0], order[1]
+    goto_slide(pg, mid)
+    mid_qid = "q" + mid.split("quiz-q", 1)[-1].replace("-", ".")
+    box = qbox(pg, mid_qid)
     box.locator("input").first.fill("")  # leave unanswered
-    # swipe on the heading, not the input
     heading = pg.locator('.slide.on h2').first
     boxh = heading.bounding_box()
     assert boxh, "no heading box for swipe"
@@ -468,12 +628,12 @@ def statics_dom_pass(pg, label, shots=False):
     pg.mouse.up()
     pg.wait_for_timeout(250)
     sid = pg.evaluate("() => document.querySelector('.concept:not([hidden]) .slide.on')?.dataset.id")
-    if sid != "quiz-q1-3":
+    if sid != nxt:
         assert not pg.is_disabled("#nextSlide"), f"{label}: Next disabled on unanswered quiz (swipe landed on {sid})"
         pg.click("#nextSlide")
         pg.wait_for_timeout(200)
         sid = pg.evaluate("() => document.querySelector('.concept:not([hidden]) .slide.on')?.dataset.id")
-        assert sid == "quiz-q1-3", f"{label}: could not move on from unanswered quiz, now {sid}"
+        assert sid == nxt, f"{label}: could not move on from unanswered quiz, now {sid} (wanted {nxt})"
         print(f"{label}: swipe did not fire, Next still moved on")
     else:
         print(f"{label}: swipe advanced unanswered quiz to {sid}")
@@ -531,6 +691,7 @@ def statics_dom_pass(pg, label, shots=False):
             seen += 1
     assert seen == 20, f"{label}: expected 20 scored quizzes, got {seen}"
     print(f"{label}: all 20 Statics quizzes accepted an iOS-typed form; Skip/Show solution/Next present")
+    random_quiz_pass(pg, label, "statics")
     return seen
 
 def ai_dom_pass(pg, label, shots=False):
@@ -541,15 +702,19 @@ def ai_dom_pass(pg, label, shots=False):
     box.scroll_into_view_if_needed()
     assert box.locator("select").count() == 2, f"{label} AI q1.4 should have % menus"
     assert box.locator("select").nth(0).input_value() == "%"
-    fill_forms(box, ["60", "75"])
+    q14 = pg.evaluate("""() => {
+      const q=window.GrokeQuizRand.get('q1.4');
+      return q.ans.map(a => String(a.v));
+    }""")
+    fill_forms(box, q14)
     check_click(box)
     fb = box.locator(".fb").inner_text()
-    assert "Correct" in fb, f"{label} AI bare 60/75 with default %: {fb}"
-    fill_forms(box, ["60%", "75 percent"])
+    assert "Correct" in fb, f"{label} AI bare percents with default %: {fb}"
+    fill_forms(box, [q14[0]+"%", q14[1]+" percent"])
     box.locator("input").nth(1).press("Enter")
     pg.wait_for_timeout(150)
     fb = box.locator(".fb").inner_text()
-    assert "Correct" in fb, f"{label} AI q1.4 60%/75 percent: {fb}"
+    assert "Correct" in fb, f"{label} AI q1.4 percent typography: {fb}"
     # unitless EU / counts have no unit menu
     box11 = qbox(pg, "q1.1")
     assert box11.locator("select").count() == 0, f"{label}: unitless EU fields should have no dropdown"
@@ -591,10 +756,15 @@ def ai_dom_pass(pg, label, shots=False):
     pg.wait_for_timeout(200)
     box = qbox(pg, "q1.3")
     box.scroll_into_view_if_needed()
-    fill_forms(box, ["11 %", "9 %"])
+    q13 = pg.evaluate("""() => {
+      const api=window.GrokeversityQuiz;
+      const q=window.GrokeQuizRand.get('q1.3');
+      return q.ans.map(a => String(api.intTargets(a.v)[0])+' %');
+    }""")
+    fill_forms(box, q13)
     check_click(box)
     fb = box.locator(".fb").inner_text()
-    assert "Correct" in fb, f"{label} AI q1.3 11%/9%: {fb}"
+    assert "Correct" in fb, f"{label} AI q1.3 rounded percents {q13}: {fb}"
     # Skip does not trap
     pg.click('#clist [data-c="4"]')
     pg.wait_for_timeout(200)
@@ -604,6 +774,7 @@ def ai_dom_pass(pg, label, shots=False):
     fb = box.locator(".fb").inner_text()
     assert "Skipped" in fb, f"{label} skip: {fb}"
     print(f"{label}: all 15 AI quizzes accepted typography forms; Skip/Show solution present")
+    random_quiz_pass(pg, label, "ai")
     return seen
 
 def make_ctx(p, engine, iphone):
@@ -620,6 +791,7 @@ def make_ctx(p, engine, iphone):
     return br, ctx
 
 def main():
+    home_links_pass()
     errors = []
     failed = []
     with sync_playwright() as p:
@@ -636,21 +808,24 @@ def main():
                 failed.append(f"{label} skipped: {e}")
                 continue
             try:
-                ctx.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+                ctx.add_init_script("(function(){var K='grokeversity.v1';try{var c=JSON.parse(localStorage.getItem(K)||'null');if(c&&typeof c==='object')return;}catch(e){}localStorage.setItem(K, %s);}());" % json.dumps(UNLOCK_JS))
                 pg = ctx.new_page(); watch(pg, errors)
                 pg.goto(LESSON, wait_until="domcontentloaded")
                 pg.wait_for_timeout(500)
+                if iphone:
+                    assert_home_header(pg, "statics " + label)
                 statics_dom_pass(pg, "statics " + label, shots=shots)
 
                 ctx2 = br.new_context(**(IPHONE if iphone else dict(viewport={"width": 1280, "height": 720})))
-                ctx2.add_init_script("localStorage.setItem('grokeversity.ai101.v1', " + json.dumps(AI_UNLOCK_JS) + ")")
+                ctx2.add_init_script("(function(){var K='grokeversity.ai101.v1';try{var c=JSON.parse(localStorage.getItem(K)||'null');if(c&&typeof c==='object')return;}catch(e){}localStorage.setItem(K, %s);}());" % json.dumps(AI_UNLOCK_JS))
                 pa = ctx2.new_page(); watch(pa, errors)
                 pa.goto(AI, wait_until="domcontentloaded")
                 pa.wait_for_timeout(500)
                 ai_dom_pass(pa, "ai " + label, shots=shots)
                 ctx2.close()
             except Exception as e:
-                print(f"FAIL {label}: {e}")
+                print(f"FAIL {label}: {type(e).__name__}: {e}")
+                traceback.print_exc()
                 failed.append(f"{label}: {e}")
             finally:
                 ctx.close()

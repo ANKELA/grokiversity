@@ -548,30 +548,47 @@ const Q={
      hints:['\\(\\sqrt{d}=\\sqrt{2}\\approx 1.41421\\). The unscaled dots are 1, 0, 1.','By symmetry \\(\\alpha_1=\\alpha_3\\), which is a useful check on the softmax.']}]
 };
 function buildQuiz(c){
+  const R=window.GrokeQuizRand;
+  if(R) R.attachStore(store, save, 'a');
   const box=$('#quiz'+c); box.innerHTML='';
-  Q[c].forEach(q=>{
+  const ids=Q[c].map(function(q){ return q.id; });
+  const order=R?R.orderOf('a'+c, ids):ids.slice();
+  const byId={}; Q[c].forEach(function(q){ byId[q.id]=q; });
+  order.forEach(function(id){
+    const q=byId[id];
+    if(!q) return;
+    if(R) R.apply(q);
+    const inst=R?R.get(q.id):null;
+    const canFresh=inst && !inst.fixed;
     const d=document.createElement('div'); d.className='q'; d.id='Q'+q.id.replace('.','_');
     const inpAttrs='type="text" inputmode="decimal" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
-    d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>${quizRoundHint(q)}
+    const fig=q.diagram?'<div class="q-fig">'+q.diagram+'</div>':'';
+    d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>${fig}${quizRoundHint(q)}
       <div class="inrow">${q.ans.map((a,i)=>fieldHTML(a,i,inpAttrs)).join('')}</div>
       <div class="q-actions">
         <button type="button" class="btn" data-act="check">Check</button>
         <button type="button" class="btn ghost" data-act="hint">Hint</button>
         <button type="button" class="btn ghost" data-act="skip">Skip</button>
         <button type="button" class="btn ghost" data-act="sol">Show solution</button>
+        <button type="button" class="btn ghost" data-act="again" hidden>Try a new one</button>
       </div>
       <div class="fb"></div><div class="hints"></div>`;
-    let hintN=0, tries=0;
+    let hintN=0, tries=R?R.getTries(q.id):0;
     const chk=d.querySelector('[data-act="check"]'), hb=d.querySelector('[data-act="hint"]');
     const skip=d.querySelector('[data-act="skip"]'), sol=d.querySelector('[data-act="sol"]');
+    const again=d.querySelector('[data-act="again"]');
     const fb=d.querySelector('.fb');
     if(store.score[c][q.id]!==undefined){ d.classList.add('correct'); fb.className='fb ok'; fb.textContent='✓ Solved earlier (saved on this device).'; }
     function blurQuiz(){ const a=document.activeElement; if(a && a.blur) a.blur(); }
-    hb.addEventListener('click',()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say('No more hints for this problem. Tell me your first step and I\'ll check it.'); });
-    sol.addEventListener('click',()=>{
+    function solHTML(){
       const lines=q.ans.map(function(a){ return a.q+': '+formatAns(a); }).join('; ');
+      return (q.sol||'')+'<div><b>Answers:</b> '+lines+'  You can keep trying or skip — you are not locked here.</div>';
+    }
+    hb.addEventListener('click',()=>{ if(hintN<q.hints.length){ const h=document.createElement('div'); h.className='hint'; h.innerHTML='💡 '+q.hints[hintN++]; d.querySelector('.hints').appendChild(h); renderMath(h); } else say('No more hints for this problem. Tell me your first step and I will check it.'); });
+    sol.addEventListener('click',()=>{
       fb.className='fb';
-      fb.textContent='Solution: '+lines+'  You can keep trying or skip — you are not locked here.';
+      fb.innerHTML=solHTML();
+      renderMath(fb);
     });
     skip.addEventListener('click',()=>{
       blurQuiz();
@@ -580,8 +597,17 @@ function buildQuiz(c){
       const next=d.nextElementSibling;
       if(next && next.scrollIntoView) next.scrollIntoView({block:'start', behavior:'smooth'});
     });
+    if(again){
+      again.addEventListener('click',function(){
+        if(!R || !canFresh) return;
+        R.fresh(q.id);
+        buildQuiz(c);
+        const el=document.getElementById('Q'+q.id.replace('.','_'));
+        if(el && el.scrollIntoView) el.scrollIntoView({block:'start'});
+      });
+    }
     chk.addEventListener('click',()=>{
-      tries++; let all=true; const msgs=[];
+      tries=R?R.bumpTries(q.id):(tries+1); let all=true; const msgs=[];
       q.ans.forEach((a,i)=>{ const inp=d.querySelector('input[data-i="'+i+'"]'), sel=d.querySelector('select[data-i="'+i+'"]');
         if(sel) syncTypedUnit(inp, sel, a.u);
         const g=gradeAns(a, inp.value, sel?sel.value:undefined);
@@ -589,15 +615,17 @@ function buildQuiz(c){
         if(g.err){ all=false; msgs.push(a.q+': '+g.err); inp.style.borderColor='var(--bad)'; return; }
         inp.style.borderColor=g.ok?'var(--ok)':'var(--bad)'; if(!g.ok){ all=false; msgs.push(a.q+" isn't right yet."); } });
       d.classList.toggle('correct',all); d.classList.toggle('wrong',!all); fb.className='fb '+(all?'ok':'no');
-      fb.innerHTML = all ? '✓ Correct'+(tries>1?' (after '+tries+' tries; first-try answers count more toward mastery)':'')+'.' : msgs.join(' ')+' Try again, take a hint, skip, or show the solution — you can always move on.';
+      fb.innerHTML = all ? '✓ Correct'+(tries>1?' (after '+tries+' tries; first-try answers count more toward mastery)':'')+'.' : msgs.join(' ')+' Try again, take a hint, skip, show the solution'+(canFresh?', or try a new one':'')+' — you can always move on.';
+      if(again) again.hidden=!(!all && canFresh && store.score[c][q.id]===undefined);
       if(all) blurQuiz();
       const first=all && store.score[c][q.id]===undefined;
       let mastered=false;
       if(first){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
         mastered=before<80 && mastery(c)>=80;
         say(tries===1?'Nice work on the first try. Can you explain why the reasoning holds?':'Good recovery. We will revisit this idea in spaced review.');
-        if(mastered) say(c<4?'Concept '+c+' mastered (80% or better). Concept '+(c+1)+' is unlocked. Go on when you are ready.':'You have finished the playable part of Unit 1. Keep going with the tutor prompt in Grok, or start Unit 2 when it lands.'); }
-      if(!all && tries===2) say('On this problem: write out your first step (the formula, with numbers plugged in) and I\'ll help you find the slip. You can also skip or show the solution.');
+        if(mastered) say(c<4?'This concept is mastered (80% or better). The next one is unlocked.':'You have finished Introduction to AI, Unit 1 on this device.');
+      }
+      if(!all && tries===2) say('Not quite yet. Write the formula with the numbers plugged in and I will help you find the slip. You can also skip or show the solution.');
       try{ if(window.GrokeFun){ if(all) window.GrokeFun.report('correct',{first:first,tries:tries,qid:q.id,concept:c,mastered:mastered}); else window.GrokeFun.report('wrong',{qid:q.id}); } }catch(e){}
     });
     d.querySelectorAll('input').forEach(function(inp){
@@ -613,6 +641,7 @@ function buildQuiz(c){
   });
   renderMath(box);
 }
+
 
 $('#reset').addEventListener('click',e=>{ e.preventDefault(); if(confirm('Reset saved AI 101 progress on this device?')){ localStorage.removeItem(KEY); location.reload(); } });
 
@@ -763,6 +792,7 @@ function prepareThumbLayout(scope){
 }
 /* ---------- boot ---------- */
 function boot(){
+  if(window.GrokeQuizRand) window.GrokeQuizRand.attachStore(store, save, 'a');
   prepareThumbLayout();
   [1,2,3,4].forEach(buildQuiz);
   go(unlocked(store.current)?store.current:1);
@@ -772,5 +802,5 @@ function boot(){
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
-try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
+try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,buildQuiz:buildQuiz,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
 })();
