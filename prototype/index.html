@@ -26,16 +26,16 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="app.css?v=84fb756d">
+<link rel="stylesheet" href="app.css?v=8723403b">
 <script>
 (function(){
   function go(){
     var h=(location.hash||'').replace(/^#/,'').toLowerCase();
     if(h==='learn' || h.indexOf('learn')===0){
-      location.replace('statics/unit-1.html?v=84fb756d');
+      location.replace('statics/unit-1.html?v=8723403b');
     } else if(/^c[1-5]/.test(h)){
       var c=(h.match(/c([1-5])/)||[])[1]||'1';
-      location.replace('statics/unit-1.html?v=84fb756d&c='+c);
+      location.replace('statics/unit-1.html?v=8723403b&c='+c);
     }
   }
   go();
@@ -50,7 +50,7 @@
     <a class="home-link" href="./">Home</a>
     <a href="about.html">About</a>
     <a href="https://github.com/ANKELA/grokiversity" rel="noopener noreferrer">GitHub</a>
-    <a class="btn sm" href="statics/unit-1.html?v=84fb756d">Start Statics</a>
+    <a class="btn sm" href="statics/unit-1.html?v=8723403b">Start Statics</a>
   </nav>
 </header>
 
@@ -68,17 +68,17 @@
       </div>
     </div>
   </div>
-  <p class="home-cta"><a class="btn btn-lg" href="statics/unit-1.html?v=84fb756d">Start Statics</a></p>
+  <p class="home-cta"><a class="btn btn-lg" href="statics/unit-1.html?v=8723403b">Start Statics</a></p>
   <ul class="course-list">
     <li>
-      <a class="course-card is-live" href="statics/unit-1.html?v=84fb756d" id="card-me">
+      <a class="course-card is-live" href="statics/unit-1.html?v=8723403b" id="card-me">
         <span class="badge">Play now</span>
         <h2>ME 201 Statics</h2>
         <p>Forces, free-body diagrams, and equilibrium.</p>
       </a>
     </li>
     <li>
-      <a class="course-card is-live" href="econ/unit-1.html?v=84fb756d" id="card-econ">
+      <a class="course-card is-live" href="econ/unit-1.html?v=8723403b" id="card-econ">
         <span class="badge">Play now</span>
         <h2>Intro to Economics</h2>
         <p>Scarcity, the PPF, trade, and markets.</p>
@@ -100,8 +100,9 @@
   <div class="disc">Built with and powered by Grok. Not an accredited degree. Community project, not affiliated with or endorsed by xAI.</div>
   <div>Code: MIT License · Course content: CC BY-SA 4.0 · Prototype v0.2</div>
 </footer>
-<script src="quiz-rand.js?v=84fb756d"></script>
-<script src="app.js?v=84fb756d"></script>
-<script src="fun.js?v=84fb756d"></script>
+<script src="progress.js?v=8723403b"></script>
+<script src="quiz-rand.js?v=8723403b"></script>
+<script src="app.js?v=8723403b"></script>
+<script src="fun.js?v=8723403b"></script>
 </body>
 </html>

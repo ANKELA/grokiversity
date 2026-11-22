@@ -4,6 +4,7 @@
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const KEY = 'grokiversity.ai101.v1';
 function readStore(key){
+  if(window.GrokeProgress && GrokeProgress.readStore) return GrokeProgress.readStore(key);
   try{
     let raw=localStorage.getItem(key);
     if(raw==null){
@@ -18,7 +19,23 @@ function readStore(key){
 }
 const store = (()=>{ const s=readStore(KEY); return (s && typeof s==='object') ? s : {}; })();
 store.score = store.score || {1:{},2:{},3:{},4:{}}; store.current = store.current || 1;
-const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} };
+let _cleared=false, _lastWritten=null;
+const save = () => {
+  if(_cleared) return;
+  try{
+    const json=JSON.stringify(store);
+    localStorage.setItem(KEY, json);
+    _lastWritten=json;
+  }catch(e){}
+};
+function flush(){
+  if(_cleared) return;
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw!=null && _lastWritten!=null && raw!==_lastWritten) return;
+    save();
+  }catch(e){}
+}
 function renderMath(el){ if(window.renderMathInElement) renderMathInElement(el||document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false}); }
 function say(html, who='t'){ const m=document.createElement('div'); m.className='msg '+who; m.innerHTML=html; $('#chat').appendChild(m); $('#chat').scrollTop=1e9; renderMath(m); }
 function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),2400); }
@@ -45,15 +62,29 @@ $('#copyPrompt').addEventListener('click',copyPrompt);
 const CONCEPTS = [[1,'What AI is'],[2,'Linear models & MSE'],[3,'Gradient descent'],[4,'Neurons & attention']];
 const unlocked = c => c===1 || mastery(c-1)>=80;
 function mastery(c){ const q=Q[c]; if(!q) return 0; const v=Object.values(store.score[c]||{}); return Math.round(100*v.reduce((a,b)=>a+b,0)/q.length); }
+function canVisit(c){
+  if(c<1 || c>CONCEPTS.length) return false;
+  if(unlocked(c)) return true;
+  if(store.reached && store.reached[c]!=null) return true;
+  if(store.furthest && +store.furthest.c>=c) return true;
+  return false;
+}
 function drawList(){
-  $('#clist').innerHTML = CONCEPTS.map(([n,t])=>{ const st = mastery(n)>=80?'✓':(unlocked(n)?'●':'🔒');
-    return `<button class="cbtn ${n===store.current?'active':''} ${!unlocked(n)?'locked':''}" data-c="${n}"><span>${n} · ${t}</span><span>${st}</span></button>`; }).join('');
+  $('#clist').innerHTML = CONCEPTS.map(([n,t])=>{
+    const open=canVisit(n)||unlocked(n);
+    const st = mastery(n)>=80?'✓':(open?'●':'🔒');
+    return `<button class="cbtn ${n===store.current?'active':''} ${!open?'locked':''}" data-c="${n}"><span>${n} · ${t}</span><span>${st}</span></button>`;
+  }).join('');
   $$('#clist .cbtn').forEach(b=>b.addEventListener('click',()=>go(+b.dataset.c)));
-  const m = mastery(store.current); $('#mpct').textContent = m+'%'; $('#mbar').style.width=m+'%';
+  const m = mastery(store.current); if($('#mpct')) $('#mpct').textContent = m+'%'; if($('#mbar')) $('#mbar').style.width=m+'%';
 }
 function go(c){
-  if(!unlocked(c)){ say(`Concept ${c} unlocks when you reach 80% mastery on concept ${c-1}. Want a hint on a question you're stuck on?`); return; }
-  store.current=c; save(); $$('.concept').forEach(d=>d.hidden = d.id!=='c'+c); drawList();
+  if(!canVisit(c) && !unlocked(c)){ say(`Concept ${c} unlocks when you reach 80% mastery on concept ${c-1}. Want a hint on a question you're stuck on?`); return; }
+  store.current=c;
+  store.reached=store.reached||{};
+  store.reached[c]=true;
+  if(!store.furthest || +store.furthest.c<c) store.furthest={c:c,i:0};
+  save(); $$('.concept').forEach(d=>d.hidden = d.id!=='c'+c); drawList();
   if(c===1) drawTree(); if(c===2) drawReg(); if(c===3) drawGD(); if(c===4){ drawNeu(); drawAttn(); }
 }
 
@@ -660,7 +691,7 @@ function buildQuiz(c){
 }
 
 
-$('#reset').addEventListener('click',e=>{ e.preventDefault(); if(confirm('Reset saved AI 101 progress on this device?')){ localStorage.removeItem(KEY); location.reload(); } });
+$('#reset').addEventListener('click',e=>{ e.preventDefault(); if(confirm('Reset saved AI 101 progress on this device?')){ _cleared=true; localStorage.removeItem(KEY); location.reload(); } });
 
 /* ---------- scripted tutor ---------- */
 function reply(t){ t=t.toLowerCase();
@@ -884,6 +915,7 @@ function boot(){
   drawTree(); drawReg(); drawGD(); drawNeu(); drawAttn();
   if(!$('#chat').children.length) say(Object.keys(store.score[1]).length ? 'Welcome back! Your AI 101 progress is restored. Pick up where you left off.' : 'Hi! Unit 1 starts with <b>what AI is</b> — agents, expected utility, a first look at search and Bayes — then the math that later units rest on. Try the sliders, then the quiz. I give hints, not answers.');
 }
+if(window.GrokeProgress && GrokeProgress.bindFlush) GrokeProgress.bindFlush(flush);
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
 try{ window.GrokiversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,buildQuiz:buildQuiz,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}

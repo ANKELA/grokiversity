@@ -8,6 +8,7 @@ const $=function(s,r){ return (r||document).querySelector(s); };
 const $$=function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
 
 function readStore(key){
+  if(window.GrokeProgress && GrokeProgress.readStore) return GrokeProgress.readStore(key);
   try{
     let raw=localStorage.getItem(key);
     if(raw==null){
@@ -23,8 +24,22 @@ function readStore(key){
 function load(){
   try{ const s=readStore(KEY); return (s && typeof s==='object') ? s : {}; }catch(e){ return {}; }
 }
+let _cleared=false, _lastWritten=null;
 function save(st_){
-  try{ localStorage.setItem(KEY, JSON.stringify(st_)); }catch(e){}
+  if(_cleared) return;
+  try{
+    const json=JSON.stringify(st_);
+    localStorage.setItem(KEY, json);
+    _lastWritten=json;
+  }catch(e){}
+}
+function flush(){
+  if(_cleared) return;
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw!=null && _lastWritten!=null && raw!==_lastWritten) return;
+    save(st);
+  }catch(e){}
 }
 function today(){
   if(window.GrokeFun && typeof window.GrokeFun._today==='string' && window.GrokeFun._today) return window.GrokeFun._today;
@@ -502,6 +517,7 @@ function renderHome(){
   if(chalBtn) chalBtn.addEventListener('click', function(){ openDaily(); });
   const gear=$('#funHomeGear',host);
   if(gear) gear.addEventListener('click', function(){ openCollection(); });
+  if(window.GrokeProgress && GrokeProgress.paintHome) GrokeProgress.paintHome();
 }
 
 function inject(){
@@ -946,7 +962,14 @@ function report(kind, info){
   }
   if(kind==='correct' || kind==='mastery'){
     const prevLv=levelOf(st.xp);
-    if(info.first){
+    if(info.redo && !info.first){
+      st.redoXp=st.redoXp||{};
+      const rk=info.qid||info.key||'';
+      if(!rk || !st.redoXp[rk]){
+        gained=Math.min(2, info.xp!=null?+info.xp:2);
+        if(rk) st.redoXp[rk]=1;
+      }
+    } else if(info.first){
       noteCorrectToday();
       if(todayCount()>=(+st.dailyGoal||5)) badge=awardBadge('goal')||badge;
       if((st.dayStreak.days||0)===3) badge=awardBadge('daily3')||badge;
@@ -1005,6 +1028,7 @@ function boot(){
   const onHome=document.documentElement.classList.contains('home') || document.body.classList.contains('home');
   if(!onLesson && !onHome) return;
   reconcileStreak(); save(st);
+  if(window.GrokeProgress && GrokeProgress.bindFlush) GrokeProgress.bindFlush(flush);
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', inject);
   else inject();
   const q=new URLSearchParams(location.search);

@@ -660,7 +660,7 @@ with sync_playwright() as p:
     ctxM = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
     ctxM.add_init_script("localStorage.setItem('grokiversity.v1', " + json.dumps(UNLOCK_JS) + ")")
     m = ctxM.new_page(); watch(m)
-    m.goto(LESSON); m.wait_for_load_state("networkidle"); m.wait_for_timeout(300)
+    m.goto(LESSON + "?overview=1"); m.wait_for_load_state("networkidle"); m.wait_for_timeout(300)
     assert m.locator("#unitOverview").is_visible()
     hov = m.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
     print("statics overview iPhone scrollHeight:", hov)

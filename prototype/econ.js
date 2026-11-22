@@ -6,6 +6,7 @@ function onEl(sel, ev, fn, opts){ const el=typeof sel==='string'?$(sel):sel; if(
 const deg = r => r*180/Math.PI, rad = d => d*Math.PI/180;
 const KEY = 'grokiversity.econ101.v1';
 function readStore(key){
+  if(window.GrokeProgress && GrokeProgress.readStore) return GrokeProgress.readStore(key);
   try{
     let raw=localStorage.getItem(key);
     if(raw==null){
@@ -23,7 +24,23 @@ store.score = store.score || {};
 [1,2,3,4].forEach(k=>{ store.score[k] = store.score[k] || {}; });
 store.current = store.current || 1;
 store.slide = store.slide || {};
-const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} };
+let _cleared=false, _lastWritten=null;
+const save = () => {
+  if(_cleared) return;
+  try{
+    const json=JSON.stringify(store);
+    localStorage.setItem(KEY, json);
+    _lastWritten=json;
+  }catch(e){}
+};
+function flush(){
+  if(_cleared) return;
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw!=null && _lastWritten!=null && raw!==_lastWritten) return;
+    save();
+  }catch(e){}
+}
 function renderMath(el){ if(window.renderMathInElement) renderMathInElement(el||document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false}); }
 function say(html, who='t'){ const m=document.createElement('div'); m.className='msg '+who; m.innerHTML=html; const chat=$('#chat'); if(chat){ chat.appendChild(m); chat.scrollTop=1e9; } renderMath(m); }
 function toast(t){ const el=$('#toast'); if(!el) return; el.textContent=t; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),2400); }
@@ -187,9 +204,63 @@ function indexOfSlideId(c, id){
   for(let j=0;j<ss.length;j++){ if(ss[j].dataset.id===id) return j; }
   return -1;
 }
+let ORIG_ORDER = {};
+function captureOrigin(){
+  ORIG_ORDER = {};
+  CONCEPTS.forEach(function(ct){
+    const c=ct[0];
+    ORIG_ORDER[c]=slides(c).map(function(s){ return s.dataset.id||''; });
+  });
+}
+function canVisit(c){
+  if(c<1 || c>CONCEPTS.length) return false;
+  if(unlocked(c)) return true;
+  if(store.reached && store.reached[c]!=null) return true;
+  if(store.furthest && +store.furthest.c>=c) return true;
+  return false;
+}
+function markVisit(c,i){
+  const ss=slides(c)[i];
+  const id=ss && ss.dataset.id;
+  store.current=c;
+  store.slide=store.slide||{};
+  store.slide[c]=i;
+  store.slideId=store.slideId||{};
+  if(id) store.slideId[c]=id;
+  store.seen=store.seen||{};
+  if(id) store.seen[c+':'+id]=true;
+  store.reached=store.reached||{};
+  const P=window.GrokeProgress;
+  const cand={c:c,id:id,i:i};
+  if(P && P.ahead){
+    if(!store.furthest || P.ahead(ORIG_ORDER, cand, store.furthest)) store.furthest={c:c,id:id,i:i};
+    const arr=ORIG_ORDER[c]||[];
+    const prev=store.reached[c];
+    const prevI=typeof prev==='string'?arr.indexOf(prev):-1;
+    if(id && (prevI<0 || arr.indexOf(id)>prevI)) store.reached[c]=id;
+  } else {
+    if(!store.furthest || c>(store.furthest.c||0) || (c===store.furthest.c && i>=(store.furthest.i||0))) store.furthest={c:c,id:id,i:i};
+    if(id) store.reached[c]=id;
+  }
+  if(P && P.refreshSummary) P.refreshSummary(store, ORIG_ORDER, CONCEPTS.length);
+  save();
+}
+function resumePoint(){
+  const P=window.GrokeProgress;
+  if(P && P.resumePoint) return P.resumePoint(store, ORIG_ORDER, indexOfSlideId, CONCEPTS.length);
+  const c=store.current||1;
+  return {c:c,i:store.slide[c]||0};
+}
 function migrateSavedSlides(){
-  if(store.slideVer>=2) return;
-  store.slideVer=2;
+  const P=window.GrokeProgress;
+  if(P && P.migrateSlides){
+    P.migrateSlides(store, LEGACY_SLIDE_IDS, ORIG_ORDER, CONCEPTS.length);
+    if(P.refreshSummary) P.refreshSummary(store, ORIG_ORDER, CONCEPTS.length);
+    save();
+    return;
+  }
+  if(store.slideVer>=3) return;
+  store.slideVer=3;
   save();
 }
 function lastUnlocked(){ let n=1; while(n<4 && unlocked(n+1)) n++; return n; }
@@ -207,6 +278,7 @@ function isOverviewRoute(){
   const h=(location.hash||'').toLowerCase();
   if(q.get('overview')==='1' || h==='#overview') return true;
   if(hasExplicitLessonRoute()) return false;
+  if(window.GrokeProgress && GrokeProgress.hasProgress(store)) return false;
   return !!$('#unitOverview');
 }
 function writeOverviewRoute(){
@@ -215,14 +287,17 @@ function writeOverviewRoute(){
 function fillOverviewConcepts(){
   const host=$('#overviewConcepts'); if(!host) return;
   host.innerHTML = CONCEPTS.map(([n,t])=>{
-    const open=unlocked(n);
+    const open=canVisit(n)||unlocked(n);
     const st=mastery(n)>=80?'✓':(open?'':'🔒');
     return `<button type="button" class="overview-c ${open?'':'locked'}" data-c="${n}" ${open?'':'disabled aria-disabled="true"'}><span class="n">${n}</span><span class="t">${t}</span><span class="st">${st}</span></button>`;
   }).join('');
   $$('#overviewConcepts .overview-c').forEach(b=>b.addEventListener('click',()=>{
     const c=+b.dataset.c;
-    if(!unlocked(c)) return;
-    startUnit(c, 0);
+    if(!canVisit(c) && !unlocked(c)) return;
+    const id=store.slideId && store.slideId[c];
+    let i=id?indexOfSlideId(c,id):-1;
+    if(i<0) i=store.slide[c]||0;
+    startUnit(c, i);
   }));
 }
 function showOverview(){
@@ -231,6 +306,7 @@ function showOverview(){
   if(ov) ov.hidden=false;
   $$('.concept').forEach(d=>d.hidden=true);
   fillOverviewConcepts();
+  if($('#startUnit')) $('#startUnit').textContent=(window.GrokeProgress && GrokeProgress.hasProgress(store))?'Continue':'Start';
   if($('#crumb')) $('#crumb').textContent='ECON 101 › Unit 1 › Overview';
   if($('#slidePos')) $('#slidePos').textContent='Overview';
   if($('#prevSlide')) $('#prevSlide').disabled=true;
@@ -249,7 +325,13 @@ function startUnit(c,i){
   hideOverview();
   go(c||1, (i===undefined||i===null)?0:i);
 }
-if($('#startUnit')) onEl('#startUnit','click',()=>startUnit(1,0));
+function continueOrStart(){
+  if(window.GrokeProgress && GrokeProgress.hasProgress(store)){
+    const r=resumePoint();
+    startUnit(r.c, r.i);
+  } else startUnit(1,0);
+}
+if($('#startUnit')) onEl('#startUnit','click',continueOrStart);
 function readRoute(){
   const q=new URLSearchParams(location.search);
   let c=parseInt(q.get('c')||'',10);
@@ -268,8 +350,17 @@ function readRoute(){
       const j=indexOfSlideId(c, legacy[old]);
       i=(j>=0)?j:old;
     } else i=old;
-  } else i=store.slide[c]||0;
-  if(!unlocked(c)) c=lastUnlocked();
+  } else {
+    if(!q.get('c')){
+      const r=resumePoint();
+      c=r.c; i=r.i;
+    } else {
+      const id=store.slideId && store.slideId[c];
+      const j=id?indexOfSlideId(c,id):-1;
+      i=(j>=0)?j:(store.slide[c]||0);
+    }
+  }
+  if(!canVisit(c) && !unlocked(c)) c=lastUnlocked();
   const n=slides(c).length;
   i=Math.max(0, Math.min((n||1)-1, i));
   return {c,i};
@@ -293,14 +384,35 @@ function setDrawer(name,on){
 }
 function closeDrawers(){ setDrawer('concepts',false); setDrawer('tutor',false); }
 function drawList(){
-  $('#clist').innerHTML = CONCEPTS.map(([n,t])=>{ const st = mastery(n)>=80?'✓':(unlocked(n)?'●':'🔒');
-    return `<button type="button" class="cbtn ${n===store.current?'active':''} ${!unlocked(n)?'locked':''}" data-c="${n}"><span>${n} · ${t}</span><span>${st}</span></button>`; }).join('');
+  const P=window.GrokeProgress;
+  const esc=P && P.escapeHtml ? P.escapeHtml : function(s){ return String(s); };
+  const heading=P && P.slideHeading ? P.slideHeading : function(el){ const h=el.querySelector('h2'); return (h && h.textContent||el.dataset.id||'').trim(); };
+  $('#clist').innerHTML = CONCEPTS.map(([n,t])=>{
+    const open=canVisit(n)||unlocked(n);
+    const st = mastery(n)>=80?'✓':(open?'●':'🔒');
+    const ss=open?slides(n):[];
+    const items=ss.map(function(s,j){
+      const id=s.dataset.id||'';
+      const qk=P && P.quizKeyFromId ? P.quizKeyFromId(id) : null;
+      const scored=qk && store.score[n] && store.score[n][qk]!=null;
+      const seen=scored || (store.seen && store.seen[n+':'+id]);
+      const on=(n===store.current && (+($('#c'+n).dataset.i)||0)===j)?'on':'';
+      return `<button type="button" class="sbtn ${on} ${seen?'done':''}" data-jump="${n}:${j}"><span>${esc(heading(s)||('Slide '+(j+1)))}</span><span>${scored||seen?'✓':''}</span></button>`;
+    }).join('');
+    return `<div class="clist-group ${n===store.current?'open':''} ${!open?'is-locked':''}">`+
+      `<button type="button" class="cbtn ${n===store.current?'active':''} ${!open?'locked':''}" data-c="${n}"><span>${n} · ${t}</span><span>${st}</span></button>`+
+      (items?`<div class="clist-slides">${items}</div>`:'')+
+    `</div>`;
+  }).join('');
   $$('#clist .cbtn').forEach(b=>b.addEventListener('click',()=>{ go(+b.dataset.c); closeDrawers(); }));
-  const m = mastery(store.current); $('#mpct').textContent = m+'%'; $('#mbar').style.width=m+'%';
+  $$('#clist .sbtn').forEach(b=>b.addEventListener('click',()=>{
+    const p=String(b.dataset.jump||'').split(':'); go(+p[0], +p[1]); closeDrawers();
+  }));
+  const m = mastery(store.current); if($('#mpct')) $('#mpct').textContent = m+'%'; if($('#mbar')) $('#mbar').style.width=m+'%';
 }
 function go(c, i){
   hideOverview();
-  if(!unlocked(c)){ say(`That concept unlocks when you reach 80% mastery on the previous one. Want a hint on a question you’re stuck on?`); return; }
+  if(!canVisit(c) && !unlocked(c)){ say(`That concept unlocks when you reach 80% mastery on the previous one. Want a hint on a question you’re stuck on?`); return; }
   store.current=c; save();
   $$('.concept').forEach(d=>d.hidden = d.id!=='c'+c);
   if($('#deckTitle')) $('#deckTitle').textContent = CONCEPTS[c-1][1];
@@ -321,14 +433,14 @@ function showSlide(c, i, dir){
     else if(dir!=='jump' && j===prev && prev!==i) s.classList.add(dir==='back'?'exit-right':'exit-left');
   });
   $('#c'+c).dataset.i=i;
-  store.slide[c]=i; save();
+  markVisit(c,i);
   writeRoute(c,i);
   clearTimeout(showSlide.hideT);
   showSlide.hideT=setTimeout(()=>$$('.slide').forEach(s=>s.classList.remove('exit-left','exit-right')), 450);
   const n=ss.length;
   $('#slidePos').textContent=(i+1)+' / '+n;
-  $('#prevSlide').disabled = i===0 && c!==1;
-  $('#nextSlide').disabled = i===n-1;
+  $('#prevSlide').disabled = false;
+  $('#nextSlide').disabled = (i===n-1 && !canVisit(c+1) && !unlocked(c+1));
   $('#nextSlide').textContent = (ss[i].dataset.id||'').startsWith('quiz') && i<n-1 ? 'Next problem' : 'Next';
   $('#dots').innerHTML = ss.map((s,j)=>`<button type="button" class="dot ${j===i?'on':''} ${(s.dataset.id||'').startsWith('quiz')?'quiz':''}" data-i="${j}" aria-label="Slide ${j+1}"></button>`).join('');
   $$('#dots .dot').forEach(b=>b.addEventListener('click',()=>showSlide(c, +b.dataset.i, +b.dataset.i<i?'back':'fwd')));
@@ -366,8 +478,22 @@ function refreshAndRedraw(){
   const s=currentSlide();
   if(s) redrawSlide(s);
 }
-onEl('#prevSlide','click',()=>{ if(window._grokeOverview) return; const c=store.current; const i=store.slide[c]||0; if(c===1 && i===0){ showOverview(); return; } showSlide(c, i-1, 'back'); });
-onEl('#nextSlide','click',()=>{ if(window._grokeOverview){ startUnit(1,0); return; } const c=store.current; showSlide(c, (store.slide[c]||0)+1, 'fwd'); });
+onEl('#prevSlide','click',()=>{
+  if(window._grokeOverview) return;
+  const c=store.current;
+  const i=+( $('#c'+c) && $('#c'+c).dataset.i ) || (store.slide[c]||0);
+  if(i>0){ showSlide(c, i-1, 'back'); return; }
+  if(c>1 && (canVisit(c-1)||unlocked(c-1))){ go(c-1, Math.max(0, slides(c-1).length-1)); return; }
+  showOverview();
+});
+onEl('#nextSlide','click',()=>{
+  if(window._grokeOverview){ continueOrStart(); return; }
+  const c=store.current;
+  const ss=slides(c);
+  const i=+( $('#c'+c) && $('#c'+c).dataset.i ) || (store.slide[c]||0);
+  if(i<ss.length-1){ showSlide(c, i+1, 'fwd'); return; }
+  if(canVisit(c+1)||unlocked(c+1)) go(c+1, 0);
+});
 document.addEventListener('keydown',e=>{
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(e.key==='Escape') closeDrawers();
@@ -1133,18 +1259,22 @@ function buildQuiz(q){
       inp.style.borderColor=g.ok?'var(--ok)':'var(--bad)'; if(!g.ok){ all=false; msgs.push(a.q+" isn't right yet."); } });
     d.classList.toggle('correct',all); d.classList.toggle('wrong',!all); fb.className='fb '+(all?'ok':'no');
     fb.innerHTML = all ? '✓ Correct'+(tries>1?' (after '+tries+' tries; first-try answers count more toward mastery)':'')+'.' : msgs.join(' ')+' Try again, take a hint, skip, show the solution'+(canFresh?', or try a new one':'')+' — you can always move on with Next or Back.';
-    if(again) again.hidden=!(!all && canFresh && store.score[c][q.id]===undefined);
+    if(again) again.hidden=!canFresh;
     if(all) blurQuiz();
     const first=all && store.score[c][q.id]===undefined;
     let mastered=false;
-    if(first){ const before=mastery(c); store.score[c][q.id]=tries===1?1:(tries===2?0.75:0.5); save(); drawList();
-      mastered=before<80 && mastery(c)>=80;
+    if(all){
+      const before=mastery(c);
+      const pts=tries===1?1:(tries===2?0.75:0.5);
+      const prev=store.score[c][q.id];
+      if(prev===undefined || pts>prev){ store.score[c][q.id]=pts; save(); drawList(); }
+      mastered=first && before<80 && mastery(c)>=80;
       if(mastered){
         say(c<5?'Nice — this concept is mastered (80% or better). The next one is unlocked. Go on when you are ready.':'You have finished Statics Unit 1 on this device. For a harder review, copy the tutor prompt into Grok.');
       }
     }
     if(!all && tries===2) say('Not quite yet. Write out your first equation, with signs and units, and I will help you find the slip. You can also skip or show the solution — Next and Back still work.');
-    try{ if(window.GrokeFun){ if(all) window.GrokeFun.report('correct',{first:first,tries:tries,qid:q.id,concept:c,mastered:mastered}); else window.GrokeFun.report('wrong',{qid:q.id}); } }catch(e){}
+    try{ if(window.GrokeFun){ if(all) window.GrokeFun.report('correct',{first:first,tries:tries,qid:q.id,concept:c,mastered:mastered,redo:!first,xp:first?undefined:2}); else window.GrokeFun.report('wrong',{qid:q.id}); } }catch(e){}
   });
   d.querySelectorAll('input').forEach(function(inp){
     const i=inp.getAttribute('data-i');
@@ -1258,7 +1388,7 @@ function bindChecks(){
 }
 
 
-onEl('#reset','click',e=>{ e.preventDefault(); if(confirm('Reset all saved progress on this device?')){ localStorage.removeItem(KEY); location.reload(); } });
+onEl('#reset','click',e=>{ e.preventDefault(); if(confirm('Reset all saved progress on this device?')){ _cleared=true; localStorage.removeItem(KEY); location.reload(); } });
 
 function reply(t){ t=t.toLowerCase();
   if(/answer|solution|just tell|give me/.test(t)) return 'I won\'t hand over the answer, because you\'d lose the learning. Tell me your first step and I\'ll check it.';
@@ -1548,8 +1678,10 @@ function boot(){
   wireKeyboard();
   bindChecks();
   Object.values(Q).forEach(list=>list.forEach(buildQuiz));
-  shuffleQuizSlides();
+  captureOrigin();
   migrateSavedSlides();
+  shuffleQuizSlides();
+  if(window.GrokeProgress && GrokeProgress.bindFlush) GrokeProgress.bindFlush(flush);
   if(isOverviewRoute()) showOverview();
   else { hideOverview(); const r=readRoute(); go(r.c, r.i); }
   renderMath(document.body);
