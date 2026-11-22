@@ -76,7 +76,41 @@ def assert_fits(pg, label, check_width=None):
     assert info["sh"] <= info["ih"] + 1, f"{label}: document height {info['sh']} > viewport {info['ih']}"
     if check_width is not None:
         assert info["sw"] <= check_width, f"{label}: scrollWidth {info['sw']} > {check_width}"
+
+def assert_header_pinned(pg, label):
+    info = pg.evaluate("""() => {
+      const h = document.querySelector('.lesson-top') || document.querySelector('header.top') || document.querySelector('header');
+      const r = h && h.getBoundingClientRect();
+      const app = document.getElementById('lessonApp');
+      const cs = app && getComputedStyle(app);
+      return {
+        y: window.scrollY,
+        x: window.scrollX,
+        top: r ? r.top : null,
+        transform: cs ? cs.transform : '',
+        appInline: app ? (app.style.transform || '') : ''
+      };
+    }""")
+    assert info["y"] == 0, f"{label}: scrollY={info['y']} ({info})"
+    assert info["x"] == 0, f"{label}: scrollX={info['x']}"
+    assert info["top"] is not None and -1 <= info["top"] <= 2, f"{label}: header top={info['top']} ({info})"
+    t = info["transform"] or "none"
+    assert t in ("none", "matrix(1, 0, 0, 1, 0, 0)"), f"{label}: lessonApp transform {t}"
     return info
+
+def recover_from_simulated_shift(pg, label):
+    pg.evaluate("window.scrollTo(0, 140)")
+    pg.wait_for_timeout(30)
+    pg.evaluate("""() => {
+      window.dispatchEvent(new Event('scroll'));
+      window.dispatchEvent(new Event('resize'));
+      if (window.visualViewport) {
+        visualViewport.dispatchEvent(new Event('resize'));
+        visualViewport.dispatchEvent(new Event('scroll'));
+      }
+    }""")
+    pg.wait_for_timeout(80)
+    assert_header_pinned(pg, label)
 
 UNLOCK = {
     "score": {
@@ -251,6 +285,7 @@ with sync_playwright() as p:
     hdesk = pg.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
     print("home desktop scrollHeight:", hdesk)
     assert hdesk <= 850, f"home should fit ~1 desktop screen (800px), got {hdesk}"
+    assert_header_pinned(pg, "home desktop")
     pg.screenshot(path=str(SHOTS / "desktop_01_landing.png"))
     pg.goto(f"http://127.0.0.1:{port}/about.html"); pg.wait_for_load_state("networkidle")
     assert "Play now" in pg.inner_text("#trackGrid")
@@ -271,6 +306,8 @@ with sync_playwright() as p:
     assert pg.locator('.slide[data-id="hook"]').evaluate("el => el.classList.contains('on')")
     drag(pg, "#ropeH", -20, -80)
     pg.screenshot(path=str(SHOTS / "desktop_03b_hook_rope.png"))
+    assert_header_pinned(pg, "desktop after rope drag")
+    recover_from_simulated_shift(pg, "desktop after rope drag shift")
     pg.click("#trigBtn"); pg.wait_for_timeout(200)
     assert pg.locator("#trigPanel").evaluate("el => el.classList.contains('on')")
     s0 = pg.inner_text("#trigS"); pg.locator("#trigSl").evaluate("el => { el.value = 60; el.dispatchEvent(new Event('input',{bubbles:true})); }")
@@ -299,6 +336,8 @@ with sync_playwright() as p:
     goto_slide(pg, "quiz-q1-4"); assert "Correct" in answer(pg, "q1.4", ["245 N", "65.9 deg"])
     goto_slide(pg, "quiz-q1-3"); assert "Correct" in answer(pg, "q1.3", ["371.8 N", "-27.4 deg"])
     print("C1 mastery:", pg.inner_text("#mpct"))
+    assert_header_pinned(pg, "desktop after C1 quizzes")
+    recover_from_simulated_shift(pg, "desktop after C1 quizzes shift")
 
     goto_concept(pg, 2)
     goto_slide(pg, "fbd")
@@ -433,6 +472,13 @@ with sync_playwright() as p:
     m.goto(LESSON); m.wait_for_load_state("networkidle"); m.wait_for_timeout(300)
     sw = m.evaluate("document.documentElement.scrollWidth"); print("Mobile lesson scrollWidth:", sw); assert sw <= 392, "horizontal overflow on mobile lesson"
     assert_fits(m, "mobile hook", check_width=392)
+    assert_header_pinned(m, "mobile hook")
+    recover_from_simulated_shift(m, "mobile hook shift")
+    try:
+        drag(m, "#ropeH", -20, -80)
+    except Exception:
+        pass
+    assert_header_pinned(m, "mobile after rope drag")
     m.screenshot(path=str(SHOTS / "mobile_02_lesson.png"))
     goto_concept(m, 5); goto_slide(m, "beam"); m.wait_for_timeout(500)
     assert_fits(m, "mobile beam", check_width=392)
@@ -448,6 +494,7 @@ with sync_playwright() as p:
     hmob = mL.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
     print("home iPhone scrollHeight:", hmob)
     assert hmob <= 1266, f"home should fit ~1.5 iPhone screens (1266px), got {hmob}"
+    assert_header_pinned(mL, "home iPhone")
     mL.screenshot(path=str(SHOTS / "mobile_01_landing.png"))
     mL.locator("footer").scroll_into_view_if_needed(); mL.screenshot(path=str(SHOTS / "mobile_04_footer.png"))
 

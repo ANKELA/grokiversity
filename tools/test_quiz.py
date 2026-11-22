@@ -180,6 +180,50 @@ def fill_forms(box, vals):
         box.locator("input").nth(i).fill(v)
 
 
+
+def assert_header_pinned(pg, label):
+    info = pg.evaluate("""() => {
+      const h = document.querySelector('.lesson-top') || document.querySelector('header.top') || document.querySelector('header');
+      const r = h && h.getBoundingClientRect();
+      const app = document.getElementById('lessonApp');
+      const cs = app && getComputedStyle(app);
+      return {
+        y: window.scrollY,
+        x: window.scrollX,
+        top: r ? r.top : null,
+        transform: cs ? cs.transform : '',
+        appInline: app ? (app.style.transform || '') : '',
+        kb: document.documentElement.classList.contains('kb-open')
+      };
+    }""")
+    assert info["y"] == 0, f"{label}: scrollY={info['y']} ({info})"
+    assert info["x"] == 0, f"{label}: scrollX={info['x']}"
+    assert info["top"] is not None and -1 <= info["top"] <= 2, f"{label}: header top={info['top']} ({info})"
+    t = info["transform"] or "none"
+    assert t in ("none", "matrix(1, 0, 0, 1, 0, 0)"), f"{label}: lessonApp transform {t}"
+    assert not info["appInline"] or info["appInline"] == "none", f"{label}: inline transform {info['appInline']}"
+    return info
+
+def recover_from_simulated_shift(pg, label):
+    pg.evaluate("window.scrollTo(0, 140)")
+    pg.wait_for_timeout(30)
+    pg.evaluate("""() => {
+      window.dispatchEvent(new Event('scroll'));
+      window.dispatchEvent(new Event('resize'));
+      if (window.visualViewport) {
+        visualViewport.dispatchEvent(new Event('resize'));
+        visualViewport.dispatchEvent(new Event('scroll'));
+      }
+    }""")
+    pg.wait_for_timeout(80)
+    assert_header_pinned(pg, label)
+
+def assert_field_font(pg, label):
+    sizes = pg.evaluate("""() => [...document.querySelectorAll('input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=hidden]), select, textarea')].map(el => parseFloat(getComputedStyle(el).fontSize))""")
+    bad = [s for s in sizes if s < 16]
+    assert not bad, f"{label}: input/select font-size < 16px: {sizes[:12]}"
+
+
 def rounding_pass(pg, label, course):
     res = pg.evaluate("""(course) => {
       const api = window.GrokeversityQuiz;
@@ -254,6 +298,8 @@ def statics_dom_pass(pg, label, shots=False):
     assert "your pull" in hook["lead"].lower(), f"{label} hook lead: {hook['lead']}"
     assert hook["marker"] and "url(" in hook["marker"], f"{label} rope missing outward arrow: {hook}"
     assert hook["x2"] is not None and hook["x2"] > hook["x1"], f"{label} rope tip should be away from the box: {hook}"
+    assert_header_pinned(pg, label + " hook")
+    recover_from_simulated_shift(pg, label + " hook shift")
     rounding_pass(pg, label, "statics")
     # Controls always present
     goto_concept(pg, 1)
@@ -317,6 +363,31 @@ def statics_dom_pass(pg, label, shots=False):
     pg.wait_for_timeout(200)
     sid = pg.evaluate("() => document.querySelector('.concept:not([hidden]) .slide.on')?.dataset.id")
     assert sid == "quiz-q1-1", f"{label}: Back did not return to quiz-q1-1, now {sid}"
+    assert_field_font(pg, label + " q1.1 fonts")
+    inp = box.locator("input").first
+    inp.scroll_into_view_if_needed()
+    try:
+        inp.tap()
+    except Exception:
+        inp.click()
+    pg.wait_for_timeout(80)
+    pg.evaluate("window.scrollTo(0, 140)")
+    pg.evaluate("window.dispatchEvent(new Event('scroll'))")
+    pg.wait_for_timeout(60)
+    assert_header_pinned(pg, label + " focused input")
+    sel = box.locator("select").first
+    try:
+        sel.tap()
+    except Exception:
+        sel.click()
+    pg.evaluate("window.scrollTo(0, 140)")
+    pg.evaluate("window.dispatchEvent(new Event('scroll'))")
+    pg.wait_for_timeout(60)
+    assert_header_pinned(pg, label + " focused unit menu")
+    pg.evaluate("document.activeElement && document.activeElement.blur()")
+    pg.wait_for_timeout(100)
+    assert_header_pinned(pg, label + " after blur")
+    recover_from_simulated_shift(pg, label + " quiz shift")
     # Show solution + still movable
     box.locator('[data-act="sol"]').click()
     fb = box.locator(".fb").inner_text()

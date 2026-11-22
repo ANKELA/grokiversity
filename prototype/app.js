@@ -1371,43 +1371,71 @@ function reply(t){ t=t.toLowerCase();
 $('#csend').onclick=()=>{ const v=$('#cin').value.trim(); if(!v) return; say(v.replace(/[<&]/g,c=>c==='<'?'&lt;':'&amp;'),'s'); $('#cin').value=''; setTimeout(()=>say(reply(v)),250); };
 $('#cin').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#csend').click(); });
 
+function isTextField(el){
+  if(!el || !el.tagName) return false;
+  if(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)){
+    if(el.tagName==='INPUT' && /^(button|submit|reset|checkbox|radio|range|file|color|hidden|image)$/i.test(el.type||'')) return false;
+    return true;
+  }
+  return !!el.isContentEditable;
+}
+function focusedTextField(){
+  return isTextField(document.activeElement) ? document.activeElement : null;
+}
+function resetPageScroll(){
+  const app=$('#lessonApp');
+  if(app){
+    app.style.transform='';
+    app.style.height='';
+    app.style.maxHeight='';
+    app.style.top='';
+  }
+  try{ if(window.scrollY || window.scrollX) window.scrollTo(0,0); }catch(e){}
+  if(document.documentElement) document.documentElement.scrollTop=0;
+  if(document.body) document.body.scrollTop=0;
+}
+function clearKeyboardInset(){
+  document.documentElement.classList.remove('kb-open');
+  document.documentElement.style.setProperty('--kb','0px');
+  resetPageScroll();
+}
 function applyKeyboardInset(){
-  const app=$('#lessonApp'); if(!app) return;
+  const app=$('#lessonApp');
+  if(!app) return;
+  const field=focusedTextField();
   const vv=window.visualViewport;
-  if(!vv){ app.style.height=''; app.style.maxHeight=''; app.style.transform=''; return; }
+  if(!field || !vv){ clearKeyboardInset(); return; }
   const kb=Math.max(0, window.innerHeight - vv.height - (vv.offsetTop||0));
   document.documentElement.style.setProperty('--kb', kb+'px');
   document.documentElement.style.setProperty('--vvh', vv.height+'px');
-  if(kb>40){
-    document.documentElement.classList.add('kb-open');
-    app.style.height=vv.height+'px';
-    app.style.maxHeight=vv.height+'px';
-    app.style.transform='translateY('+(vv.offsetTop||0)+'px)';
-  } else {
-    document.documentElement.classList.remove('kb-open');
-    app.style.height=''; app.style.maxHeight=''; app.style.transform='';
-  }
+  if(kb>40) document.documentElement.classList.add('kb-open');
+  else document.documentElement.classList.remove('kb-open');
+  resetPageScroll();
 }
-function revealQuizControls(el){
-  applyKeyboardInset();
-  const q=el.closest && el.closest('.q, .check');
-  const btn=q && q.querySelector('button.btn, [data-act="check"]');
-  const slide=el.closest && (el.closest('.slide')||el.closest('.lesson')||document.scrollingElement);
-  requestAnimationFrame(function(){
-    try{ el.scrollIntoView({block:'center', inline:'nearest', behavior:'smooth'}); }catch(e){ if(el.scrollIntoView) el.scrollIntoView(true); }
+function scrollFieldInSlide(el){
+  const slide=el && el.closest && el.closest('.slide');
+  if(slide){
+    const er=el.getBoundingClientRect();
+    const sr=slide.getBoundingClientRect();
+    const mid=(er.top+er.bottom)/2;
+    const target=(sr.top+sr.bottom)/2;
+    if(Math.abs(mid-target)>8 && slide.scrollBy) slide.scrollBy(0, mid-target);
+    const q=el.closest('.q, .check');
+    const btn=q && q.querySelector('button.btn, [data-act="check"]');
     const vv=window.visualViewport;
     if(btn && vv){
       const br=btn.getBoundingClientRect();
-      const floor=vv.height+(vv.offsetTop||0)-12;
-      if(br.bottom>floor && slide && slide.scrollBy){
-        slide.scrollBy(0, br.bottom-floor+16);
-      }
+      const floor=sr.top + Math.min(slide.clientHeight, vv.height) - 12;
+      if(br.bottom>floor && slide.scrollBy) slide.scrollBy(0, br.bottom-floor+16);
     }
-    const nav=$('.slide-nav');
-    if(nav && vv){
-      const nr=nav.getBoundingClientRect();
-      if(nr.bottom>vv.height+(vv.offsetTop||0)+4) applyKeyboardInset();
-    }
+  }
+  resetPageScroll();
+}
+function revealQuizControls(el){
+  applyKeyboardInset();
+  requestAnimationFrame(function(){
+    scrollFieldInSlide(el);
+    applyKeyboardInset();
   });
 }
 function bindLessonSwipe(){
@@ -1451,8 +1479,18 @@ function wireKeyboard(){
     visualViewport.addEventListener('resize', applyKeyboardInset);
     visualViewport.addEventListener('scroll', applyKeyboardInset);
   }
+  window.addEventListener('scroll', function(){ resetPageScroll(); }, {passive:true});
   document.addEventListener('focusin',function(e){
-    if(e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) revealQuizControls(e.target);
+    if(isTextField(e.target)) revealQuizControls(e.target);
+  });
+  document.addEventListener('focusout',function(){
+    setTimeout(function(){ if(!focusedTextField()) clearKeyboardInset(); }, 60);
+  });
+  document.addEventListener('touchend', function(){
+    if(!focusedTextField()) requestAnimationFrame(resetPageScroll);
+  }, {passive:true});
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && !focusedTextField()) clearKeyboardInset();
   });
   ['#prevSlide','#nextSlide','#conceptsBtn','#trigBtn','#tutorBtn'].forEach(function(sel){
     const el=$(sel); if(!el) return;
@@ -1477,5 +1515,5 @@ function boot(){
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
-try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
+try{ window.GrokeversityQuiz={applyKeyboardInset:applyKeyboardInset,clearKeyboardInset:clearKeyboardInset,resetPageScroll:resetPageScroll,parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
 })();
