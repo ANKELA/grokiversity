@@ -1,10 +1,23 @@
-/* Grokeversity: lightweight quiz rewards (XP, streaks, confetti). No CDN, no sound by default. */
+/* Grokiversity: lightweight quiz rewards (XP, streaks, confetti). No CDN, no sound by default. */
 (function(){
 'use strict';
-const KEY='grokeversity.fun.v1';
+const KEY='grokiversity.fun.v1';
 const $=function(s,r){ return (r||document).querySelector(s); };
+function readStore(key){
+  try{
+    let raw=localStorage.getItem(key);
+    if(raw==null){
+      const old=key.replace(/^grokiversity/,'grokeversity');
+      if(old!==key){
+        raw=localStorage.getItem(old);
+        if(raw!=null) localStorage.setItem(key, raw);
+      }
+    }
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
 function load(){
-  try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; }
+  try{ const s=readStore(KEY); return (s && typeof s==='object') ? s : {}; }catch(e){ return {}; }
 }
 function save(st){
   try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){}

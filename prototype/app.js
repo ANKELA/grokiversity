@@ -1,11 +1,24 @@
-/* Grokeversity prototype: Statics Unit 1, concepts 1-5 as interactive slides. No backend; progress in localStorage. */
+/* Grokiversity prototype: Statics Unit 1, concepts 1-5 as interactive slides. No backend; progress in localStorage. */
 (function(){
 'use strict';
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 function onEl(sel, ev, fn, opts){ const el=typeof sel==='string'?$(sel):sel; if(el) el.addEventListener(ev, fn, opts); return el; }
 const deg = r => r*180/Math.PI, rad = d => d*Math.PI/180;
-const KEY = 'grokeversity.v1';
-const store = (()=>{ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } })();
+const KEY = 'grokiversity.v1';
+function readStore(key){
+  try{
+    let raw=localStorage.getItem(key);
+    if(raw==null){
+      const old=key.replace(/^grokiversity/,'grokeversity');
+      if(old!==key){
+        raw=localStorage.getItem(old);
+        if(raw!=null) localStorage.setItem(key, raw);
+      }
+    }
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+const store = (()=>{ const s=readStore(KEY); return (s && typeof s==='object') ? s : {}; })();
 store.score = store.score || {};
 [1,2,3,4,5].forEach(k=>{ store.score[k] = store.score[k] || {}; });
 store.current = store.current || 1;
@@ -222,7 +235,9 @@ if($('#copyHero')) onEl('#copyHero','click',copyPrompt);
 if(!$('#lessonApp')){
   const jump=()=>{
     const h=(location.hash||'').replace(/^#/,'').toLowerCase();
-    if(h==='learn' || h.startsWith('learn') || /^c[1-5]/.test(h)){
+    if(h==='learn' || h.startsWith('learn')){
+      location.replace(lessonUrl());
+    } else if(/^c[1-5]/.test(h)){
       const c=(h.match(/c([1-5])/)||[])[1]||'1';
       location.replace(lessonUrl('c='+c));
     }
@@ -237,6 +252,62 @@ const unlocked = c => c===1 || (c<=5 && mastery(c-1)>=80);
 function mastery(c){ const q=Q[c]; if(!q) return 0; const v=Object.values(store.score[c]||{}); return Math.round(100*v.reduce((a,b)=>a+b,0)/q.length); }
 function slides(c){ return $$('#c'+c+' .slide'); }
 function lastUnlocked(){ let n=1; while(n<5 && unlocked(n+1)) n++; return n; }
+
+/* ---------- unit overview (not a concept slide; ?c= and #s indexes stay unchanged) ---------- */
+function hasExplicitLessonRoute(){
+  const q=new URLSearchParams(location.search);
+  if(q.has('c')) return true;
+  if(/#s=?[0-9]+/i.test(location.hash||'')) return true;
+  return false;
+}
+function isOverviewRoute(){
+  const q=new URLSearchParams(location.search);
+  const h=(location.hash||'').toLowerCase();
+  if(q.get('overview')==='1' || h==='#overview') return true;
+  if(hasExplicitLessonRoute()) return false;
+  return !!$('#unitOverview');
+}
+function writeOverviewRoute(){
+  if((location.search+location.hash)!=='?overview=1') history.replaceState(null,'','?overview=1');
+}
+function fillOverviewConcepts(){
+  const host=$('#overviewConcepts'); if(!host) return;
+  host.innerHTML = CONCEPTS.map(([n,t])=>{
+    const open=unlocked(n);
+    const st=mastery(n)>=80?'✓':(open?'':'🔒');
+    return `<button type="button" class="overview-c ${open?'':'locked'}" data-c="${n}" ${open?'':'disabled aria-disabled="true"'}><span class="n">${n}</span><span class="t">${t}</span><span class="st">${st}</span></button>`;
+  }).join('');
+  $$('#overviewConcepts .overview-c').forEach(b=>b.addEventListener('click',()=>{
+    const c=+b.dataset.c;
+    if(!unlocked(c)) return;
+    startUnit(c, 0);
+  }));
+}
+function showOverview(){
+  window._grokeOverview=true;
+  const ov=$('#unitOverview');
+  if(ov) ov.hidden=false;
+  $$('.concept').forEach(d=>d.hidden=true);
+  fillOverviewConcepts();
+  if($('#crumb')) $('#crumb').textContent='ME 201 Statics › Unit 1 › Overview';
+  if($('#slidePos')) $('#slidePos').textContent='Overview';
+  if($('#prevSlide')) $('#prevSlide').disabled=true;
+  if($('#nextSlide')){ $('#nextSlide').disabled=false; $('#nextSlide').textContent='Start'; }
+  if($('#dots')) $('#dots').innerHTML='';
+  writeOverviewRoute();
+  if(typeof closeDrawers==='function') closeDrawers();
+  if(typeof resetPageScroll==='function') resetPageScroll();
+}
+function hideOverview(){
+  window._grokeOverview=false;
+  const ov=$('#unitOverview');
+  if(ov) ov.hidden=true;
+}
+function startUnit(c,i){
+  hideOverview();
+  go(c||1, (i===undefined||i===null)?0:i);
+}
+if($('#startUnit')) onEl('#startUnit','click',()=>startUnit(1,0));
 function readRoute(){
   const q=new URLSearchParams(location.search);
   let c=parseInt(q.get('c')||'',10);
@@ -270,6 +341,7 @@ function drawList(){
   const m = mastery(store.current); $('#mpct').textContent = m+'%'; $('#mbar').style.width=m+'%';
 }
 function go(c, i){
+  hideOverview();
   if(!unlocked(c)){ say(`That concept unlocks when you reach 80% mastery on the previous one. Want a hint on a question you’re stuck on?`); return; }
   store.current=c; save();
   $$('.concept').forEach(d=>d.hidden = d.id!=='c'+c);
@@ -297,7 +369,7 @@ function showSlide(c, i, dir){
   showSlide.hideT=setTimeout(()=>$$('.slide').forEach(s=>s.classList.remove('exit-left','exit-right')), 450);
   const n=ss.length;
   $('#slidePos').textContent=(i+1)+' / '+n;
-  $('#prevSlide').disabled = i===0;
+  $('#prevSlide').disabled = i===0 && c!==1;
   $('#nextSlide').disabled = i===n-1;
   $('#nextSlide').textContent = (ss[i].dataset.id||'').startsWith('quiz') && i<n-1 ? 'Next problem' : 'Next';
   $('#dots').innerHTML = ss.map((s,j)=>`<button type="button" class="dot ${j===i?'on':''} ${(s.dataset.id||'').startsWith('quiz')?'quiz':''}" data-i="${j}" aria-label="Slide ${j+1}"></button>`).join('');
@@ -336,8 +408,8 @@ function refreshAndRedraw(){
   const s=currentSlide();
   if(s) redrawSlide(s);
 }
-onEl('#prevSlide','click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)-1, 'back'); });
-onEl('#nextSlide','click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)+1, 'fwd'); });
+onEl('#prevSlide','click',()=>{ if(window._grokeOverview) return; const c=store.current; const i=store.slide[c]||0; if(c===1 && i===0){ showOverview(); return; } showSlide(c, i-1, 'back'); });
+onEl('#nextSlide','click',()=>{ if(window._grokeOverview){ startUnit(1,0); return; } const c=store.current; showSlide(c, (store.slide[c]||0)+1, 'fwd'); });
 document.addEventListener('keydown',e=>{
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(e.key==='Escape') closeDrawers();
@@ -352,11 +424,15 @@ if($('#tutorBtn')){
   onEl('#tutorBtn','click',()=>{ const on=!$('#tutorDrawer').classList.contains('on'); closeDrawers(); setDrawer('tutor',on); });
   onEl('#tutorBack','click',()=>setDrawer('tutor',false));
 }
-window.addEventListener('hashchange',()=>{
+function applyLessonRoute(){
+  if(isOverviewRoute()){ showOverview(); return; }
+  hideOverview();
   const r=readRoute();
   if(r.c!==store.current) go(r.c, r.i);
-  else if(r.i!==(store.slide[store.current]||0)) showSlide(r.c, r.i, 'jump');
-});
+  else showSlide(r.c, r.i, 'jump');
+}
+window.addEventListener('hashchange', applyLessonRoute);
+window.addEventListener('popstate', applyLessonRoute);
 
 /* ---------- trig refresher ---------- */
 const trig={th:30};
@@ -1791,8 +1867,8 @@ function boot(){
   bindChecks();
   Object.values(Q).forEach(list=>list.forEach(buildQuiz));
   shuffleQuizSlides();
-  const r=readRoute();
-  go(r.c, r.i);
+  if(isOverviewRoute()) showOverview();
+  else { hideOverview(); const r=readRoute(); go(r.c, r.i); }
   renderMath(document.body);
   const any=Object.values(store.score).some(o=>Object.keys(o||{}).length);
   if(!$('#chat').children.length) say(any
@@ -1801,5 +1877,5 @@ function boot(){
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
-try{ window.GrokeversityQuiz={prepareThumbLayout:prepareThumbLayout,shuffleQuizSlides:shuffleQuizSlides,buildQuiz:buildQuiz,bootHome:bootHome,drawRope:drawRope,applyKeyboardInset:applyKeyboardInset,clearKeyboardInset:clearKeyboardInset,resetPageScroll:resetPageScroll,parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
+try{ window.GrokiversityQuiz={prepareThumbLayout:prepareThumbLayout,shuffleQuizSlides:shuffleQuizSlides,buildQuiz:buildQuiz,bootHome:bootHome,drawRope:drawRope,applyKeyboardInset:applyKeyboardInset,clearKeyboardInset:clearKeyboardInset,resetPageScroll:resetPageScroll,parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
 })();

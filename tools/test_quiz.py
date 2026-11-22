@@ -21,6 +21,7 @@ srv = socketserver.TCPServer(("127.0.0.1", 0), functools.partial(Q, directory=st
 PORT = srv.server_address[1]
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 LESSON = f"http://127.0.0.1:{PORT}/statics/unit-1.html"
+LESSON_C1 = LESSON + "?c=1#s1"
 AI = f"http://127.0.0.1:{PORT}/intro-ai.html"
 
 UNLOCK = {
@@ -55,8 +56,8 @@ IPHONE = dict(
 )
 
 PARSE_JS = r"""() => {
-  const api = window.GrokeversityQuiz;
-  if (!api || !api.gradeAns || !api.Q) return {error: 'GrokeversityQuiz not exported'};
+  const api = window.GrokiversityQuiz;
+  if (!api || !api.gradeAns || !api.Q) return {error: 'GrokiversityQuiz not exported'};
   const {gradeAns, Q, formatAns, formatExact, usesIntRound, intTargets} = api;
   const qs = [];
   Object.keys(Q).forEach(k => (Q[k] || []).forEach(q => qs.push(q)));
@@ -248,7 +249,7 @@ def assert_field_font(pg, label):
 
 def rounding_pass(pg, label, course):
     res = pg.evaluate("""(course) => {
-      const api = window.GrokeversityQuiz;
+      const api = window.GrokiversityQuiz;
       const {gradeAns, Q, usesIntRound, intTargets, formatAns} = api;
       const qs = Object.values(Q).flat();
       const fails = [];
@@ -316,9 +317,9 @@ def random_quiz_pass(pg, label, course="statics"):
         assert str(int(first["givens"]["F1"])) in (again["body"] or ""), f"{label}: page text missing drawn F1 after refresh: {again['body']}"
         # UNLOCK scripts pre-mark quizzes solved; clear q1.1 so Try a new one can appear
         pg.evaluate("""() => {
-          const raw=JSON.parse(localStorage.getItem('grokeversity.v1')||'{}');
+          const raw=JSON.parse(localStorage.getItem('grokiversity.v1')||'{}');
           if(raw.score && raw.score['1']) delete raw.score['1']['q1.1'];
-          localStorage.setItem('grokeversity.v1', JSON.stringify(raw));
+          localStorage.setItem('grokiversity.v1', JSON.stringify(raw));
         }""")
         pg.reload(wait_until="domcontentloaded")
         pg.wait_for_timeout(400)
@@ -346,7 +347,7 @@ def random_quiz_pass(pg, label, course="statics"):
         # Shuffle is a stored permutation of the concept's quiz ids
         perm = pg.evaluate("""() => {
           const ids=[...document.querySelectorAll('#c1 .q-mount')].map(el => el.dataset.q);
-          const stored=(JSON.parse(localStorage.getItem('grokeversity.v1')||'{}').quiz||{}).order||{};
+          const stored=(JSON.parse(localStorage.getItem('grokiversity.v1')||'{}').quiz||{}).order||{};
           return {ids, stored: stored.s1};
         }""")
         assert perm["stored"] and sorted(perm["stored"])==sorted(perm["ids"]), f"{label}: stored quiz order is not a permutation {perm}"
@@ -355,9 +356,9 @@ def random_quiz_pass(pg, label, course="statics"):
     else:
         # AI: self-contained text + try a new one on q2.2 (mentions its own points)
         pg.evaluate("""() => {
-          const raw=JSON.parse(localStorage.getItem('grokeversity.ai101.v1')||'{}');
+          const raw=JSON.parse(localStorage.getItem('grokiversity.ai101.v1')||'{}');
           if(raw.score && raw.score['2']) delete raw.score['2']['q2.2'];
-          localStorage.setItem('grokeversity.ai101.v1', JSON.stringify(raw));
+          localStorage.setItem('grokiversity.ai101.v1', JSON.stringify(raw));
         }""")
         pg.reload(wait_until="domcontentloaded")
         pg.wait_for_timeout(400)
@@ -477,7 +478,7 @@ def statics_dom_pass(pg, label, shots=False):
         im = box.locator("input").nth(i).get_attribute("inputmode")
         assert im == "decimal", f"{label}: inputmode should be decimal, got {im}"
     conv = pg.evaluate("""() => {
-      const api=window.GrokeversityQuiz;
+      const api=window.GrokiversityQuiz;
       const q=window.GrokeQuizRand.get('q1.1');
       const kn=api.convertToWanted(q.ans[0].v, q.ans[0].u, 'kN').v;
       const rad=api.convertToWanted(q.ans[1].v, q.ans[1].u, 'rad').v;
@@ -574,7 +575,7 @@ def statics_dom_pass(pg, label, shots=False):
     box.locator('[data-act="sol"]').click()
     fb = box.locator(".fb").inner_text()
     assert "Solution" in fb or "Answers:" in fb, f"{label}: Show solution failed: {fb}"
-    shown = pg.evaluate("""() => window.GrokeQuizRand.get('q1.1').ans.map(a => window.GrokeversityQuiz.formatExact(a))""")
+    shown = pg.evaluate("""() => window.GrokeQuizRand.get('q1.1').ans.map(a => window.GrokiversityQuiz.formatExact(a))""")
     for piece in shown:
         num = "".join(ch for ch in piece if ch.isdigit() or ch=='.' or ch=='-')
         # at least the leading digits of the exact value should appear
@@ -584,7 +585,7 @@ def statics_dom_pass(pg, label, shots=False):
     assert (not pg.is_disabled("#nextSlide")) or (not pg.is_disabled("#prevSlide")), f"{label}: both Next and Back disabled after Show solution"
     # Enter / Go submits an iOS-flavored correct answer
     ios = pg.evaluate("""() => {
-      const api=window.GrokeversityQuiz;
+      const api=window.GrokiversityQuiz;
       const q=window.GrokeQuizRand.get('q1.1');
       const n0=String(q.ans[0].v).replace('.', ',');
       const n1=String(q.ans[1].v);
@@ -641,7 +642,7 @@ def statics_dom_pass(pg, label, shots=False):
     # Every scored problem: two typography forms accepted in the DOM
     # Pick one iOS-ish form per field
     form_js = r"""(qid) => {
-      const api = window.GrokeversityQuiz;
+      const api = window.GrokiversityQuiz;
       const q = Object.values(api.Q).flat().find(x => x.id === qid);
       const forms = q.ans.map(a => {
         const n = String(a.v);
@@ -670,7 +671,7 @@ def statics_dom_pass(pg, label, shots=False):
             assert box.locator('[data-act="sol"]').count() == 1, f"{label} {qid} missing Show solution"
             assert not pg.is_disabled("#nextSlide") or not pg.is_disabled("#prevSlide"), f"{label} {qid}: both Back and Next disabled"
             info = pg.evaluate("""(qid) => {
-              const api=window.GrokeversityQuiz;
+              const api=window.GrokiversityQuiz;
               const q=Object.values(api.Q).flat().find(x=>x.id===qid);
               const root=document.getElementById('Q'+qid.replace('.','_'));
               const expect=(q.ans||[]).map(a => api.unitMenu(a.u) ? api.selectDefault(a.u) : null);
@@ -725,7 +726,7 @@ def ai_dom_pass(pg, label, shots=False):
         print("wrote", SHOTS / "quiz_iphone_ai_q1_4_accepted.png")
     seen = 0
     form_js = r"""(qid) => {
-      const api = window.GrokeversityQuiz;
+      const api = window.GrokiversityQuiz;
       const q = Object.values(api.Q).flat().find(x => x.id === qid);
       return q.ans.map(a => {
         const n = String(a.v);
@@ -757,7 +758,7 @@ def ai_dom_pass(pg, label, shots=False):
     box = qbox(pg, "q1.3")
     box.scroll_into_view_if_needed()
     q13 = pg.evaluate("""() => {
-      const api=window.GrokeversityQuiz;
+      const api=window.GrokiversityQuiz;
       const q=window.GrokeQuizRand.get('q1.3');
       return q.ans.map(a => String(api.intTargets(a.v)[0])+' %');
     }""")
@@ -808,16 +809,16 @@ def main():
                 failed.append(f"{label} skipped: {e}")
                 continue
             try:
-                ctx.add_init_script("(function(){var K='grokeversity.v1';try{var c=JSON.parse(localStorage.getItem(K)||'null');if(c&&typeof c==='object')return;}catch(e){}localStorage.setItem(K, %s);}());" % json.dumps(UNLOCK_JS))
+                ctx.add_init_script("(function(){var K='grokiversity.v1';try{var c=JSON.parse(localStorage.getItem(K)||'null');if(c&&typeof c==='object')return;}catch(e){}localStorage.setItem(K, %s);}());" % json.dumps(UNLOCK_JS))
                 pg = ctx.new_page(); watch(pg, errors)
-                pg.goto(LESSON, wait_until="domcontentloaded")
+                pg.goto(LESSON_C1, wait_until="domcontentloaded")
                 pg.wait_for_timeout(500)
                 if iphone:
                     assert_home_header(pg, "statics " + label)
                 statics_dom_pass(pg, "statics " + label, shots=shots)
 
                 ctx2 = br.new_context(**(IPHONE if iphone else dict(viewport={"width": 1280, "height": 720})))
-                ctx2.add_init_script("(function(){var K='grokeversity.ai101.v1';try{var c=JSON.parse(localStorage.getItem(K)||'null');if(c&&typeof c==='object')return;}catch(e){}localStorage.setItem(K, %s);}());" % json.dumps(AI_UNLOCK_JS))
+                ctx2.add_init_script("(function(){var K='grokiversity.ai101.v1';try{var c=JSON.parse(localStorage.getItem(K)||'null');if(c&&typeof c==='object')return;}catch(e){}localStorage.setItem(K, %s);}());" % json.dumps(AI_UNLOCK_JS))
                 pa = ctx2.new_page(); watch(pa, errors)
                 pa.goto(AI, wait_until="domcontentloaded")
                 pa.wait_for_timeout(500)

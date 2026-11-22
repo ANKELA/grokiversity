@@ -2,7 +2,7 @@
 """Prepare prototype/ for static hosting.
 - copies tutor prompts into prototype/ and embeds them in index.html and intro-ai.html (so Copy works offline)
 - renders assets: og.png (1200x630), favicon-32.png, apple-touch-icon.png
-- optional: --base-url https://USER.github.io/grokeversity/  rewrites og/twitter URLs to absolute (X needs absolute)."""
+- optional: --base-url https://USER.github.io/grokiversity/  rewrites og/twitter URLs to absolute (X needs absolute)."""
 import argparse, html, pathlib, re, shutil
 from PIL import Image, ImageDraw, ImageFont
 ROOT = pathlib.Path(__file__).resolve().parents[1]; SITE = ROOT / "prototype"; A = SITE / "assets"
@@ -73,7 +73,7 @@ W, H = 1200, 630; im = Image.new("RGB", (W, H), "#0f1220"); d = ImageDraw.Draw(i
 for y in range(H):  # soft top glow
     t = max(0, 1 - y / 420); d.line([0, y, W, y], fill=(int(15 + 28 * t), int(18 + 35 * t), int(32 + 78 * t)))
 im.paste(icon(84), (70, 64), icon(84))
-d.text((172, 78), "Grokeversity", font=f("DejaVuSans-Bold.ttf", 50), fill="#e8eaf6")
+d.text((172, 78), "Grokiversity", font=f("DejaVuSans-Bold.ttf", 50), fill="#e8eaf6")
 d.text((70, 190), "University-level curricula,", font=f("DejaVuSans-Bold.ttf", 54), fill="#ffffff")
 d.text((70, 256), "curriculum, one concept at a time.", font=f("DejaVuSans-Bold.ttf", 54), fill="#7c9cff")
 d.text((70, 350), "Mechanical Engineering  ·  Introduction to AI  ·  strict quizzes", font=f("DejaVuSans.ttf", 28), fill="#c5cae9")
@@ -83,5 +83,6 @@ ox, oy = 1010, 595
 for (dx, dy), c in [((-50, -120), "#ff8a65"), ((130, -50), "#4dd0e1"), ((85, -160), "#ffd54f")]:
     d.line([ox, oy, ox + dx, oy + dy], fill=c, width=9)
 d.ellipse([ox - 10, oy - 10, ox + 10, oy + 10], fill="#e8eaf6")
-d.text((70, 560), "Community project · not affiliated with xAI · not an accredited degree", font=f("DejaVuSans.ttf", 21), fill="#7a83b5")
+d.text((70, 528), "Built with and powered by Grok. Not an accredited degree.", font=f("DejaVuSans.ttf", 20), fill="#7a83b5")
+d.text((70, 560), "Community project, not affiliated with or endorsed by xAI.", font=f("DejaVuSans.ttf", 20), fill="#7a83b5")
 im.save(A / "og.png"); print("built:", [p.name for p in A.iterdir()], "| prompts:", n_me, n_ai, n_econ, "| base-url:", args.base_url or "(relative)")

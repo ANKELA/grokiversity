@@ -14,23 +14,24 @@ navy, gold, grey = "#1f2a56", "#b08d3c", "#5b6070"
 d.rectangle([40, 40, W-40, H-40], outline=navy, width=10); d.rectangle([70, 70, W-70, H-70], outline=gold, width=3)
 def c(y, text, f, fill=navy):
     w = d.textlength(text, font=f); d.text(((W-w)/2, y), text, font=f, fill=fill)
-c(140, "GROKEVERSITY", serifb(54), gold)
+c(140, "GROKIVERSITY", serifb(54), gold)
 c(210, "An open-source community learning project", sans(28), grey)
 c(330, "Certificate of Completion", serifb(86))
 c(450, "This certifies that", serif(34), grey)
 c(510, "Jane Q. Student", serifb(78))
 d.line([560, 610, W-560, 610], fill=gold, width=3)
-c(640, "has completed the Grokeversity", serif(36))
+c(640, "has completed the Grokiversity", serif(36))
 c(695, "Mechanical Engineering Curriculum", serifb(46))
 c(760, "All required courses · ~5,400 study hours · identity-checked final exams (≥80%) · peer-reviewed capstone design project", sans(26), grey)
-disc = ["This is not an academic degree and does not confer academic credit. Grokeversity is not an accredited institution.",
-        "Grokeversity is an independent community project, not affiliated with or endorsed by xAI or any university."]
-for i, t in enumerate(disc): c(850 + i*40, t, sans(24), "#7a3b3b")
+disc = ["This is not an academic degree and does not confer academic credit.",
+        "Built with and powered by Grok. Not an accredited degree.",
+        "Community project, not affiliated with or endorsed by xAI."]
+for i, t in enumerate(disc): c(850 + i*36, t, sans(24), "#7a3b3b")
 cred_id = "GKV-ME-2027-000123"; h = hashlib.sha256(b"sample credential json").hexdigest()
 d.text((150, 1010), f"Credential ID: {cred_id}", font=sans(26), fill=navy)
 d.text((150, 1050), "Issued: 2027-06-01   ·   Open Badges 3.0 / W3C Verifiable Credential", font=sans(24), fill=grey)
 d.text((150, 1090), f"SHA-256: {h[:32]}…", font=font("DejaVuSansMono.ttf", 22), fill=grey)
-d.text((150, 1130), "Verify: https://verify.grokeversity.example/GKV-ME-2027-000123", font=sans(24), fill=navy)
+d.text((150, 1130), "Verify: https://verify.grokiversity.example/GKV-ME-2027-000123", font=sans(24), fill=navy)
 for i, (x, who) in enumerate([(150, "Capstone mentor reviewer"), (720, "Curriculum maintainer")]):
     d.line([x, 1260, x+420, 1260], fill=navy, width=2); d.text((x, 1272), who, font=sans(24), fill=grey)
 # QR placeholder (pseudo-pattern from hash; a real build would use the `qrcode` package)

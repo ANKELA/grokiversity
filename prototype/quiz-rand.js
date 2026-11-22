@@ -1,4 +1,4 @@
-/* Grokeversity parameterized quiz bank.
+/* Grokiversity parameterized quiz bank.
    Seeded variants, shuffle helpers, and worked solutions for Statics Unit 1
    Intro AI Unit 1, and ECON 101 Unit 1. Loaded before app.js / ai.js / econ.js. */
 (function (root) {

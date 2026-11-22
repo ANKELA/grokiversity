@@ -1,13 +1,13 @@
-# Grokeversity: Product and Technical Plan (v0.1)
+# Grokiversity: Product and Technical Plan (v0.1)
 
 *Status: draft, 21 Nov 2026. First track: **Mechanical Engineering**. Everything here is local and unpublished.*
 
-> Grokeversity is a community project. It is **not affiliated with or endorsed by xAI** and **not an accredited degree**. We call the ME track a *degree-equivalent curriculum*.
+> Built with and powered by Grok. Not an accredited degree. Community project, not affiliated with or endorsed by xAI. We call the ME track a *degree-equivalent curriculum*.
 
 ---
 
 ## 1. Product in one paragraph
-Grokeversity is a free, open-source course of study whose depth matches an accredited B.S. in Mechanical Engineering. Content lives in version-controlled Markdown/YAML: degree → courses → units → concepts → problems. Every numeric answer is machine-verified. A static web app teaches each concept with rendered math and interactive diagrams, grades strictly with mastery gates (≥ 80%), and schedules spaced review. An AI tutor does the one-on-one coaching. In the MVP, the student pastes our **tutor prompt into their own Grok chat**. Later, they can **bring their own xAI API key**.
+Grokiversity is a free, open-source course of study whose depth matches an accredited B.S. in Mechanical Engineering. Content lives in version-controlled Markdown/YAML: degree → courses → units → concepts → problems. Every numeric answer is machine-verified. A static web app teaches each concept with rendered math and interactive diagrams, grades strictly with mastery gates (≥ 80%), and schedules spaced review. An AI tutor does the one-on-one coaching. In the MVP, the student pastes our **tutor prompt into their own Grok chat**. Later, they can **bring their own xAI API key**.
 
 ## 2. Rigor standard
 "Equivalent to a real accredited ME degree" means the following. This is a hard requirement for every course.
@@ -151,20 +151,20 @@ ME labs (instrumentation, materials testing, machining, thermal-fluids rigs) **c
 - **Rate limits and cooldowns** on retakes.
 
 **Verifiable credentials:**
-- Issue certificates as **1EdTech Open Badges 3.0** credentials [ob3][1edtech]. These are built on the **W3C Verifiable Credentials Data Model 2.0** [vc2] and digitally signed by a Grokeversity issuer key.
+- Issue certificates as **1EdTech Open Badges 3.0** credentials [ob3][1edtech]. These are built on the **W3C Verifiable Credentials Data Model 2.0** [vc2] and digitally signed by a Grokiversity issuer key.
 - Each certificate gets a **public verification URL** and **QR code**, such as `verify.<domain>/<credential-id>`, that shows its status. The printed PDF also carries a **SHA-256 hash** of the signed credential JSON, so anyone can confirm that the PDF matches the record. Revocations are published in a status list.
 - A mockup is at `assets/certificate_mockup.png`.
 
 **Legal limits on the word "degree"** (not legal advice; get a lawyer before issuing anything):
 - In the US, many states restrict who may grant degrees and penalize false academic credentials. For example, **Oregon** forbids claiming an academic degree unless it came from an accredited or state-approved school (ORS 348.609) [ors]. **Washington** makes it unlawful to grant or offer a "false academic credential" (RCW 28B.85.220) [rcw].
 - Therefore: **never** call it a degree, diploma, B.S. or "bachelor's". Don't use Latin honors. Don't say "accredited" or "university-equivalent".
-- **Recommended title:** "Certificate of Completion: Mechanical Engineering Curriculum". The name "Grokeversity" itself is fine as a brand, but any page that issues certificates should carry the disclaimer.
+- **Recommended title:** "Certificate of Completion: Mechanical Engineering Curriculum". The name "Grokiversity" itself is fine as a brand, but any page that issues certificates should carry the disclaimer.
 
 **Sample certificate wording (honest):**
-> **Grokeversity**, an open-source community learning project
+> **Grokiversity**, an open-source community learning project
 > **Certificate of Completion**
-> This certifies that **[Name]** has completed the Grokeversity **Mechanical Engineering Curriculum**: all required courses (~5,400 study hours), identity-checked final examinations (≥ 80%), and a capstone design project reviewed by volunteer engineering mentors.
-> *This is not an academic degree and does not confer academic credit. Grokeversity is not an accredited institution. Grokeversity is an independent community project, not affiliated with or endorsed by xAI or any university.*
+> This certifies that **[Name]** has completed the Grokiversity **Mechanical Engineering Curriculum**: all required courses (~5,400 study hours), identity-checked final examinations (≥ 80%), and a capstone design project reviewed by volunteer engineering mentors.
+> *This is not an academic degree and does not confer academic credit. Built with and powered by Grok. Not an accredited degree. Community project, not affiliated with or endorsed by xAI.*
 > Credential ID · Issue date · Verification URL / QR · SHA-256
 
 **Later path to recognized value (Phase 4+):**
@@ -222,7 +222,7 @@ ME labs (instrumentation, materials testing, machining, thermal-fluids rigs) **c
 ## 12. Hosting and launch (when the user decides)
 - **GitHub Pages:** free for public repositories. The published site can be up to 1 GB, with a soft limit of 100 GB/month of bandwidth. It must not be used primarily for commercial transactions [ghp][ghp-lim]. The `prototype/` folder is already static and includes `.nojekyll`.
 - Alternative: **Cloudflare Pages**, also free [cfp].
-- Steps (not done; they need the user's approval and a GitHub login): create a GitHub account or org `grokeversity` (the name currently looks free) → create a public repo → push → Settings → Pages → deploy from `/prototype` (or move it to `/docs`) → run `python3 tools/build_site.py --base-url https://grokeversity.github.io/<repo>/` so the X card image URL is absolute → check it with X's card preview after posting.
+- Steps (not done; they need the user's approval and a GitHub login): create a GitHub account or org `grokiversity` (the name currently looks free) → create a public repo → push → Settings → Pages → deploy from `/prototype` (or move it to `/docs`) → run `python3 tools/build_site.py --base-url https://grokiversity.github.io/<repo>/` so the X card image URL is absolute → check it with X's card preview after posting.
 
 ## 13. Roadmap
 | Phase | Scope | Exit criteria |
@@ -234,7 +234,7 @@ ME labs (instrumentation, materials testing, machining, thermal-fluids rigs) **c
 | **4 – Full track** (2–3 yrs) | Thermo, fluids, heat transfer, design, manufacturing, controls, labs kit, capstone with mentors; track certificate; Open Badges 3.0 issuance; ACE review exploration; FE-prep mapping | First track completers; external review |
 
 ## 14. Open decisions for the project owner
-1. **Name and trademark:** "Grokeversity" contains "Grok", which is an xAI trademark. The GitHub user/org name `grokeversity` currently returns 404 (it looks free), and `.com`, `.org`, `.io` and `.dev` show no registration in RDAP. Using "Grok" in the name could draw a trademark objection, so consider asking xAI or a lawyer, or keep a fallback name ready.
+1. **Name and trademark:** "Grokiversity" contains "Grok", which is an xAI trademark. The GitHub user/org name `grokiversity` currently returns 404 (it looks free), and `.com`, `.org`, `.io` and `.dev` show no registration in RDAP. Using "Grok" in the name could draw a trademark objection, so consider asking xAI or a lawyer, or keep a fallback name ready.
 2. **Fiscal sponsor:** HCB (7%) or Open Source Collective (10%).
 3. **Tutor model:** prompt pack only, or also BYOK in Phase 2 (and whether to support other models besides Grok).
 4. **Certificates:** whether to charge a proctoring fee, and who the volunteer mentor reviewers will be.

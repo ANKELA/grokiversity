@@ -630,3 +630,136 @@ body.home .disc{max-width:720px;padding:10px 14px;margin:0 auto 8px}
 .cs-shade{fill:#4dd0e1;fill-opacity:.28}
 .ps-shade{fill:#ff8a65;fill-opacity:.28}
 .xs-shade{fill:#ffd54f;fill-opacity:.28}
+
+/* ---- unit overview (first screen, not a concept slide) ---- */
+.unit-overview{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  background:var(--panel);
+  z-index:3;
+}
+.unit-overview[hidden]{display:none !important}
+.overview-slide{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:8px 14px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.overview-slide h1{
+  font-size:clamp(18px, 4.6vw, 26px);
+  line-height:1.15;
+  margin:0;
+  letter-spacing:-.3px;
+}
+.overview-kicker{
+  margin:0;
+  font-size:11px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--mute);
+}
+.overview-lead{
+  margin:0;
+  font-size:13.5px;
+  line-height:1.4;
+  color:#c5cae9;
+}
+.overview-slide h2{
+  font-size:11px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--mute);
+  margin:4px 0 0;
+}
+.overview-grid{display:flex; flex-direction:column; gap:6px; min-height:0}
+.overview-concepts{display:flex; flex-direction:column; gap:4px; margin:0; padding:0; list-style:none}
+.overview-c{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  text-align:left;
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:6px 10px;
+  color:inherit;
+  min-height:40px;
+  font:inherit;
+  cursor:pointer;
+}
+.overview-c .n{flex:0 0 1.2em; color:var(--acc); font-weight:700}
+.overview-c .t{flex:1; min-width:0}
+.overview-c .st{flex:0 0 auto; color:var(--mute); font-size:13px}
+.overview-c.locked{opacity:.55; cursor:default}
+.overview-c:not(.locked):hover{border-color:var(--acc); background:#1d2550}
+.overview-outcomes{margin:0; padding-left:1.15em; font-size:13.5px; line-height:1.4}
+.overview-outcomes li{margin:0 0 2px}
+.overview-meta, .overview-how{
+  margin:0;
+  font-size:12.5px;
+  line-height:1.4;
+  color:var(--mute);
+}
+.overview-slide > *{flex-shrink:0}
+.overview-start{
+  align-self:stretch;
+  margin-top:auto;
+  font-size:17px;
+  min-height:46px;
+  padding:10px 18px;
+}
+@media (max-width:719px){
+  .overview-slide{padding:6px 12px 8px; gap:4px}
+  .overview-lead{font-size:12.5px; line-height:1.32}
+  .overview-c{min-height:32px; padding:4px 8px; border-radius:8px}
+  .overview-outcomes{font-size:12.5px; line-height:1.32}
+  .overview-meta, .overview-how{font-size:11.5px; line-height:1.32}
+  .overview-slide h2{margin:2px 0 0}
+  .overview-start{min-height:42px; font-size:16px; padding:8px 16px}
+}
+@media (min-width:720px){
+  .overview-slide{padding:14px 22px 16px; gap:8px}
+  .overview-lead{font-size:15px; max-width:42em}
+  .overview-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; align-items:start}
+  .overview-c{min-height:44px}
+}
+/* Intro AI: first viewport is the overview; the long lesson stays off-screen until Start */
+html.ai-overview-open, html.ai-overview-open body{
+  height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+html.ai-overview-open body{
+  display:flex;
+  flex-direction:column;
+  margin:0;
+}
+html.ai-overview-open .top{flex:0 0 auto}
+html.ai-overview-open .course-hero,
+html.ai-overview-open .player,
+html.ai-overview-open footer,
+html.ai-overview-open #funBar,
+html.ai-overview-open .fun-bar{display:none !important}
+
+.unit-overview.ai-overview{display:none;}
+html.ai-overview-open .unit-overview.ai-overview{display:flex;}
+html.ai-overview-open .unit-overview{
+  position:relative;
+  flex:1 1 0;
+  min-height:0;
+  inset:auto;
+  width:100%;
+  max-width:720px;
+  margin:0 auto;
+  align-self:stretch;
+}
+body.ai-started .course-hero{display:none}

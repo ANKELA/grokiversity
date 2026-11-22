@@ -1,9 +1,22 @@
-/* Grokeversity prototype: AI 101 Unit 1, concepts 1-4. No backend; progress in localStorage. */
+/* Grokiversity prototype: AI 101 Unit 1, concepts 1-4. No backend; progress in localStorage. */
 (function(){
 'use strict';
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-const KEY = 'grokeversity.ai101.v1';
-const store = (()=>{ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } })();
+const KEY = 'grokiversity.ai101.v1';
+function readStore(key){
+  try{
+    let raw=localStorage.getItem(key);
+    if(raw==null){
+      const old=key.replace(/^grokiversity/,'grokeversity');
+      if(old!==key){
+        raw=localStorage.getItem(old);
+        if(raw!=null) localStorage.setItem(key, raw);
+      }
+    }
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+const store = (()=>{ const s=readStore(KEY); return (s && typeof s==='object') ? s : {}; })();
 store.score = store.score || {1:{},2:{},3:{},4:{}}; store.current = store.current || 1;
 const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} };
 function renderMath(el){ if(window.renderMathInElement) renderMathInElement(el||document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false}); }
@@ -790,17 +803,82 @@ function prepareThumbLayout(scope){
     }
   }
 }
+
+/* ---------- unit overview ---------- */
+function fillOverviewConcepts(){
+  const host=$('#overviewConcepts'); if(!host) return;
+  host.innerHTML = CONCEPTS.map(([n,title])=>{
+    const open=unlocked(n);
+    const st=mastery(n)>=80?'✓':(open?'':'🔒');
+    return `<button type="button" class="overview-c ${open?'':'locked'}" data-c="${n}" ${open?'':'disabled aria-disabled="true"'}><span class="n">${n}</span><span class="t">${title}</span><span class="st">${st}</span></button>`;
+  }).join('');
+  $$('#overviewConcepts .overview-c').forEach(b=>b.addEventListener('click',()=>{
+    const c=+b.dataset.c;
+    if(!unlocked(c)) return;
+    startUnit(c);
+  }));
+}
+function hasAiLessonRoute(){
+  const h=(location.hash||'').toLowerCase();
+  return h==='#learn' || /^#c[1-4]/.test(h) || h==='#overview';
+}
+function shouldShowAiOverview(){
+  const h=(location.hash||'').toLowerCase();
+  if(h==='#overview') return true;
+  if(h==='#learn' || /^#c[1-4]/.test(h)) return false;
+  const any=Object.values(store.score||{}).some(o=>Object.keys(o||{}).length);
+  if(any || (store.current&&store.current>1)) return false;
+  return !!$('#unitOverview');
+}
+function showAiOverview(){
+  document.documentElement.classList.add('ai-overview-open');
+  document.body.classList.add('ai-overview-open');
+  const ov=$('#unitOverview'); if(ov) ov.hidden=false;
+  fillOverviewConcepts();
+}
+function hideAiOverview(){
+  document.documentElement.classList.remove('ai-overview-open');
+  document.body.classList.remove('ai-overview-open');
+  document.body.classList.add('ai-started');
+  const ov=$('#unitOverview'); if(ov) ov.hidden=true;
+}
+function startUnit(c){
+  hideAiOverview();
+  go(c||1);
+  const learn=$('#learn');
+  if(learn && learn.scrollIntoView) learn.scrollIntoView({block:'start'});
+  const next= (c && c>1) ? ('#c'+c) : '#learn';
+  if((location.hash||'')!==next) history.replaceState(null,'', next);
+}
+
+const startBtn=$('#startUnit'); if(startBtn) startBtn.addEventListener('click',()=>startUnit(1));
+window.addEventListener('hashchange', function(){
+  if(shouldShowAiOverview()) showAiOverview();
+  else {
+    hideAiOverview();
+    const h=(location.hash||'').toLowerCase();
+    const m=h.match(/^#c([1-4])/);
+    go(m?+m[1]:(unlocked(store.current)?store.current:1));
+  }
+});
+
 /* ---------- boot ---------- */
 function boot(){
   if(window.GrokeQuizRand) window.GrokeQuizRand.attachStore(store, save, 'a');
   prepareThumbLayout();
   [1,2,3,4].forEach(buildQuiz);
-  go(unlocked(store.current)?store.current:1);
+  if(shouldShowAiOverview()) showAiOverview();
+  else {
+    hideAiOverview();
+    const h=(location.hash||'').toLowerCase();
+    const m=h.match(/^#c([1-4])/);
+    go(m?+m[1]:(unlocked(store.current)?store.current:1));
+  }
   renderMath(document.body);
   drawTree(); drawReg(); drawGD(); drawNeu(); drawAttn();
   if(!$('#chat').children.length) say(Object.keys(store.score[1]).length ? 'Welcome back! Your AI 101 progress is restored. Pick up where you left off.' : 'Hi! Unit 1 starts with <b>what AI is</b> — agents, expected utility, a first look at search and Bayes — then the math that later units rest on. Try the sliders, then the quiz. I give hints, not answers.');
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
-try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,buildQuiz:buildQuiz,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
+try{ window.GrokiversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,buildQuiz:buildQuiz,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
 })();

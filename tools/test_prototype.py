@@ -18,6 +18,8 @@ srv = socketserver.TCPServer(("127.0.0.1", 0), functools.partial(Q, directory=st
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 URL = f"http://127.0.0.1:{port}/index.html"
 LESSON = f"http://127.0.0.1:{port}/statics/unit-1.html"
+LESSON_C1 = LESSON + "?c=1#s1"
+ECON = f"http://127.0.0.1:{port}/econ/unit-1.html"
 errors = []
 IGNORE_404 = ("assets/audio/intro.mp3", "assets/favicon.svg")
 def skip_net(url):
@@ -43,7 +45,7 @@ def watch(pg):
     pg.on("response", lambda r: r.status >= 400 and not skip_net(r.url) and "fonts/KaTeX_" not in r.url and errors.append(f"HTTP {r.status}: {r.url}"))
 def live_exact(pg, qid):
     return pg.evaluate("""(qid) => {
-      const api=window.GrokeversityQuiz;
+      const api=window.GrokiversityQuiz;
       const q=(window.GrokeQuizRand && window.GrokeQuizRand.get(qid)) || Object.values(api.Q).flat().find(x => x.id===qid);
       return q.ans.map(a => api.formatExact(a));
     }""", qid)
@@ -405,10 +407,10 @@ with sync_playwright() as p:
     home_hrefs = pg.evaluate("[...document.querySelectorAll('a')].map(a => a.getAttribute('href') || '')")
     joined = " ".join(home_hrefs)
     assert all("intro-ai.html" not in (h or "") for h in home_hrefs), f"home still links to intro-ai.html: {home_hrefs}"
-    assert "github.com/ANKELA/grokeversity" in joined
+    assert "github.com/ANKELA/grokiversity" in joined
     assert "about.html" in joined
     body = pg.inner_text("body")
-    assert "Not an accredited degree" in body and "not affiliated with xAI" in body
+    assert 'Built with and powered by Grok. Not an accredited degree. Community project, not affiliated with or endorsed by xAI.' in body
     assert "completion certificate" in body.lower() or "completion certificates" in body.lower()
     hdesk = pg.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
     print("home desktop scrollHeight:", hdesk)
@@ -429,12 +431,27 @@ with sync_playwright() as p:
 
     pg.goto(URL + "#learn"); pg.wait_for_url("**/statics/unit-1.html**", timeout=8000); pg.wait_for_load_state("networkidle")
     print("Redirect #learn ->", pg.url); assert "statics/unit-1.html" in pg.url
+    assert "c=" not in pg.url.split("#")[0] or "overview=1" in pg.url
+    # may still be navigating to overview
+    pg.wait_for_timeout(300)
 
+    # Bare unit URL shows the overview; deep link still opens the first concept slide.
     pg.goto(LESSON); pg.wait_for_load_state("networkidle")
+    assert pg.locator("#unitOverview").count() == 1
+    assert pg.locator("#unitOverview").is_visible()
+    assert "Overview" in pg.inner_text("#crumb") or "overview" in (pg.locator("#unitOverview").inner_text().lower())
+    assert "Start" in pg.inner_text("#startUnit")
+    assert "80%" in pg.locator("#unitOverview").inner_text()
+    assert pg.locator("#overviewConcepts .overview-c").count() == 5
+    assert_fits(pg, "desktop lesson overview")
+    assert_home_header(pg, "desktop overview")
+    pg.screenshot(path=str(SHOTS / "desktop_overview_statics.png"))
+    pg.goto(LESSON_C1); pg.wait_for_load_state("networkidle")
     assert pg.locator("#lessonApp").count() == 1
     assert "ME 201 Statics › Unit 1 › Concept 1" in pg.inner_text("#crumb")
     assert_fits(pg, "desktop lesson hook")
     assert pg.locator('.slide[data-id="hook"]').evaluate("el => el.classList.contains('on')")
+    assert pg.locator("#unitOverview").is_hidden() or pg.evaluate("() => document.getElementById('unitOverview').hidden")
     hook_txt = pg.evaluate("() => (document.querySelector('[data-id=hook]')?.innerText || '').toLowerCase()")
     assert "tap the box" not in hook_txt and "drag the end" not in hook_txt and "to name them" not in hook_txt, hook_txt
     assert "drag the box" in hook_txt, hook_txt
@@ -474,7 +491,7 @@ with sync_playwright() as p:
     goto_slide(pg, "quiz-q1-1")
     fb = answer(pg, "q1.1"); print("default-unit menu:", fb); assert "Correct" in fb
     conv = pg.evaluate("""() => {
-      const api=window.GrokeversityQuiz;
+      const api=window.GrokiversityQuiz;
       const q=window.GrokeQuizRand.get('q1.1');
       const kn=api.convertToWanted(q.ans[0].v, q.ans[0].u, 'kN').v;
       return {kn, th:q.ans[1].v, i0:api.intTargets(q.ans[0].v), i1:api.intTargets(q.ans[1].v)};
@@ -557,7 +574,7 @@ with sync_playwright() as p:
     print("C5 mastery:", pg.inner_text("#mpct"))
 
     pg.click("#tutorBtn"); pg.wait_for_timeout(200)
-    pg.click("#copyPrompt"); clip = pg.evaluate("navigator.clipboard.readText()"); print("Clipboard chars:", len(clip)); assert clip.startswith("# Grokeversity Tutor Prompt")
+    pg.click("#copyPrompt"); clip = pg.evaluate("navigator.clipboard.readText()"); print("Clipboard chars:", len(clip)); assert clip.startswith("# Grokiversity Tutor Prompt")
     pg.wait_for_timeout(300); pg.locator("#tutorDrawer").screenshot(path=str(SHOTS / "desktop_07_tutor_copy.png"))
     pg.reload(); pg.wait_for_load_state("networkidle")
     print("After reload: c5 visible =", pg.is_visible("#c5"), "| url:", pg.url, "| q1.1:", pg.locator("#Qq1_1 .fb").inner_text())
@@ -565,9 +582,9 @@ with sync_playwright() as p:
 
     ctxH = br.new_context(viewport={"width": 1280, "height": 800})
 
-    ctxH.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+    ctxH.add_init_script("localStorage.setItem('grokiversity.v1', " + json.dumps(UNLOCK_JS) + ")")
     ph = ctxH.new_page(); watch(ph)
-    ph.goto(LESSON); ph.wait_for_load_state("networkidle"); ph.wait_for_timeout(300)
+    ph.goto(LESSON_C1); ph.wait_for_load_state("networkidle"); ph.wait_for_timeout(300)
     n_desk = height_tour(ph, "desktop")
     ctxH.close()
 
@@ -575,9 +592,9 @@ with sync_playwright() as p:
     # 1280x720 is short enough that a 0-height SVG (height:auto while hidden) would fail.
     for w, h, name in ((1280, 720, "chrome1280x720"), (1366, 768, "chrome1366x768"), (1920, 1080, "chrome1920x1080")):
         ctxG = br.new_context(viewport={"width": w, "height": h})
-        ctxG.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+        ctxG.add_init_script("localStorage.setItem('grokiversity.v1', " + json.dumps(UNLOCK_JS) + ")")
         g = ctxG.new_page(); watch(g)
-        g.goto(LESSON); g.wait_for_load_state("networkidle"); g.wait_for_timeout(400)
+        g.goto(LESSON_C1); g.wait_for_load_state("networkidle"); g.wait_for_timeout(400)
         graphic_tour(g, name)
         ctxG.close()
 
@@ -589,9 +606,9 @@ with sync_playwright() as p:
             continue
         try:
             ctxF = fx.new_context(viewport={"width": 1280, "height": 720})
-            ctxF.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+            ctxF.add_init_script("localStorage.setItem('grokiversity.v1', " + json.dumps(UNLOCK_JS) + ")")
             gf = ctxF.new_page(); watch(gf)
-            gf.goto(LESSON); gf.wait_for_load_state("networkidle"); gf.wait_for_timeout(400)
+            gf.goto(LESSON_C1); gf.wait_for_load_state("networkidle"); gf.wait_for_timeout(400)
             graphic_tour(gf, name)
             ctxF.close()
         finally:
@@ -600,9 +617,9 @@ with sync_playwright() as p:
     IPHONE = dict(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=3,
                   user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0.6778.73 Mobile/15E148 Safari/604.1")
     ctxI = br.new_context(**IPHONE)
-    ctxI.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+    ctxI.add_init_script("localStorage.setItem('grokiversity.v1', " + json.dumps(UNLOCK_JS) + ")")
     gi = ctxI.new_page(); watch(gi)
-    gi.goto(LESSON); gi.wait_for_load_state("networkidle"); gi.wait_for_timeout(400)
+    gi.goto(LESSON_C1); gi.wait_for_load_state("networkidle"); gi.wait_for_timeout(400)
     assert_home_header(gi, "chrome-iphone-390x844 lesson")
     graphic_tour(gi, "chrome-iphone-390x844")
     thumb_tour(gi, "chrome-iphone-390x844 thumb")
@@ -610,9 +627,9 @@ with sync_playwright() as p:
     try:
         wk = p.webkit.launch()
         ctxW = wk.new_context(**IPHONE)
-        ctxW.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+        ctxW.add_init_script("localStorage.setItem('grokiversity.v1', " + json.dumps(UNLOCK_JS) + ")")
         gw = ctxW.new_page(); watch(gw)
-        gw.goto(LESSON); gw.wait_for_load_state("networkidle"); gw.wait_for_timeout(400)
+        gw.goto(LESSON_C1); gw.wait_for_load_state("networkidle"); gw.wait_for_timeout(400)
         assert_home_header(gw, "webkit-iphone-390x844 lesson")
         graphic_tour(gw, "webkit-iphone-390x844")
         thumb_tour(gw, "webkit-iphone-390x844 thumb")
@@ -622,9 +639,18 @@ with sync_playwright() as p:
         print("webkit-iphone-390x844 skipped (browser not launchable):", e)
 
     ctxM = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
-    ctxM.add_init_script("localStorage.setItem('grokeversity.v1', " + json.dumps(UNLOCK_JS) + ")")
+    ctxM.add_init_script("localStorage.setItem('grokiversity.v1', " + json.dumps(UNLOCK_JS) + ")")
     m = ctxM.new_page(); watch(m)
     m.goto(LESSON); m.wait_for_load_state("networkidle"); m.wait_for_timeout(300)
+    assert m.locator("#unitOverview").is_visible()
+    hov = m.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
+    print("statics overview iPhone scrollHeight:", hov)
+    assert hov <= 844 + 1, f"Statics overview should fit 390x844, got {hov}"
+    assert_home_header(m, "chrome-iphone-390x844 overview")
+    SHOTS_OUT = pathlib.Path("/workspace/grokeversity_shots")
+    SHOTS_OUT.mkdir(parents=True, exist_ok=True)
+    m.screenshot(path=str(SHOTS_OUT / "overview_statics.png"))
+    m.goto(LESSON_C1); m.wait_for_load_state("networkidle"); m.wait_for_timeout(300)
     sw = m.evaluate("document.documentElement.scrollWidth"); print("Mobile lesson scrollWidth:", sw); assert sw <= 392, "horizontal overflow on mobile lesson"
     assert_fits(m, "mobile hook", check_width=392)
     assert_header_pinned(m, "mobile hook")
@@ -675,6 +701,13 @@ with sync_playwright() as p:
 
     pg2 = ctx.new_page(); watch(pg2)
     pg2.goto(f"http://127.0.0.1:{port}/intro-ai.html"); pg2.wait_for_load_state("networkidle")
+    if pg2.locator("#startUnit").count() and pg2.locator("#unitOverview").is_visible():
+        assert "Fundamentals" in pg2.inner_text("#unitOverview")
+        assert pg2.locator("#overviewConcepts .overview-c").count() == 4
+        hov = pg2.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
+        print("AI overview desktop height:", hov)
+        assert hov <= pg2.evaluate("window.innerHeight") + 1, f"AI overview should fit one desktop screen, got {hov}"
+        pg2.locator("#startUnit").click(); pg2.wait_for_timeout(300)
     print("AI KaTeX nodes:", pg2.locator(".katex").count()); assert pg2.locator(".katex").count() > 15
     pg2.screenshot(path=str(SHOTS / "desktop_10_ai_c1.png"))
     before = pg2.inner_text("#tTot"); pg2.fill("#dRange", "7"); pg2.locator("#dRange").evaluate("el => { el.value = 7; el.dispatchEvent(new Event('input',{bubbles:true})); }")
@@ -683,7 +716,7 @@ with sync_playwright() as p:
     assert "Correct" in answer(pg2, "q1.1")
     assert "Correct" in answer(pg2, "q1.2")
     q13 = pg2.evaluate("""() => {
-      const api=window.GrokeversityQuiz;
+      const api=window.GrokiversityQuiz;
       const q=window.GrokeQuizRand.get('q1.3');
       return {exact:q.ans.map(a=>api.formatExact(a)), ints:q.ans.map(a=>api.intTargets(a.v)[0])};
     }""")
@@ -714,13 +747,18 @@ with sync_playwright() as p:
     out1 = pg2.inner_text("#aout"); print("Attention out:", out0, "->", out1); assert out0 != out1
     pg2.locator("#attn").scroll_into_view_if_needed(); pg2.screenshot(path=str(SHOTS / "desktop_13_ai_attention.png"))
     assert "Correct" in answer(pg2, "q4.1")
-    pg2.click("#copyPrompt"); clip = pg2.evaluate("navigator.clipboard.readText()"); print("AI clipboard chars:", len(clip)); assert "AI 101" in clip and clip.startswith("# Grokeversity Tutor Prompt")
+    pg2.click("#copyPrompt"); clip = pg2.evaluate("navigator.clipboard.readText()"); print("AI clipboard chars:", len(clip)); assert "AI 101" in clip and clip.startswith("# Grokiversity Tutor Prompt")
     pg2.reload(); pg2.wait_for_load_state("networkidle")
     print("AI after reload c4 visible:", pg2.is_visible("#c4"), "| q1.1:", pg2.locator("#Qq1_1 .fb").inner_text())
     assert pg2.is_visible("#c4")
 
     m2 = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True).new_page(); watch(m2)
     m2.goto(f"http://127.0.0.1:{port}/intro-ai.html"); m2.wait_for_load_state("networkidle")
+    if m2.locator("#startUnit").count() and m2.locator("#unitOverview").is_visible():
+        hov = m2.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
+        print("AI overview iPhone height:", hov)
+        assert hov <= 844 + 1, f"AI overview should fit 390x844, got {hov}"
+        m2.locator("#startUnit").click(); m2.wait_for_timeout(300)
     sw = m2.evaluate("document.documentElement.scrollWidth"); print("AI mobile scrollWidth:", sw); assert sw <= 392, "horizontal overflow on AI mobile"
     ai_thumb = m2.evaluate("""() => {
       const svg = document.getElementById('treeViz');

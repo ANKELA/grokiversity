@@ -10,9 +10,9 @@ SITE = ROOT / "prototype"
 HOME = (SITE / "index.html").resolve()
 
 ABSOLUTE_HOME = (
-    "https://ankela.github.io/grokeversity",
-    "https://ankela.github.io/grokeversity/",
-    "https://ankela.github.io/grokeversity/index.html",
+    "https://ankela.github.io/grokiversity",
+    "https://ankela.github.io/grokiversity/",
+    "https://ankela.github.io/grokiversity/index.html",
 )
 
 class LinkParser(HTMLParser):
@@ -94,7 +94,7 @@ def check_page(page: pathlib.Path) -> str | None:
     if not home_control:
         return f"{page.relative_to(SITE)}: header has a home URL but no visible Home control (a.home-link)"
     if not logo_home:
-        return f"{page.relative_to(SITE)}: Grokeversity logo in the header should also link home"
+        return f"{page.relative_to(SITE)}: Grokiversity logo in the header should also link home"
     # The resolved file must exist
     dest = resolve(page, header_homes[0][0])
     if dest == SITE.resolve():

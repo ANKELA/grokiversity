@@ -44,7 +44,7 @@ UNLOCK = {
     "current": 1,
     "slide": {},
 }
-STORE_KEY = "grokeversity.econ101.v1"
+STORE_KEY = "grokiversity.econ101.v1"
 
 
 def watch(pg, errors):
@@ -79,7 +79,7 @@ def no_shift(pg, label):
 
 def live_ans(pg, qid):
     return pg.evaluate("""(id) => {
-      const Q = window.GrokeversityQuiz && window.GrokeversityQuiz.Q;
+      const Q = window.GrokiversityQuiz && window.GrokiversityQuiz.Q;
       if (!Q) return null;
       for (const list of Object.values(Q)) {
         const q = list.find(x => x.id === id);
@@ -96,6 +96,7 @@ def run_on(page, label, shots=False, iphone=False):
     page.wait_for_load_state("networkidle")
     body = page.inner_text("body")
     assert "Not an accredited degree" in body
+    assert 'Built with and powered by Grok. Not an accredited degree. Community project, not affiliated with or endorsed by xAI.' in body
     assert page.locator("#card-econ").count() == 1
     assert "Play now" in page.inner_text("#card-econ")
     assert "Coming soon" in page.inner_text("#card-ai")
@@ -117,16 +118,40 @@ def run_on(page, label, shots=False, iphone=False):
     assert "not an accredited" in page.inner_text("body").lower()
     assert_home_header(page, f"{label} about")
 
+    # Bare URL is the unit overview; deep links still open concept slides.
     page.goto(LESSON)
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(400)
     assert page.locator("#lessonApp").count() == 1
+    assert page.locator("#unitOverview").is_visible()
+    assert "Scarcity" in page.inner_text("#unitOverview")
+    assert "80%" in page.inner_text("#unitOverview")
+    assert page.locator("#overviewConcepts .overview-c").count() == 4
+    assert page.locator("#startUnit").is_visible()
+    no_shift(page, f"{label} overview")
+    assert_home_header(page, f"{label} overview")
+    if iphone:
+        h = page.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
+        print(f"{label} overview scrollHeight:", h)
+        assert h <= 844 + 1, f"{label}: overview should fit 390x844, got {h}"
+        if shots:
+            page.screenshot(path=str(SHOTS / "overview_econ.png"))
+    # Start opens concept 1 first slide; ?c= / #s indexes are unchanged
+    page.locator("#startUnit").click()
+    page.wait_for_timeout(400)
+    assert page.locator("#unitOverview").is_hidden() or page.evaluate("() => document.getElementById('unitOverview').hidden")
     assert "ECON 101" in page.inner_text("#crumb")
     assert page.locator("#trigBtn").count() == 0
     assert page.locator("#copyPrompt").count() == 1
     assert page.locator("#ocSvg").count() == 1
     assert_home_header(page, f"{label} lesson")
     no_shift(page, f"{label} lesson load")
+    # Back from the first concept slide returns to the overview
+    page.locator("#prevSlide").click()
+    page.wait_for_timeout(200)
+    assert page.locator("#unitOverview").is_visible(), f"{label}: Back from first slide should return to overview"
+    page.locator("#startUnit").click()
+    page.wait_for_timeout(300)
     # Drag the day split and watch the work hours change
     before = page.inner_text("#ocWork")
     box = page.locator("#ocSvg").bounding_box()
@@ -272,6 +297,31 @@ def main():
         except Exception as e:
             traceback.print_exc()
             raise SystemExit(f"webkit iPhone failed: {e}")
+
+        # Old grokeversity.* keys must migrate so saved progress is not lost.
+        br = p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
+        ctxm = br.new_context(viewport={"width": 1280, "height": 800})
+        ctxm.add_init_script("""
+            localStorage.removeItem('grokiversity.econ101.v1');
+            localStorage.setItem('grokeversity.econ101.v1', JSON.stringify({
+              score: {1: { 'q1.1': 1, 'q1.2': 1, 'q1.3': 1, 'q1.4': 1 }},
+              current: 1, slide: {}
+            }));
+        """)
+        pg = ctxm.new_page()
+        pg.goto(LESSON + "?c=1#s1")
+        pg.wait_for_load_state("networkidle")
+        pg.wait_for_timeout(400)
+        info = pg.evaluate("""() => ({
+          neu: localStorage.getItem('grokiversity.econ101.v1') !== null,
+          mastery: (document.getElementById('mpct')||{}).textContent || '',
+          score: JSON.parse(localStorage.getItem('grokiversity.econ101.v1')||'{}').score
+        })""")
+        print("econ key migration:", info)
+        assert info["neu"] and info["score"] and info["score"].get("1",{}).get("q1.1") == 1
+        assert "100" in (info["mastery"] or "")
+        results.append("key migration ok")
+        ctxm.close(); br.close()
 
     print("test_econ:", "; ".join(results))
     return 0

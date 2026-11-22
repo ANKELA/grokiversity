@@ -5,35 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
-<title>ECON 101 Introduction to Economics · Unit 1 — Grokeversity</title>
+<title>ECON 101 Introduction to Economics · Unit 1 — Grokiversity</title>
 <meta name="description" content="Interactive single-screen slides for ECON 101, Unit 1: scarcity, opportunity cost, the PPF, comparative advantage, and a first look at supply and demand.">
 <meta name="theme-color" content="#0f1220">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Grokeversity">
-<meta property="og:title" content="ECON 101 · Unit 1 — Grokeversity">
+<meta property="og:site_name" content="Grokiversity">
+<meta property="og:title" content="ECON 101 · Unit 1 — Grokiversity">
 <meta property="og:description" content="Interactive slides for Introduction to Economics, Unit 1. Drag the diagrams, build the math one piece at a time, and prove mastery with strict quizzes.">
-<meta property="og:image" content="https://ankela.github.io/grokeversity/assets/og.png">
+<meta property="og:image" content="https://ankela.github.io/grokiversity/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Grokeversity: university-level lessons in Statics and Introduction to Economics.">
-<meta property="og:url" content="https://ankela.github.io/grokeversity/econ/unit-1.html">
+<meta property="og:image:alt" content="Grokiversity: university-level lessons in Statics and Introduction to Economics.">
+<meta property="og:url" content="https://ankela.github.io/grokiversity/econ/unit-1.html">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="ECON 101 · Unit 1 — Grokeversity">
+<meta name="twitter:title" content="ECON 101 · Unit 1 — Grokiversity">
 <meta name="twitter:description" content="Interactive single-screen slides for Introduction to Economics, Unit 1, with strict mastery quizzes.">
-<meta name="twitter:image" content="https://ankela.github.io/grokeversity/assets/og.png">
-<meta name="twitter:image:alt" content="Grokeversity: university-level lessons in Statics and Introduction to Economics.">
+<meta name="twitter:image" content="https://ankela.github.io/grokiversity/assets/og.png">
+<meta name="twitter:image:alt" content="Grokiversity: university-level lessons in Statics and Introduction to Economics.">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="../app.css?v=8d69e811">
+<link rel="stylesheet" href="../app.css?v=15ab8611">
 </head>
 <body>
 <div class="lesson-app" id="lessonApp">
   <header class="lesson-top">
-    <a class="logo" href="../index.html"><img src="../assets/favicon.svg" alt=""><span>Grok<b>e</b>versity</span></a>
+    <a class="logo" href="../index.html"><img src="../assets/favicon.svg" alt=""><span>Grok<b>i</b>versity</span></a>
     <a class="home-link" href="../index.html">Home</a>
     <div class="crumb" id="crumb">ECON 101 › Unit 1 › Concept 1</div>
     <span id="slidePos">1 / 1</span>
@@ -42,6 +42,32 @@
   </header>
 
   <div class="stage-wrap" id="stageWrap">
+
+    <div id="unitOverview" class="unit-overview">
+      <div class="overview-slide" data-id="overview">
+        <p class="overview-kicker">ECON 101 · Unit 1 of 12</p>
+        <h1>Scarcity, choice, and exchange</h1>
+        <p class="overview-lead">Every choice has a cost because time and resources are limited. This unit starts with opportunity cost and the production possibilities frontier, then shows why people and countries gain from trade, and ends with a first look at supply and demand — the toolkit the rest of the course uses.</p>
+        <div class="overview-grid">
+          <div>
+            <h2>Concepts</h2>
+            <div class="overview-concepts" id="overviewConcepts"></div>
+          </div>
+          <div>
+            <h2>By the end you can…</h2>
+            <ul class="overview-outcomes">
+              <li>Compute opportunity cost, including implicit costs.</li>
+              <li>Read a PPF and tell whether a point is inefficient, efficient, or unattainable.</li>
+              <li>Find comparative advantage and the gains from trade.</li>
+              <li>Find a market equilibrium and measure a shortage or surplus.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="overview-meta"><b>Time.</b> About 12–16 hours for the slides and quizzes in this unit, including practice. The lessons themselves are not timed.</p>
+        <p class="overview-how"><b>How it works.</b> Swipe or use Next and Back. Drag the graphics to see the numbers change. Quizzes use new numbers each time. Reach 80% on a concept to unlock the next one.</p>
+        <button type="button" class="btn overview-start" id="startUnit">Start</button>
+      </div>
+    </div>
 
     <div id="c1" class="concept">
       <div class="stage">
@@ -249,12 +275,27 @@
     </div>
 </aside>
 
+
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var deep=q.has('c') || /#s=?\d+/i.test(location.hash||'');
+  var ov=document.getElementById('unitOverview');
+  if(ov) ov.hidden=!!deep;
+  if(!deep){
+    document.querySelectorAll('.concept').forEach(function(el){ el.hidden=true; });
+  }
+})();
+</script>
+
 <div class="toast" id="toast"></div>
-<script type="text/plain" id="tutorPromptText"><!--TUTOR_PROMPT_START--># Grokeversity Tutor Prompt — ECON 101 Introduction to Economics, Unit 1
+<script type="text/plain" id="tutorPromptText"><!--TUTOR_PROMPT_START--># Grokiversity Tutor Prompt — ECON 101 Introduction to Economics, Unit 1
 
-You are a strict, Socratic tutor for Grokeversity's **ECON 101 — Introduction to Economics, Unit 1: Scarcity, Choice, and Exchange**. The student pasted this prompt into a chat with you. Stay in character until they are done.
+You are a strict, Socratic tutor for Grokiversity's **ECON 101 — Introduction to Economics, Unit 1: Scarcity, Choice, and Exchange**. The student pasted this prompt into a chat with you. Stay in character until they are done.
 
-This is a university-level principles course (micro and the first look at markets), written to the topic lists of MIT OCW 14.01 / 14.02 and OpenStax *Principles of Economics* (CC BY). All lesson text and problems are original. Grokeversity is a community curriculum, **not an accredited degree**.
+This is a university-level principles course (micro and the first look at markets), written to the topic lists of MIT OCW 14.01 / 14.02 and OpenStax *Principles of Economics* (CC BY). All lesson text and problems are original.
+
+Built with and powered by Grok. Not an accredited degree. Community project, not affiliated with or endorsed by xAI.
 
 ## How to behave
 - Never give the numerical answer or a complete worked solution before the student has submitted their own attempt.
@@ -317,8 +358,8 @@ Each line is a *reference instance*. The live lesson will use different numbers.
 
 Begin now. Greet the student and ask for their pace. If they are in the web lesson, ask them to paste the problem they are on when they want it graded.
 <!--TUTOR_PROMPT_END--></script>
-<script src="../quiz-rand.js?v=8d69e811"></script>
-<script src="../fun.js?v=8d69e811"></script>
-<script src="../econ.js?v=8d69e811"></script>
+<script src="../quiz-rand.js?v=15ab8611"></script>
+<script src="../fun.js?v=15ab8611"></script>
+<script src="../econ.js?v=15ab8611"></script>
 </body>
 </html>

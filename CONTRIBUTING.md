@@ -1,4 +1,4 @@
-# Contributing to Grokeversity
+# Contributing to Grokiversity
 
 Thank you! The goal is **accredited-level rigor**, so correctness beats speed.
 
@@ -25,4 +25,4 @@ python3 tools/test_prototype.py           # headless browser test (needs playwri
 ```
 
 ## Conduct
-Be kind, be precise, and cite your sources. Never claim Grokeversity is accredited or affiliated with xAI.
+Be kind, be precise, and cite your sources. Never claim Grokiversity is an accredited degree or is affiliated with or endorsed by xAI. The site disclaimer must stay: "Built with and powered by Grok. Not an accredited degree. Community project, not affiliated with or endorsed by xAI."

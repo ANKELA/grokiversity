@@ -18,6 +18,7 @@ srv = socketserver.TCPServer(("127.0.0.1", 0), functools.partial(Q, directory=st
 PORT = srv.server_address[1]
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 LESSON = f"http://127.0.0.1:{PORT}/statics/unit-1.html"
+LESSON_C1 = LESSON + "?c=1#s1"
 AI = f"http://127.0.0.1:{PORT}/intro-ai.html"
 
 IPHONE = dict(
@@ -31,9 +32,9 @@ PROG = json.dumps({"score":{"1":{},"2":{},"3":{},"4":{},"5":{}},"current":1,"sli
 AI_PROG = json.dumps({"score":{"1":{},"2":{},"3":{},"4":{}},"current":1})
 
 def init_scripts(ctx, fun=FUN_ON):
-    ctx.add_init_script("localStorage.setItem('grokeversity.v1', %s)" % json.dumps(PROG))
-    ctx.add_init_script("localStorage.setItem('grokeversity.ai101.v1', %s)" % json.dumps(AI_PROG))
-    ctx.add_init_script("localStorage.setItem('grokeversity.fun.v1', %s)" % json.dumps(fun))
+    ctx.add_init_script("localStorage.setItem('grokiversity.v1', %s)" % json.dumps(PROG))
+    ctx.add_init_script("localStorage.setItem('grokiversity.ai101.v1', %s)" % json.dumps(AI_PROG))
+    ctx.add_init_script("localStorage.setItem('grokiversity.fun.v1', %s)" % json.dumps(fun))
 
 def goto_q11(pg):
     pg.wait_for_timeout(400)
@@ -46,7 +47,7 @@ def goto_q11(pg):
 
 def live_exact(pg, qid):
     return pg.evaluate("""(qid) => {
-      const api=window.GrokeversityQuiz;
+      const api=window.GrokiversityQuiz;
       const q=window.GrokeQuizRand.get(qid);
       return q.ans.map(a => api.formatExact(a));
     }""", qid)
@@ -72,7 +73,7 @@ def run_browser(p, engine, iphone, shots=False):
     ctx = br.new_context(**kw)
     init_scripts(ctx)
     pg = ctx.new_page()
-    pg.goto(LESSON, wait_until="domcontentloaded")
+    pg.goto(LESSON_C1, wait_until="domcontentloaded")
     pg.wait_for_timeout(500)
     assert pg.evaluate("() => !!(window.GrokeFun && document.getElementById('funBar'))"), f"{label}: fun bar missing"
     sound = pg.evaluate("() => window.GrokeFun.state().sound")
@@ -135,7 +136,7 @@ def run_browser(p, engine, iphone, shots=False):
     init_scripts(ctx2, fun=json.dumps({"xp":0,"streak":0,"bestStreak":0,"daily":{"date":"","days":0},"badges":[],"cards":[],"fx":None,"sound":False,"correct":0}))
     p2 = ctx2.new_page()
     p2.emulate_media(reduced_motion="reduce")
-    p2.goto(LESSON, wait_until="domcontentloaded")
+    p2.goto(LESSON_C1, wait_until="domcontentloaded")
     p2.wait_for_timeout(400)
     goto_q11(p2)
     answer_q11(p2)
@@ -151,7 +152,7 @@ def run_browser(p, engine, iphone, shots=False):
     ctx3 = br.new_context(**kw)
     init_scripts(ctx3)
     p3 = ctx3.new_page()
-    p3.goto(AI, wait_until="domcontentloaded")
+    p3.goto(AI + "#learn", wait_until="domcontentloaded")
     p3.wait_for_timeout(500)
     assert p3.evaluate("() => !!(window.GrokeFun && document.getElementById('funBar'))"), f"{label}: AI fun bar missing"
     p3.locator("#Qq1_4").scroll_into_view_if_needed()
@@ -168,9 +169,33 @@ def run_browser(p, engine, iphone, shots=False):
     br.close()
     print(label, "PASS")
 
+
+def test_key_migration(p):
+    """Progress stored under the old grokeversity.* keys is copied to grokiversity.*."""
+    br = p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
+    ctx = br.new_context(viewport={"width": 1280, "height": 720})
+    ctx.add_init_script("""
+      localStorage.removeItem('grokiversity.v1');
+      localStorage.removeItem('grokiversity.fun.v1');
+      localStorage.setItem('grokeversity.v1', JSON.stringify({score:{1:{},2:{},3:{},4:{},5:{}},current:1,slide:{}}));
+      localStorage.setItem('grokeversity.fun.v1', JSON.stringify({xp:40,streak:2,bestStreak:2,daily:{date:'',days:0},badges:[],cards:[],fx:true,sound:false,correct:2}));
+    """)
+    pg = ctx.new_page()
+    pg.goto(LESSON_C1, wait_until="domcontentloaded")
+    pg.wait_for_timeout(500)
+    info = pg.evaluate("""() => ({
+      neu: localStorage.getItem('grokiversity.v1') !== null,
+      fun: JSON.parse(localStorage.getItem('grokiversity.fun.v1')||'{}').xp
+    })""")
+    print("statics/fun key migration:", info)
+    assert info["neu"], info
+    assert info["fun"] == 40, info
+    ctx.close(); br.close()
+
 def main():
     failed=[]
     with sync_playwright() as p:
+        test_key_migration(p)
         for engine, iphone, shots in (("chromium", False, False), ("webkit", True, True)):
             label=f"{engine}-{'iphone' if iphone else 'desktop'}"
             try:

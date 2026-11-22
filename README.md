@@ -1,8 +1,8 @@
-# Grokeversity
+# Grokiversity
 
 **University-level curricula, one concept at a time. It is free, open source and mastery-based, and you can study it with an AI tutor such as Grok. The tracks include Mechanical Engineering, Introduction to Economics, and Introduction to AI.**
 
-> ⚠️ **Honest disclaimer.** Grokeversity is an independent community project. It is **not affiliated with, sponsored by or endorsed by xAI** (the maker of Grok) or by any university. It is **not an accredited institution** and does **not** award degrees or academic credit. What we offer is a *degree-equivalent curriculum*: a course of study designed to match the depth of an accredited B.S. in Mechanical Engineering. Completion certificates are not degrees. "Grok" is a trademark of its owner; this project does not use xAI or Grok logos.
+> ⚠️ **Honest disclaimer.** Built with and powered by Grok. Not an accredited degree. Community project, not affiliated with or endorsed by xAI. This project does not use xAI or Grok logos.
 
 ## Mission
 Anyone with curiosity, an internet connection and an AI chat account should be able to learn the full content of a useful degree, rigorously and at their own pace. The tracks include **Mechanical Engineering (ME)**, **Introduction to Economics**, and **Introduction to AI**.
@@ -14,9 +14,9 @@ Anyone with curiosity, an internet connection and an AI chat account should be a
 - **Your pace:** nothing in the lessons is timed. Exams are timed, as in a real course.
 
 ## Try it now
-- **Web demo:** [ankela.github.io/grokeversity](https://ankela.github.io/grokeversity/). Unit 1 of Statics and of Introduction to Economics are playable now; Introduction to AI is listed as coming soon on the home page:
-  - [ME 201 Statics, Unit 1](https://ankela.github.io/grokeversity/#learn) — forces, free-body diagrams, equilibrium.
-  - [ECON 101 Introduction to Economics, Unit 1](https://ankela.github.io/grokeversity/econ/unit-1.html) — scarcity, opportunity cost, the PPF, comparative advantage, and a first look at supply and demand.
+- **Web demo:** [ankela.github.io/grokiversity](https://ankela.github.io/grokiversity/). Unit 1 of Statics and of Introduction to Economics are playable now; Introduction to AI is listed as coming soon on the home page:
+  - [ME 201 Statics, Unit 1](https://ankela.github.io/grokiversity/#learn) — forces, free-body diagrams, equilibrium.
+  - [ECON 101 Introduction to Economics, Unit 1](https://ankela.github.io/grokiversity/econ/unit-1.html) — scarcity, opportunity cost, the PPF, comparative advantage, and a first look at supply and demand.
   Progress is saved in your browser, and no account or API key is needed. You can also open `prototype/index.html` or `prototype/econ/unit-1.html` locally.
 - **With Grok:** click **"Copy tutor prompt for Grok"** in a lesson, or copy [`tutor/TUTOR_PROMPT.md`](tutor/TUTOR_PROMPT.md) (Statics) or [`tutor/TUTOR_PROMPT_ECON.md`](tutor/TUTOR_PROMPT_ECON.md) (Economics). Paste it into a new Grok chat and type `start`.
 
@@ -69,4 +69,4 @@ Details are in [CONTRIBUTING.md](CONTRIBUTING.md).
 - Don't paste in copyrighted textbook problems. MIT OCW material is CC BY-NC-SA, which is not compatible with CC BY-SA, so **link** to it and don't copy it.
 
 ## Status
-Version 0.2 is live at [ankela.github.io/grokeversity](https://ankela.github.io/grokeversity/), with playable Unit 1 lessons in Mechanical Engineering (Statics) and Introduction to AI. See the roadmap in [PLAN.md](PLAN.md#10-roadmap).
+Version 0.2 is live at [ankela.github.io/grokiversity](https://ankela.github.io/grokiversity/), with playable Unit 1 lessons in Mechanical Engineering (Statics) and Introduction to AI. See the roadmap in [PLAN.md](PLAN.md#10-roadmap).

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/grokeversity/schema/unit.schema.json",
-  "title": "Grokeversity Unit",
-  "description": "One unit of a Grokeversity course: ordered concepts, each with objectives, an explanation outline, tutor prompts and a quiz bank with verified answers.",
+  "$id": "https://example.org/grokiversity/schema/unit.schema.json",
+  "title": "Grokiversity Unit",
+  "description": "One unit of a Grokiversity course: ordered concepts, each with objectives, an explanation outline, tutor prompts and a quiz bank with verified answers.",
   "type": "object",
   "required": ["id", "course_id", "title", "version", "status", "mastery_threshold", "concepts", "unit_exam"],
   "properties": {
