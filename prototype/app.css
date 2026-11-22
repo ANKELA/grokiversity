@@ -439,10 +439,37 @@ html.lesson-page select,
   -webkit-appearance:menulist;
   touch-action:manipulation;
 }
+.qty-field{display:flex;align-items:stretch;gap:6px;width:100%;max-width:min(320px,100%);min-width:0}
+.sign-toggle{
+  flex:0 0 auto;
+  box-sizing:border-box;
+  min-width:44px;
+  width:44px;
+  min-height:44px;
+  margin:0;
+  padding:0;
+  font:inherit;
+  font-size:20px;
+  font-weight:700;
+  line-height:1;
+  color:var(--ink);
+  background:#0c0f1d;
+  border:1px solid var(--line);
+  border-radius:8px;
+  cursor:pointer;
+  -webkit-user-select:none;
+  user-select:none;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.sign-toggle:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 @media (max-width:700px){
   .inrow label{flex:1 1 100%}
-  .unit-field{max-width:100%}
-  .unit-field input, .unit-field .unit-select, select.unit-select{min-height:46px}
+  .unit-field, .qty-field{max-width:100%}
+  .unit-field input, .unit-field .unit-select, .unit-field .sign-toggle,
+  .qty-field input, .qty-field .sign-toggle,
+  select.unit-select{min-height:46px}
+  .sign-toggle{min-width:46px;width:46px;min-height:46px}
 }
 
 /* compact home page */
@@ -812,3 +839,134 @@ html.ai-overview-open .unit-overview{
   align-self:stretch;
 }
 body.ai-started .course-hero{display:none}
+
+/* ---- phone typography: larger type, tighter chrome ---- */
+@media (max-width:700px), (pointer:coarse){
+  body{font-size:18px;line-height:1.4}
+  body.home, body.about{font-size:18px;line-height:1.4}
+
+  /* Header stays one row so the page does not grow a wrapping nav */
+  body.home header.top, body.about header.top{padding:6px 10px}
+  body.home header.top, body.about header.top, body.home header.top nav, body.about header.top nav{
+    flex-wrap:nowrap; gap:8px
+  }
+  body.home header.top nav, body.about header.top nav,
+  body.home header.top nav a, body.about header.top nav a,
+  .home-link, .lesson-top .home-link, .lesson-top .crumb, .lesson-top #slidePos{
+    font-size:15px
+  }
+  body.home .logo span, body.about .logo span{display:none}
+  body.home header.top nav a.btn, body.about header.top nav a.btn{padding:6px 10px;font-size:15px}
+  .lesson-top .btn.sm, .btn.sm{font-size:17px;padding:6px 12px;min-height:44px}
+  .btn, .overview-start, body.home .btn-lg{font-size:17px}
+
+  /* Home */
+  body.home h1{font-size:26px;line-height:1.15;margin:0 0 6px;font-weight:800}
+  body.home .lead{font-size:18px;line-height:1.35;margin:0 auto 6px}
+  body.home .home-main{padding:4px 12px 4px}
+  body.home .course-card{padding:8px 8px}
+  body.home .course-card h2{font-size:17px;margin:4px 0 2px;line-height:1.2;font-weight:800}
+  body.home .course-card p{font-size:15px;line-height:1.3}
+  body.home .course-card .badge, .badge, .tag, .pill, .course .badge, .track-card .badge{font-size:15px;padding:2px 8px}
+  body.home .cert-note, body.home .home-links, body.home footer, footer, .disc, .copybox{font-size:15px;line-height:1.35}
+  body.home .cert-note{margin:0 0 4px}
+  body.home footer{padding:4px 12px 8px}
+  body.home .disc{padding:8px 12px;margin:0 auto 4px}
+  body.home .home-demo{padding:4px 8px;margin-bottom:4px}
+  body.home .home-demo svg.diagram,
+  body.home .home-demo svg.diagram:not(.is-output){max-height:90px !important;min-height:0 !important}
+  body.home .home-demo .readout, .home-demo .readout{font-size:15px;padding:4px 0 !important;max-height:none}
+  body.home .home-demo .readout .row{padding:1px 0}
+  body.home .home-demo .readout .row > span:last-child,
+  body.home .home-demo .readout .row > [id]{font-size:20px;font-weight:800}
+  body.home .home-demo .readout .sub, body.home .home-demo .sub{font-size:15px;margin:2px 0 0}
+  .fun-home{min-height:44px;padding:4px 10px}
+  .fun-home-copy strong{font-size:15px}
+  .fun-home-copy span{font-size:15px}
+  .fun-home-chal{font-size:17px;padding:6px 12px;min-height:44px}
+  .fun-bar{font-size:15px;min-height:40px;padding:4px 8px}
+  .fun-rank{font-size:15px;max-width:11em}
+  .fun-ring{width:40px;height:40px;flex-basis:40px}
+  .fun-ring svg{width:40px;height:40px}
+  .fun-ring span{font-size:15px}
+  .fun-pop, .fun-pop h4, .fun-card h5, .fun-card p, .fun-toast, .fun-rare{font-size:15px}
+  .fun-overlay h2{font-size:26px}
+  .fun-overlay h3, .fun-kicker{font-size:15px}
+  .fun-qtext, .fun-overlay .fun-teaser, .fun-overlay p{font-size:19px;line-height:1.4}
+  .fun-qform label{font-size:17px}
+  .fun-timer, .fun-speed-meta{font-size:18px}
+
+  /* Overview: bigger type; inner panel may scroll; the shell still fills one screen */
+  .overview-slide{padding:6px 12px 8px;gap:6px}
+  .overview-slide h1{font-size:24px;line-height:1.15;font-weight:800}
+  .overview-kicker, .overview-slide h2{font-size:15px}
+  .overview-lead{font-size:18px;line-height:1.35}
+  .overview-c{min-height:44px;padding:6px 10px;font-size:17px}
+  .overview-c .st{font-size:15px}
+  .overview-outcomes{font-size:17px;line-height:1.35}
+  .overview-meta, .overview-how{font-size:15px;line-height:1.35}
+  .overview-start{font-size:17px;min-height:46px}
+
+  /* Lessons */
+  .lesson-page .slide, .lesson .slide{font-size:18px;line-height:1.4}
+  .lesson-page .slide{padding:8px 10px 8px}
+  .lesson-page .slide h2, .slide h2, .lesson-page .thumb-layout > .slide-copy h2, .thumb-layout > .slide-copy h2{
+    font-size:22px;line-height:1.2;margin:0 0 6px;font-weight:800
+  }
+  .lesson-page .slide p, .slide p, .thumb-layout > .slide-copy p, .eqcheck, .hint, .fb, .q-sol, .mastery, .msg, .support-card b{
+    font-size:18px;line-height:1.4
+  }
+  .lesson-page .slide p.sub, .sub, .q-round-hint{font-size:15px;line-height:1.35;margin:0 0 8px}
+  article.slide > p:not(.sub), .q > p, .check > p, .fun-qtext, .q-mount p, article.slide .q p{
+    font-size:19px;line-height:1.4
+  }
+  .q > p, article.slide .q p{font-size:20px;line-height:1.4}
+  .inrow label, .fun-qform label{font-size:17px}
+  .inrow input, .unit-field input, .qty-field input, .lesson-page input, select.unit-select, .unit-field .unit-select{
+    font-size:18px
+  }
+  .sign-toggle{font-size:20px}
+  .fb{font-size:17px}
+  .q .tag, .tag{font-size:15px}
+
+  /* Punchy readout numbers (lessons). Home demo is slightly smaller so the landing still fits. */
+  .readout{font-size:15px}
+  .readout .row{padding:3px 0;align-items:baseline;gap:8px}
+  .readout .row > span:first-child, .readout .row .k1, .readout .row .k2{font-size:15px;color:var(--mute)}
+  .lesson-page .readout .row > span:last-child,
+  .lesson-page .readout .row > [id]{
+    font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.15;color:var(--ink)
+  }
+  .thumb-layout > .readout{padding:6px 8px}
+
+  /* Tighten thumb stacks so larger type still leaves room for the diagram */
+  .lesson-page .slide.thumb-ready{padding:6px 8px 6px}
+  .thumb-layout{gap:4px}
+  .thumb-layout > .slide-copy{max-height:26%;font-size:18px}
+  .thumb-layout > .slide-copy h2{font-size:22px}
+  .thumb-layout > .slide-copy p{font-size:18px;margin:0 0 4px}
+  .thumb-layout > .readout{max-height:28%}
+
+  /* Intro AI scrolling lesson */
+  .course-hero h1, .course-hero h2{font-size:26px}
+  .course-hero p, .player, .lesson, .ai-lesson{font-size:18px}
+}
+
+/* Short phones (iPhone SE): keep the same type, give copy more of the column,
+   and let quiz/check forms scroll inside the slide instead of clipping. */
+@media (max-height:700px){
+  .thumb-layout > .slide-copy{max-height:42%}
+  .thumb-layout > .readout{max-height:24%;padding:4px 6px}
+  .thumb-layout .q-mount, .thumb-layout .check, .lesson-page .slide:not(.thumb-ready){
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+  }
+  .thumb-layout .q-mount, .thumb-layout .check{flex:1 1 auto;min-height:0}
+}
+@media (max-width:379px){
+  body.home h1{font-size:24px}
+  .lesson-page .slide, .overview-slide{padding:4px 8px 6px}
+  body.home .home-demo svg.diagram,
+  body.home .home-demo svg.diagram:not(.is-output){max-height:80px !important}
+}

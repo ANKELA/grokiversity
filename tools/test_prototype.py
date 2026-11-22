@@ -3,7 +3,7 @@
 Landing stays a marketing page. The Statics lesson lives on its own single-screen page
 (statics/unit-1.html): document height must fit the viewport on every slide and scrollY stays 0.
 Also checks beam arrow directions, human tutor messages, quiz grading, mastery, copy-prompt,
-OG tags, #learn redirect, the Intro to AI lesson (unchanged), and a 46-slide graphic tour:
+OG tags, #learn redirect, the Intro to AI lesson (unchanged), and a 59-slide graphic tour:
 every interactive must have a non-empty, non-zero SVG and respond to a drag or slider."""
 import http.server, json, pathlib, socketserver, sys, threading, functools
 from playwright.sync_api import sync_playwright
@@ -359,7 +359,7 @@ def thumb_tour(pg, label):
     print(f"{label}: {len(ids)} interactive slides have readout above diagram and diagram above the nav")
 
 def graphic_tour(pg, label, click_next=True):
-    """Click through all 46 slides and assert every interactive graphic."""
+    """Click through all 59 slides and assert every interactive graphic."""
     n = 0
     n_diag = 0
     n_act = 0
@@ -385,7 +385,7 @@ def graphic_tour(pg, label, click_next=True):
                 n_act += 1
             n += 1
     print(f"{label}: {n} slides, {n_diag} diagrams rendered, {n_act} interactions responded")
-    assert n == 46, f"{label}: expected 46 slides, got {n}"
+    assert n == 59, f"{label}: expected 59 slides, got {n}"
     assert n_diag >= 15, f"{label}: expected >=15 diagrams, got {n_diag}"
     assert n_act >= 15, f"{label}: expected >=15 interactions, got {n_act}"
     return n
@@ -607,7 +607,7 @@ with sync_playwright() as p:
     n_desk = height_tour(ph, "desktop")
     ctxH.close()
 
-    # Regression: click Next through all 46 slides at the viewports a real PC uses.
+    # Regression: click Next through all 59 slides at the viewports a real PC uses.
     # 1280x720 is short enough that a 0-height SVG (height:auto while hidden) would fail.
     for w, h, name in ((1280, 720, "chrome1280x720"), (1366, 768, "chrome1366x768"), (1920, 1080, "chrome1920x1080")):
         ctxG = br.new_context(viewport={"width": w, "height": h})

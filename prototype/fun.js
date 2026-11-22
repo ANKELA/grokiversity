@@ -567,6 +567,7 @@ function showOverlay(id, html, bind){
   box.innerHTML=html;
   el.removeAttribute('hidden');
   typeset(box);
+  if(window.GrokeQuizRand && GrokeQuizRand.attachSignToggles) GrokeQuizRand.attachSignToggles(box);
   const closer=$('[data-fun-close]', box);
   if(closer) closer.addEventListener('click', function(){ closeOverlays(); });
   if(bind) bind(box, el);
@@ -900,6 +901,7 @@ function openSpeed(){
         save(st); renderBar();
         box.innerHTML=frame();
         typeset(box);
+        if(window.GrokeQuizRand && GrokeQuizRand.attachSignToggles) GrokeQuizRand.attachSignToggles(box);
         bind(box);
       } else if(fb){
         fb.textContent='Skip or try once more.';

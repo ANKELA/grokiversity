@@ -181,6 +181,17 @@ const CONCEPTS = [[1,'Scarcity and opportunity cost'],[2,'The production possibi
 const unlocked = c => c===1 || (c<=4 && mastery(c-1)>=80);
 function mastery(c){ const q=Q[c]; if(!q) return 0; const v=Object.values(store.score[c]||{}); return Math.round(100*v.reduce((a,b)=>a+b,0)/q.length); }
 function slides(c){ return $$('#c'+c+' .slide'); }
+const LEGACY_SLIDE_IDS = {};
+function indexOfSlideId(c, id){
+  const ss=slides(c);
+  for(let j=0;j<ss.length;j++){ if(ss[j].dataset.id===id) return j; }
+  return -1;
+}
+function migrateSavedSlides(){
+  if(store.slideVer>=2) return;
+  store.slideVer=2;
+  save();
+}
 function lastUnlocked(){ let n=1; while(n<4 && unlocked(n+1)) n++; return n; }
 
 /* ---------- unit overview (not a concept slide; ?c= and #s indexes stay unchanged) ---------- */
@@ -243,8 +254,21 @@ function readRoute(){
   const q=new URLSearchParams(location.search);
   let c=parseInt(q.get('c')||'',10);
   if(!c) c=store.current||1;
-  const hs=(location.hash||'').match(/s=?([0-9]+)/i);
-  let i=hs ? (parseInt(hs[1],10)-1) : (store.slide[c]||0);
+  const raw=location.hash||'';
+  const hs=raw.match(/s=?([0-9]+)(?:\/([A-Za-z0-9._-]+))?/i);
+  let i;
+  if(hs && hs[2]){
+    const j=indexOfSlideId(c, hs[2]);
+    i=(j>=0)?j:(parseInt(hs[1],10)-1);
+  } else if(hs){
+    const old=parseInt(hs[1],10)-1;
+    const legacy=(typeof LEGACY_SLIDE_IDS!=='undefined') && LEGACY_SLIDE_IDS[c];
+    const n=slides(c).length;
+    if(legacy && n!==legacy.length && old>=0 && old<legacy.length){
+      const j=indexOfSlideId(c, legacy[old]);
+      i=(j>=0)?j:old;
+    } else i=old;
+  } else i=store.slide[c]||0;
   if(!unlocked(c)) c=lastUnlocked();
   const n=slides(c).length;
   i=Math.max(0, Math.min((n||1)-1, i));
@@ -252,7 +276,9 @@ function readRoute(){
 }
 function writeRoute(c,i){
   const keep=new URLSearchParams(location.search).get('daily')==='1'?'&daily=1':'';
-  const next=`?c=${c}${keep}#s${i+1}`;
+  const ss=slides(c)[i];
+  const id=ss && ss.dataset.id;
+  const next=`?c=${c}${keep}#s${i+1}${id?'/'+id:''}`;
   if((location.search+location.hash)!==next) history.replaceState(null,'',next);
 }
 function drawCrumb(){
@@ -956,7 +982,10 @@ function attachUnitField(inp, want){
   inp.setAttribute('autocorrect','off');
   inp.setAttribute('spellcheck','false');
   const menu=unitMenu(want);
-  if(!menu) return null;
+  if(!menu){
+    if(window.GrokeQuizRand && GrokeQuizRand.attachSignToggle) GrokeQuizRand.attachSignToggle(inp);
+    return null;
+  }
   let sel=inp.parentElement && inp.parentElement.classList.contains('unit-field') ? inp.parentElement.querySelector('select') : null;
   if(!sel){
     const wrap=document.createElement('span');
@@ -980,6 +1009,7 @@ function attachUnitField(inp, want){
   inp.addEventListener('input', sync);
   inp.addEventListener('change', sync);
   inp.addEventListener('blur', sync);
+  if(window.GrokeQuizRand && GrokeQuizRand.attachSignToggle) GrokeQuizRand.attachSignToggle(inp);
   return sel;
 }
 
@@ -1161,6 +1191,7 @@ function bindChecks(){
         inp.setAttribute('autocapitalize','off');
         inp.setAttribute('autocorrect','off');
         inp.setAttribute('spellcheck','false');
+        if(window.GrokeQuizRand && GrokeQuizRand.attachSignToggle) GrokeQuizRand.attachSignToggle(inp);
       }
     });
     if(MICRO[key]){
@@ -1518,6 +1549,7 @@ function boot(){
   bindChecks();
   Object.values(Q).forEach(list=>list.forEach(buildQuiz));
   shuffleQuizSlides();
+  migrateSavedSlides();
   if(isOverviewRoute()) showOverview();
   else { hideOverview(); const r=readRoute(); go(r.c, r.i); }
   renderMath(document.body);

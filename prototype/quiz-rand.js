@@ -1455,13 +1455,74 @@
     return inst;
   }
 
+  /* iOS decimal keypads have no minus key. One shared ± toggle for every numeric answer field. */
+  var LEADING_SIGN = /^(\s*)([+\-\u2212\u2010-\u2015\uFE58\uFE63\uFF0D])?(.*)$/;
+  function toggleLeadingSign(value) {
+    var s = String(value == null ? "" : value);
+    var m = s.match(LEADING_SIGN);
+    var pre = (m && m[1]) || "";
+    var sign = m && m[2];
+    var rest = (m && m[3]) != null ? m[3] : s;
+    if (!sign || sign === "+") return pre + "-" + rest;
+    return pre + rest;
+  }
+  function attachSignToggle(inp) {
+    if (!inp || inp.dataset.signToggle === "1") return inp;
+    if (inp.disabled || inp.readOnly) return inp;
+    var typ = (inp.getAttribute("type") || inp.type || "text").toLowerCase();
+    if (typ && typ !== "text" && typ !== "search" && typ !== "tel") return inp;
+    var mode = (inp.getAttribute("inputmode") || "").toLowerCase();
+    if (mode && mode !== "decimal" && mode !== "numeric") return inp;
+    inp.dataset.signToggle = "1";
+    var wrap = inp.parentElement;
+    if (!wrap || !(wrap.classList.contains("unit-field") || wrap.classList.contains("qty-field"))) {
+      wrap = document.createElement("span");
+      wrap.className = "qty-field";
+      inp.parentNode.insertBefore(wrap, inp);
+      wrap.appendChild(inp);
+    }
+    if (wrap.querySelector(".sign-toggle")) return inp;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "sign-toggle";
+    btn.setAttribute("aria-label", "Toggle negative sign");
+    btn.textContent = "\u00B1";
+    function flip(e) {
+      if (e) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
+      inp.value = toggleLeadingSign(inp.value);
+      try { inp.dispatchEvent(new Event("input", { bubbles: true })); } catch (err) {}
+      try { inp.focus({ preventScroll: true }); } catch (err2) { try { inp.focus(); } catch (err3) {} }
+      try {
+        var n = String(inp.value || "").length;
+        if (inp.setSelectionRange) inp.setSelectionRange(n, n);
+      } catch (err4) {}
+    }
+    btn.addEventListener("pointerdown", flip);
+    btn.addEventListener("mousedown", flip);
+    btn.addEventListener("click", function (e) { if (e && e.preventDefault) e.preventDefault(); });
+    wrap.insertBefore(btn, inp);
+    return inp;
+  }
+  function attachSignToggles(root) {
+    if (typeof document === "undefined") return 0;
+    if (!root || !root.querySelectorAll) root = document;
+    var list = root.querySelectorAll('input[inputmode="decimal"], input[inputmode="numeric"]');
+    var i;
+    for (i = 0; i < list.length; i++) attachSignToggle(list[i]);
+    return list.length;
+  }
+
   var api = {
     mulberry32: mulberry32, hash: hash, shuffle: shuffleInPlace, pick: pick, randInt: randInt,
     fmt: fmt, solve3: solve3,
     instantiate: instantiate, get: get, fresh: fresh, apply: apply,
     attachStore: attachStore, orderOf: orderOf,
     currentSeed: currentSeed, getTries: getTries, bumpTries: bumpTries,
-    gens: GENS, fixed: FIXED, G: G
+    gens: GENS, fixed: FIXED, G: G,
+    toggleLeadingSign: toggleLeadingSign, attachSignToggle: attachSignToggle, attachSignToggles: attachSignToggles
   };
   root.GrokeQuizRand = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

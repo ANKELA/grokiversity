@@ -481,7 +481,10 @@ function attachUnitField(inp, want){
   inp.setAttribute('autocorrect','off');
   inp.setAttribute('spellcheck','false');
   const menu=unitMenu(want);
-  if(!menu) return null;
+  if(!menu){
+    if(window.GrokeQuizRand && GrokeQuizRand.attachSignToggle) GrokeQuizRand.attachSignToggle(inp);
+    return null;
+  }
   let sel=inp.parentElement && inp.parentElement.classList.contains('unit-field') ? inp.parentElement.querySelector('select') : null;
   if(!sel){
     const wrap=document.createElement('span');
@@ -505,6 +508,7 @@ function attachUnitField(inp, want){
   inp.addEventListener('input', sync);
   inp.addEventListener('change', sync);
   inp.addEventListener('blur', sync);
+  if(window.GrokeQuizRand && GrokeQuizRand.attachSignToggle) GrokeQuizRand.attachSignToggle(inp);
   return sel;
 }
 function nearly(a,v){

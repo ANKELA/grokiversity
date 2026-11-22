@@ -74,6 +74,7 @@ PARSE_JS = r"""() => {
     const signed = (s) => (v < 0 ? '-' + s.replace(/^[+-]/,'') : s);
     const uminus = (s) => (v < 0 ? '\u2212' + s.replace(/^[+-]/,'') : s);
     const endash = (s) => (v < 0 ? '\u2013' + s.replace(/^[+-]/,'') : s);
+    const emdash = (s) => (v < 0 ? '\u2014' + s.replace(/^[+-]/,'') : s);
     const out = [];
     const add = (s, ok=true, kind='form') => out.push({s, ok, kind});
     if (u === 'count' || u === '1'){
@@ -90,7 +91,7 @@ PARSE_JS = r"""() => {
     }
     if (u === 'deg'){
       add(n + ' deg'); add(n + 'deg'); add(n + '°'); add(n + ' degrees'); add(n + ' Deg');
-      add(n + '\u00a0deg'); add(n + ' deg.'); add(uminus(absn) + ' deg'); add(endash(absn) + ' deg');
+      add(n + '\u00a0deg'); add(n + ' deg.'); add(uminus(absn) + ' deg'); add(endash(absn) + ' deg'); add(emdash(absn) + ' deg');
       add(n, true, 'bare');
       return out;
     }
@@ -113,6 +114,7 @@ PARSE_JS = r"""() => {
     if (v > 0) add('+' + n + ' ' + u);
     add(uminus(absn) + ' ' + u);
     add(endash(absn) + ' ' + u);
+    add(emdash(absn) + ' ' + u);
     if (String(v).includes('.')) add(n.replace('.', ',') + ' ' + u);
     if (u === 'N'){ add(n + ' newtons'); add(n + ' Newton'); add(num(v/1000) + ' kN'); add(num(v/1000) + ' Kn'); }
     if (u === 'kN'){ add(n + ' kilonewtons'); add(num(v*1000) + ' N'); add(n + ' Kn'); }
@@ -391,6 +393,163 @@ def random_quiz_pass(pg, label, course="statics"):
         again_btn = box.locator('[data-act="again"]')
         assert again_btn.count()==1 and again_btn.is_visible(), f"{label}: AI Try a new one missing after a wrong answer"
         print(f"{label}: AI random quiz ok ({text[:90]!r})")
+
+
+def negative_input_pass(pg, label, shots=False):
+    """± toggle on every decimal input; tap ± then type 12 on a negative answer."""
+    dismiss_fun(pg)
+    # parseQty / nearly / rounding for signed and typographic minus
+    parsed = pg.evaluate("""() => {
+      const api=window.GrokiversityQuiz;
+      const R=window.GrokeQuizRand;
+      const out={ok:[], fail:[], negs:0, seeds:[]};
+      const signs=['-','\\u2212','\\u2013','\\u2014','+'];
+      const a={q:'M',v:-12,u:'N·m',tp:1};
+      signs.forEach(s => {
+        const raw=(s==='+'?'+12':s+'12')+' N·m';
+        const g=api.gradeAns(a, raw);
+        const p=api.parseQty(s+'12', a.u);
+        const rec={s:raw, ok:!!(g&&g.ok), pv:p&&p.v, err:(g&&g.err)||(p&&p.err)};
+        if(s==='+') rec.expect=false; else rec.expect=true;
+        if(!!g.ok!==rec.expect || (s!=='+' && p.v!==-12)) out.fail.push(rec); else out.ok.push(rec);
+      });
+      // 1% tolerance and integer rounding on negatives
+      if(!api.nearly({v:-100,u:'N',tp:1}, -101) || !api.nearly({v:-100,u:'N',tp:1}, -99)) out.fail.push('tol');
+      if(api.nearly({v:-100,u:'N',tp:1}, -103)) out.fail.push('tol-wide');
+      const ts=api.intTargets(-12.4);
+      if(ts[0]!==-12) out.fail.push('round '+JSON.stringify(ts));
+      if(!api.nearly({v:-12.4,u:'N',tp:1}, -12)) out.fail.push('round-grade');
+      const half=api.intTargets(-12.5);
+      if(half.indexOf(-12)<0 || half.indexOf(-13)<0) out.fail.push('half '+JSON.stringify(half));
+      // randomized problems already produce negative answers
+      ['q1.3','q4.2','q4.5'].forEach(id => {
+        for(let seed=1; seed<=400; seed++){
+          const inst=R.instantiate(id, seed, 's');
+          if(!inst || !inst.ans) continue;
+          inst.ans.forEach(ans => { if(ans.v<0){ out.negs++; if(out.seeds.length<6) out.seeds.push({id,seed,q:ans.q,v:ans.v}); } });
+        }
+      });
+      // a seed whose rounded integer answer is -12
+      let hit=null;
+      for(let seed=1; seed<=8000 && !hit; seed++){
+        const inst=R.instantiate('q4.2', seed, 's');
+        if(!inst || !inst.ans) continue;
+        inst.ans.forEach((ans,i) => {
+          if(hit) return;
+          const targets=api.intTargets(ans.v);
+          if(ans.v<0 && targets.indexOf(-12)>=0) hit={id:'q4.2', seed, i, v:ans.v, targets};
+        });
+      }
+      out.hit=hit;
+      return out;
+    }""")
+    assert not parsed.get("fail"), f"{label} parse/tolerance: {parsed}"
+    assert parsed["negs"] > 0, f"{label}: no randomized negative answers found: {parsed}"
+    assert parsed.get("hit"), f"{label}: could not find a q4.2 seed that rounds to -12: {parsed}"
+    print(f"{label} signed parse ok; {parsed['negs']} negative generator hits; seed {parsed['hit']}")
+
+    # Every decimal input in the current lesson has a thumb-sized ± button
+    coverage = pg.evaluate("""() => {
+      const ins=[...document.querySelectorAll('input[inputmode="decimal"]')];
+      return ins.map(inp => {
+        const btn=inp.parentElement && inp.parentElement.querySelector('.sign-toggle');
+        const br=btn && btn.getBoundingClientRect();
+        return {has:!!btn, aria:btn && btn.getAttribute('aria-label'), h:br && br.height, w:br && br.width, mode:inp.getAttribute('inputmode')};
+      });
+    }""")
+    # May be 0 if we have not visited quiz slides that built mounts... buildQuiz runs at boot for all Q.
+    # On statics, all quizzes should already be mounted.
+    assert coverage, f"{label}: no decimal inputs found"
+    missing=[c for c in coverage if not c["has"] or c.get("aria")!="Toggle negative sign"]
+    assert not missing, f"{label}: missing ± on some inputs: {missing[:4]} of {len(coverage)}"
+    short=[c for c in coverage if (c.get("h") or 0)<43.5]
+    # hidden slides may report 0 height — only check visible ones later on the active quiz
+
+    hit=parsed["hit"]
+    goto_concept(pg, 4)
+    pg.evaluate("""(hit) => {
+      const R=window.GrokeQuizRand;
+      const api=window.GrokiversityQuiz;
+      const q=Object.values(api.Q).flat().find(x=>x.id==='q4.2');
+      const inst=R.instantiate('q4.2', hit.seed, 's');
+      const apply=R.apply;
+      R.apply=function(qq){
+        if(qq && qq.id==='q4.2'){
+          qq.text=inst.text; qq.ans=inst.ans; qq.sol=inst.sol; qq.hints=inst.hints; qq.diagram=inst.diagram;
+          return inst;
+        }
+        return apply.apply(this, arguments);
+      };
+      api.buildQuiz(q);
+      R.apply=apply;
+    }""", hit)
+    goto_slide(pg, "quiz-q4-2")
+    box = qbox(pg, "q4.2")
+    reveal_el(pg, box)
+    idx = hit["i"]
+    inp = box.locator("input").nth(idx)
+    reveal_el(pg, inp)
+    # confirm ± button is thumb-sized and visible
+    geo = pg.evaluate("""(i) => {
+      const root=document.getElementById('Qq4_2');
+      const inp=root.querySelectorAll('input')[i];
+      const btn=inp.parentElement.querySelector('.sign-toggle');
+      const br=btn.getBoundingClientRect();
+      const ir=inp.getBoundingClientRect();
+      return {aria:btn.getAttribute('aria-label'), h:br.height, w:br.width, visible:br.height>0, mode:inp.getAttribute('inputmode'), text:btn.textContent, inpH:ir.height};
+    }""", idx)
+    assert geo["aria"]=="Toggle negative sign", geo
+    assert geo["mode"]=="decimal", geo
+    assert geo["h"]>=44, f"{label}: ± height {geo}"
+    assert geo["w"]>=44, f"{label}: ± width {geo}"
+    # tap ± (empty field -> '-'), then type 12, then fill any other fields correctly, submit
+    inp.fill("")
+    btn = box.locator(".sign-toggle").nth(idx)
+    try:
+        btn.tap()
+    except Exception:
+        btn.dispatch_event("pointerdown")
+    pg.wait_for_timeout(80)
+    val = inp.input_value()
+    assert val.strip() in ("-", "\u2212", "\u2013", "\u2014"), f"{label}: ± on empty should insert minus, got {val!r}"
+    pg.evaluate("""(i) => {
+      const inp=document.querySelectorAll('#Qq4_2 input')[i];
+      inp.focus();
+      const n=(inp.value||'').length;
+      try{ inp.setSelectionRange(n,n); }catch(e){}
+    }""", idx)
+    inp.type("12")
+    pg.wait_for_timeout(50)
+    typed = inp.input_value().strip()
+    assert typed in ("-12", "\u221212", "\u201312", "\u201412"), f"{label}: expected -12, got {typed!r}"
+    # fill other answer fields with exact values (not the one we typed)
+    ans_vals = pg.evaluate("""(i) => {
+      const api=window.GrokiversityQuiz;
+      const q=Object.values(api.Q).flat().find(x=>x.id==='q4.2');
+      return q.ans.map((a,j) => j===i ? null : api.formatExact(a));
+    }""", idx)
+    for i,v in enumerate(ans_vals):
+        if v is None: continue
+        box.locator("input").nth(i).fill(v)
+    check_click(box)
+    fb = box.locator(".fb").inner_text()
+    assert "Correct" in fb, f"{label}: ± then 12 should be accepted on seed {hit}: {fb} typed={typed!r}"
+    # Show solution still present and works
+    box.locator('[data-act="sol"]').click()
+    pg.wait_for_timeout(80)
+    sol = box.locator(".fb").inner_text()
+    assert "solution" in sol.lower() or "N·m" in sol or "N" in sol, f"{label} show solution: {sol}"
+    if shots:
+        Path = __import__("pathlib").Path
+        dest = Path("/workspace/grokiversity_shots")
+        dest.mkdir(parents=True, exist_ok=True)
+        # reset input to show '-' + button clearly? already has -12. Fine.
+        reveal_el(pg, inp)
+        pg.wait_for_timeout(100)
+        pg.screenshot(path=str(dest / "negative_input.png"))
+        print("wrote /workspace/grokiversity_shots/negative_input.png")
+    print(f"{label} ± toggle accepted -12 ({typed!r}) on q4.2 seed {hit['seed']}")
+
 
 def typography_pass(pg, label):
     res = pg.evaluate(PARSE_JS)
@@ -711,6 +870,7 @@ def statics_dom_pass(pg, label, shots=False):
     assert seen == 20, f"{label}: expected 20 scored quizzes, got {seen}"
     print(f"{label}: all 20 Statics quizzes accepted an iOS-typed form; Skip/Show solution/Next present")
     random_quiz_pass(pg, label, "statics")
+    negative_input_pass(pg, label, shots=shots)
     return seen
 
 def ai_dom_pass(pg, label, shots=False):
