@@ -629,8 +629,141 @@ function reply(t){ t=t.toLowerCase();
 $('#csend').onclick=()=>{ const v=$('#cin').value.trim(); if(!v) return; say(v.replace(/[<&]/g,c=>c==='<'?'&lt;':'&amp;'),'s'); $('#cin').value=''; setTimeout(()=>say(reply(v)),250); };
 $('#cin').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#csend').click(); });
 
+
+function prepareThumbLayout(scope){
+  const rootEl=scope||document;
+  const OUTPUT={treeViz:1,gdLoss:1,neu:1,attn:1};
+  function isLive(el){
+    if(!el) return false;
+    const id=el.id||'';
+    return id==='signLabel'||id==='supInfo'||id==='fbdfb'||id==='trigEx';
+  }
+  function isCopy(el){
+    if(!el || !el.tagName) return false;
+    if(isLive(el)) return false;
+    if(el.closest('.viz,.readout,.check,.q,.q-mount,.thumb-controls,.palette,.chatin')) return false;
+    return el.matches('h2,h3,p,ul,ol,b,strong') || (el.tagName==='SPAN' && el.classList.contains('tag'));
+  }
+  function ensureReadout(host){
+    let r=host.querySelector(':scope > .readout');
+    if(r) return r;
+    r=document.createElement('div');
+    r.className='readout';
+    host.appendChild(r);
+    return r;
+  }
+  function splitControls(readout, viz){
+    if(!readout) return;
+    const box=document.createElement('div');
+    box.className='thumb-controls';
+    const move=[];
+    [...readout.children].forEach(function(child){
+      const hasRange=child.matches('input[type=range]') || child.querySelector && child.querySelector('input[type=range]');
+      const hasCb=child.matches('label') && child.querySelector && child.querySelector('input[type=checkbox]');
+      const isPal=child.classList && child.classList.contains('palette');
+      const isBtn=child.matches('button') || (child.querySelector && child.querySelector('button') && !child.matches('.row,.eqcheck'));
+      if(hasRange || hasCb || isPal || isBtn) move.push(child);
+    });
+    // range whose label is the previous sibling
+    move.forEach(function(el){
+      if(el.matches && el.matches('input[type=range]')){
+        const prev=el.previousElementSibling;
+        if(prev && prev.matches('label') && move.indexOf(prev)<0) box.appendChild(prev);
+      }
+      box.appendChild(el);
+    });
+    if(!box.childNodes.length) return;
+    viz.appendChild(box);
+  }
+  function structure(root){
+    if(!root || root.classList.contains('thumb-ready')) return;
+    let viz=root.querySelector(':scope > .viz');
+    const looseSvg=root.querySelector(':scope > svg.diagram');
+    const grid=root.querySelector(':scope > .support-grid');
+    if(!viz && !looseSvg && !grid && root.id!=='trigPanel') return;
+    if(!viz){
+      viz=document.createElement('div');
+      viz.className='viz';
+      if(looseSvg){
+        looseSvg.parentNode.insertBefore(viz, looseSvg);
+        viz.appendChild(looseSvg);
+      } else if(grid){
+        grid.parentNode.insertBefore(viz, grid);
+        viz.appendChild(grid);
+        grid.classList.add('thumb-diagram');
+      }
+    }
+    const layout=document.createElement('div');
+    layout.className='thumb-layout';
+    const copy=document.createElement('div');
+    copy.className='slide-copy';
+    const kids=[...root.children];
+    kids.forEach(function(el){
+      if(isCopy(el)) copy.appendChild(el);
+    });
+    let readout=viz.querySelector(':scope > .readout');
+    // Promote live labels that sit next to a bare diagram
+    ['#signLabel','#fbdfb','#supInfo','#trigEx'].forEach(function(sel){
+      const el=root.querySelector(sel);
+      if(!el) return;
+      if(el.closest('.readout,.slide-copy,.thumb-controls')) return;
+      if(!readout) readout=ensureReadout(viz);
+      readout.appendChild(el);
+    });
+    const pal=root.querySelector(':scope > .palette, :scope > #palette');
+    const checkBtn=root.querySelector(':scope > #checkfbd');
+    if(pal && pal.parentNode===root) viz.appendChild(pal);
+    if(checkBtn && checkBtn.parentNode===root){
+      const controls=viz.querySelector(':scope > .thumb-controls')||(function(){const d=document.createElement('div'); d.className='thumb-controls'; viz.appendChild(d); return d;})();
+      controls.appendChild(checkBtn);
+    }
+    if(!readout) readout=viz.querySelector(':scope > .readout');
+    splitControls(readout, viz);
+    // Output-only plots stay in the layout so CSS can park them with the numbers
+    viz.querySelectorAll('svg.diagram').forEach(function(svg){
+      if(OUTPUT[svg.id]) svg.classList.add('is-output');
+    });
+    // Rebuild: copy, viz (diagrams + controls), readout
+    if(copy.childNodes.length) layout.appendChild(copy);
+    layout.appendChild(viz);
+    if(readout){
+      readout.style.removeProperty('grid-column');
+      readout.style.removeProperty('grid-row');
+      readout.style.removeProperty('grid-area');
+      layout.appendChild(readout);
+    }
+    [...root.children].forEach(function(el){
+      if(el===layout) return;
+      if(el.classList && el.classList.contains('thumb-layout')) return;
+      if(isCopy(el) || (el.matches && el.matches('b,strong,span,h1,h2,h3,p'))){
+        if(copy.parentNode!==layout) layout.insertBefore(copy, viz);
+        copy.appendChild(el);
+      } else {
+        layout.appendChild(el);
+      }
+    });
+    root.appendChild(layout);
+    root.classList.add('thumb-ready');
+  }
+  rootEl.querySelectorAll('.slide, .card, #trigPanel').forEach(structure);
+  // trig panel is a special root itself
+  if(rootEl.id==='trigPanel' || (rootEl.querySelector && rootEl.querySelector('#trigPanel'))){
+    const pan=rootEl.id==='trigPanel'?rootEl:rootEl.querySelector('#trigPanel');
+    if(pan && !pan.classList.contains('thumb-ready')){
+      // wrap range + live rows
+      const viz=pan.querySelector('.viz')||(function(){
+        const v=document.createElement('div'); v.className='viz';
+        const svg=pan.querySelector('svg.diagram');
+        if(svg){ svg.parentNode.insertBefore(v, svg); v.appendChild(svg); }
+        return v;
+      })();
+      structure(pan);
+    }
+  }
+}
 /* ---------- boot ---------- */
 function boot(){
+  prepareThumbLayout();
   [1,2,3,4].forEach(buildQuiz);
   go(unlocked(store.current)?store.current:1);
   renderMath(document.body);

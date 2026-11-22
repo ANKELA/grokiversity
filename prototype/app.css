@@ -460,3 +460,108 @@ body.home .disc{max-width:720px;padding:10px 14px;margin:0 auto 8px}
   body.home h1{font-size:26px}
   body.home .lead{font-size:15px;margin-bottom:12px}
 }
+
+/* ---- thumb-reach interactive layout ---- */
+.thumb-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(150px,240px);
+  grid-template-rows:auto minmax(0,1fr);
+  grid-template-areas:"copy copy" "viz readout";
+  gap:10px;
+  min-height:0;
+  height:100%;
+  align-items:stretch;
+}
+.thumb-layout > .slide-copy{grid-area:copy; min-width:0}
+.thumb-layout > .viz{grid-area:viz; min-width:0; min-height:0; display:flex; flex-direction:column; gap:6px}
+.thumb-layout > .readout{grid-area:readout; min-width:0; overflow:auto}
+.thumb-layout .thumb-controls{flex:0 0 auto}
+.thumb-layout .is-output{width:100%}
+.lesson-page .slide.thumb-ready{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  min-height:0;
+}
+.lesson-page .slide.thumb-ready > .thumb-layout{flex:1 1 auto; min-height:0}
+.card > .thumb-layout{height:auto; grid-template-rows:auto auto}
+
+@media (max-width:700px), (pointer:coarse){
+  .lesson-page .slide.thumb-ready{padding-bottom:8px}
+  .thumb-layout{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    height:100%;
+    min-height:0;
+    overflow:hidden;
+  }
+  .thumb-layout > .viz{display:contents}
+  .thumb-layout > .readout{
+    order:1;
+    flex:0 1 auto;
+    max-height:30%;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+    background:#121528;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px 10px;
+    z-index:2;
+    overscroll-behavior:contain;
+  }
+  .thumb-layout svg.diagram.is-output{
+    order:2;
+    flex:0 0 auto;
+    max-height:18dvh;
+    min-height:72px;
+    width:100%;
+  }
+  .thumb-layout > .slide-copy{
+    order:3;
+    flex:0 1 auto;
+    max-height:22%;
+    min-height:0;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+  }
+  .thumb-layout > .slide-copy h2{font-size:16px;margin:0 0 4px}
+  .thumb-layout > .slide-copy p{margin:0 0 6px;font-size:14px}
+  .thumb-layout svg.diagram:not(.is-output),
+  .thumb-layout .thumb-diagram{
+    order:4;
+    flex:1 1 auto;
+    min-height:120px;
+    max-height:none;
+    width:100%;
+  }
+  .lesson-page .thumb-layout svg.diagram:not(.is-output){
+    max-height:none;
+    min-height:120px;
+  }
+  .thumb-layout .thumb-controls{
+    order:5;
+    flex:0 0 auto;
+    padding-top:2px;
+  }
+  .thumb-layout .support-grid{order:4; flex:1 1 auto}
+  .card > .thumb-layout{
+    height:auto;
+    max-height:none;
+    overflow:visible;
+  }
+  .card > .thumb-layout > .readout{max-height:none}
+  .card > .thumb-layout > .slide-copy{max-height:none}
+  #trigPanel.thumb-ready,
+  #trigPanel .thumb-layout{
+    display:flex;
+    flex-direction:column;
+    height:100%;
+    min-height:0;
+  }
+}
+
+@media (max-width:700px){
+  .lesson-page .slide.thumb-ready svg.diagram:not(.is-output){max-height:none}
+}

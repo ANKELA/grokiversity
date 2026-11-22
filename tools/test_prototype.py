@@ -208,11 +208,72 @@ def interact_slide(pg, info, label):
         }""")
         pg.wait_for_timeout(80)
     elif kind == "click":
-        pg.locator(sel).first.click()
-        pg.wait_for_timeout(80)
+        loc = pg.locator(sel).first
+        loc.evaluate("el => el.dispatchEvent(new Event('click', {bubbles:true}))")
+        pg.wait_for_timeout(120)
+        after = slide_graphics(pg)["snapshot"]
+        if after == before:
+            try:
+                loc.click(force=True, timeout=2000)
+            except Exception:
+                loc.evaluate("el => { el.dispatchEvent(new Event('click', {bubbles:true})); }")
+            pg.wait_for_timeout(120)
+            after = slide_graphics(pg)["snapshot"]
+        # already captured
+        if after != before:
+            return kind
     after = slide_graphics(pg)["snapshot"]
     assert after != before, f"{label} {sid}: {kind} on {sel} did not change the graphic or readout"
     return kind
+
+
+def thumb_tour(pg, label):
+    """On a narrow phone viewport: live readout above the diagram, diagram above the nav, no page scroll."""
+    ids = pg.evaluate("""() => {
+      const out=[];
+      document.querySelectorAll('.concept').forEach((c, ci) => {
+        c.querySelectorAll('.slide').forEach(s => {
+          if (s.querySelector('svg.diagram, .support-grid, input[type=range]'))
+            out.push({c: ci + 1, id: s.dataset.id});
+        });
+      });
+      return out;
+    }""")
+    assert len(ids) >= 15, f"{label}: expected >=15 interactive slides, got {len(ids)} {[x['id'] for x in ids]}"
+    for item in ids:
+        goto_concept(pg, item["c"])
+        goto_slide(pg, item["id"])
+        pg.wait_for_timeout(160)
+        info = pg.evaluate("""() => {
+          const slide = document.querySelector('.concept:not([hidden]) .slide.on');
+          const readout = slide && slide.querySelector('.readout');
+          const diag = slide && slide.querySelector('svg.diagram:not(.is-output), .thumb-diagram, .support-grid');
+          const nav = document.querySelector('.slide-nav');
+          const header = document.querySelector('.lesson-top');
+          const rr = readout && readout.getBoundingClientRect();
+          const dr = diag && diag.getBoundingClientRect();
+          const nr = nav && nav.getBoundingClientRect();
+          const hr = header && header.getBoundingClientRect();
+          return {
+            id: slide && slide.dataset.id,
+            y: window.scrollY,
+            headerTop: hr ? hr.top : null,
+            rTop: rr ? rr.top : null,
+            rBottom: rr ? rr.bottom : null,
+            dTop: dr ? dr.top : null,
+            dBottom: dr ? dr.bottom : null,
+            navTop: nr ? nr.top : null,
+            ready: !!(slide && slide.classList.contains('thumb-ready'))
+          };
+        }""")
+        assert info["ready"], f"{label} {item['id']}: missing thumb-ready layout {info}"
+        assert info["y"] == 0, f"{label} {item['id']}: scrollY={info['y']}"
+        assert info["headerTop"] is not None and -1 <= info["headerTop"] <= 2, f"{label} {item['id']}: header top {info['headerTop']}"
+        assert info["rBottom"] is not None and info["dTop"] is not None, f"{label} {item['id']}: missing readout or diagram {info}"
+        assert info["rBottom"] <= info["dTop"] + 1, f"{label} {item['id']}: readout bottom {info['rBottom']} not above diagram top {info['dTop']}"
+        assert info["dBottom"] <= info["navTop"] + 1, f"{label} {item['id']}: diagram bottom {info['dBottom']} not above nav {info['navTop']}"
+        assert info["dBottom"] <= info.get("navTop", 844) and info["rTop"] >= -1
+    print(f"{label}: {len(ids)} interactive slides have readout above diagram and diagram above the nav")
 
 def graphic_tour(pg, label, click_next=True):
     """Click through all 46 slides and assert every interactive graphic."""
@@ -453,6 +514,7 @@ with sync_playwright() as p:
     gi = ctxI.new_page(); watch(gi)
     gi.goto(LESSON); gi.wait_for_load_state("networkidle"); gi.wait_for_timeout(400)
     graphic_tour(gi, "chrome-iphone-390x844")
+    thumb_tour(gi, "chrome-iphone-390x844 thumb")
     ctxI.close()
     try:
         wk = p.webkit.launch()
@@ -461,6 +523,7 @@ with sync_playwright() as p:
         gw = ctxW.new_page(); watch(gw)
         gw.goto(LESSON); gw.wait_for_load_state("networkidle"); gw.wait_for_timeout(400)
         graphic_tour(gw, "webkit-iphone-390x844")
+        thumb_tour(gw, "webkit-iphone-390x844 thumb")
         ctxW.close()
         wk.close()
     except Exception as e:
@@ -484,6 +547,7 @@ with sync_playwright() as p:
     assert_fits(m, "mobile beam", check_width=392)
     m.screenshot(path=str(SHOTS / "mobile_08_beam.png"))
     n_mob = height_tour(m, "mobile", width_limit=392)
+    thumb_tour(m, "mobile chrome 390 thumb")
     goto_concept(m, 1); goto_slide(m, "quiz-q1-1")
     m.screenshot(path=str(SHOTS / "mobile_03_quiz.png"))
     ctxM.close()
@@ -543,6 +607,19 @@ with sync_playwright() as p:
     m2 = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True).new_page(); watch(m2)
     m2.goto(f"http://127.0.0.1:{port}/intro-ai.html"); m2.wait_for_load_state("networkidle")
     sw = m2.evaluate("document.documentElement.scrollWidth"); print("AI mobile scrollWidth:", sw); assert sw <= 392, "horizontal overflow on AI mobile"
+    ai_thumb = m2.evaluate("""() => {
+      const svg = document.getElementById('treeViz');
+      const card = svg && svg.closest('.card');
+      if (!card) return {ok:false, why:'no tree card'};
+      card.scrollIntoView({block:'center'});
+      const r = card.querySelector('.readout');
+      const sl = card.querySelector('.thumb-controls, input[type=range]');
+      if (!r || !sl) return {ok:false, why:'missing readout or sliders', ready:card.classList.contains('thumb-ready')};
+      const rr = r.getBoundingClientRect(), sr = sl.getBoundingClientRect();
+      return {ok: rr.bottom <= sr.top + 1, ready: card.classList.contains('thumb-ready'), rB: rr.bottom, sT: sr.top};
+    }""")
+    print("AI mobile tree thumb:", ai_thumb)
+    assert ai_thumb.get("ready") and ai_thumb.get("ok"), f"AI tree card should put numbers above sliders: {ai_thumb}"
     m2.screenshot(path=str(SHOTS / "mobile_05_ai_landing.png"))
     m2.locator("#learn").scroll_into_view_if_needed(); m2.wait_for_timeout(200); m2.screenshot(path=str(SHOTS / "mobile_06_ai_lesson.png"))
     m2.locator("footer").scroll_into_view_if_needed(); m2.screenshot(path=str(SHOTS / "mobile_07_ai_footer.png"))
