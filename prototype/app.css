@@ -399,19 +399,35 @@ body.home .home-main{
   min-width:0;
 }
 body.home h1{
-  font-size:clamp(26px,4.2vw,40px);
-  line-height:1.12;
-  margin:0 0 10px;
-  letter-spacing:-.4px;
+  font-size:clamp(20px,3.2vw,32px);
+  line-height:1.15;
+  margin:0 0 6px;
+  letter-spacing:-.3px;
 }
 body.home .lead{
-  margin:0 auto 16px;
+  margin:0 auto 10px;
   max-width:36em;
   color:#c5cae9;
-  font-size:16px;
+  font-size:15px;
 }
-body.home .home-cta{margin:0 0 18px}
-body.home .btn-lg{font-size:18px;padding:14px 28px;min-height:48px}
+.home-demo{
+  width:100%;
+  max-width:640px;
+  margin:0 auto 10px;
+  padding:10px 12px;
+  text-align:left;
+}
+.home-demo svg.diagram{
+  max-height:200px;
+  width:100%;
+  height:auto;
+  touch-action:none;
+}
+.home-demo .readout{font-size:13px}
+.home-demo .readout .row{padding:3px 0}
+.home-demo .thumb-layout{height:auto}
+body.home .home-cta{margin:0 0 12px}
+body.home .btn-lg{font-size:17px;padding:12px 24px;min-height:46px}
 .course-list{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -456,9 +472,22 @@ body.home .disc{max-width:720px;padding:10px 14px;margin:0 auto 8px}
   body.about header.top nav a:not(.btn){display:inline}
   body.home header.top nav,
   body.about header.top nav{gap:10px;font-size:13px;flex-wrap:wrap;justify-content:flex-end}
-  body.home .home-main{padding:10px 16px 8px;justify-content:flex-start}
-  body.home h1{font-size:26px}
-  body.home .lead{font-size:15px;margin-bottom:12px}
+  body.home .home-main{padding:8px 14px 6px;justify-content:flex-start}
+  body.home h1{font-size:22px;margin-bottom:4px}
+  body.home .lead{font-size:13.5px;margin-bottom:8px}
+  body.home .course-list{grid-template-columns:1fr 1fr;margin-bottom:8px}
+  body.home .course-card{padding:10px 12px}
+  body.home .course-card h2{font-size:15px;margin:4px 0 2px}
+  body.home .course-card p{font-size:12px}
+  body.home .home-demo{padding:8px 10px;margin-bottom:8px}
+  body.home .home-demo svg.diagram{max-height:168px}
+  body.home .home-cta{margin:0 0 8px}
+  body.home .cert-note{font-size:12px;margin:0 0 4px}
+  body.home footer{padding:8px 14px 10px}
+}
+@media (max-width:700px), (pointer:coarse){
+  .home-demo .thumb-layout > .readout{max-height:none}
+  .home-demo svg.diagram:not(.is-output){min-height:120px;max-height:168px;flex:0 0 auto}
 }
 
 /* ---- thumb-reach interactive layout ---- */

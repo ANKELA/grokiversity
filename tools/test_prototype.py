@@ -98,6 +98,51 @@ def assert_header_pinned(pg, label):
     assert t in ("none", "matrix(1, 0, 0, 1, 0, 0)"), f"{label}: lessonApp transform {t}"
     return info
 
+def home_demo_pass(pg, label, thumb=False):
+    assert pg.locator("#homeDemo").count() == 1, f"{label}: missing #homeDemo"
+    assert pg.locator("#ropeBox").count() == 1, f"{label}: missing #ropeBox"
+    assert pg.locator(".home-cta a[href*='statics/unit-1.html']").count() >= 1
+    text = pg.evaluate("() => (document.querySelector('#homeDemo')?.innerText || '').toLowerCase()")
+    assert "drag the box" in text, f"{label}: demo should say Drag the box: {text!r}"
+    assert "tap the box" not in text and "drag the end" not in text and "to name them" not in text, text
+    geo = pg.evaluate("""() => {
+      const demo = document.getElementById('homeDemo');
+      const cta = document.querySelector('.home-cta');
+      const readout = demo && demo.querySelector('.readout');
+      const diagram = demo && demo.querySelector('svg.diagram');
+      const dr = demo && demo.getBoundingClientRect();
+      const cr = cta && cta.getBoundingClientRect();
+      const rr = readout && readout.getBoundingClientRect();
+      const gr = diagram && diagram.getBoundingClientRect();
+      return {
+        ready: !!(demo && demo.classList.contains('thumb-ready')),
+        demoBottom: dr && dr.bottom,
+        ctaTop: cr && cr.top,
+        rBottom: rr && rr.bottom,
+        dTop: gr && gr.top,
+        floor: (document.getElementById('ropeFloor')||{}).textContent || '',
+        lift: (document.getElementById('ropeLift')||{}).textContent || ''
+      };
+    }""")
+    assert geo["ready"], f"{label}: home demo should be thumb-ready: {geo}"
+    assert geo["ctaTop"] is not None and geo["demoBottom"] is not None
+    assert geo["ctaTop"] + 1 >= geo["demoBottom"], f"{label}: Start Statics should sit below the demo: {geo}"
+    if thumb:
+        assert geo["rBottom"] <= geo["dTop"] + 1, f"{label}: readout should be above the diagram: {geo}"
+    floor0, lift0 = geo["floor"], geo["lift"]
+    assert floor0 and lift0, f"{label}: missing live readouts: {geo}"
+    drag(pg, "#ropeBox", -80, 0)
+    pg.wait_for_timeout(120)
+    after = pg.evaluate("""() => ({
+      floor: document.getElementById('ropeFloor').textContent,
+      lift: document.getElementById('ropeLift').textContent,
+      hint: (document.getElementById('ropeSvg')||{}).className?.baseVal || ''
+    })""")
+    print(f"{label} drag box:", floor0, lift0, "->", after["floor"], after["lift"])
+    assert (after["floor"], after["lift"]) != (floor0, lift0), f"{label}: dragging the demo box should change readouts"
+    assert "hint-seen" in after["hint"], f"{label}: cue should fade after first drag: {after}"
+    assert_header_pinned(pg, label + " after demo drag")
+
 def recover_from_simulated_shift(pg, label):
     pg.evaluate("window.scrollTo(0, 140)")
     pg.wait_for_timeout(30)
@@ -347,6 +392,7 @@ with sync_playwright() as p:
     print("home desktop scrollHeight:", hdesk)
     assert hdesk <= 850, f"home should fit ~1 desktop screen (800px), got {hdesk}"
     assert_header_pinned(pg, "home desktop")
+    home_demo_pass(pg, "chrome1280x800 home")
     pg.screenshot(path=str(SHOTS / "desktop_01_landing.png"))
     pg.goto(f"http://127.0.0.1:{port}/about.html"); pg.wait_for_load_state("networkidle")
     assert "Play now" in pg.inner_text("#trackGrid")
@@ -571,10 +617,26 @@ with sync_playwright() as p:
     sw = mL.evaluate("document.documentElement.scrollWidth"); print("Mobile landing scrollWidth:", sw); assert sw <= 392, "horizontal overflow on mobile landing"
     hmob = mL.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
     print("home iPhone scrollHeight:", hmob)
-    assert hmob <= 1266, f"home should fit ~1.5 iPhone screens (1266px), got {hmob}"
+    assert hmob <= 980, f"home should fit about one iPhone screen with at most a small scroll (980px), got {hmob}"
     assert_header_pinned(mL, "home iPhone")
+    home_demo_pass(mL, "chrome-iphone-390x844 home", thumb=True)
     mL.screenshot(path=str(SHOTS / "mobile_01_landing.png"))
     mL.locator("footer").scroll_into_view_if_needed(); mL.screenshot(path=str(SHOTS / "mobile_04_footer.png"))
+
+    try:
+        wkH = p.webkit.launch()
+        ctxWH = wkH.new_context(**IPHONE)
+        wH = ctxWH.new_page(); watch(wH)
+        wH.goto(URL); wH.wait_for_load_state("networkidle"); wH.wait_for_timeout(400)
+        hwk = wH.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
+        print("home webkit iPhone scrollHeight:", hwk)
+        assert hwk <= 980, f"home should fit about one iPhone screen with at most a small scroll (980px), got {hwk}"
+        assert wH.evaluate("document.documentElement.scrollWidth") <= 392
+        assert_header_pinned(wH, "home webkit iPhone")
+        home_demo_pass(wH, "webkit-iphone-390x844 home", thumb=True)
+        ctxWH.close(); wkH.close()
+    except Exception as e:
+        print("webkit-iphone home demo skipped (browser not launchable):", e)
 
     pg2 = ctx.new_page(); watch(pg2)
     pg2.goto(f"http://127.0.0.1:{port}/intro-ai.html"); pg2.wait_for_load_state("networkidle")

@@ -2,6 +2,7 @@
 (function(){
 'use strict';
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+function onEl(sel, ev, fn, opts){ const el=typeof sel==='string'?$(sel):sel; if(el) el.addEventListener(ev, fn, opts); return el; }
 const deg = r => r*180/Math.PI, rad = d => d*Math.PI/180;
 const KEY = 'grokeversity.v1';
 const store = (()=>{ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } })();
@@ -183,8 +184,8 @@ async function copyPrompt(){
   toast('Tutor prompt copied. Paste it into Grok and say “start”.');
   say('Prompt copied ✅. Open Grok, paste it as your first message, then type <b>start</b>. That tutor grades strictly and won\'t give away answers.');
 }
-if($('#copyPrompt')) $('#copyPrompt').addEventListener('click',copyPrompt);
-if($('#copyHero')) $('#copyHero').addEventListener('click',copyPrompt);
+if($('#copyPrompt')) onEl('#copyPrompt','click',copyPrompt);
+if($('#copyHero')) onEl('#copyHero','click',copyPrompt);
 
 /* ---------- optional intro theme: click only, never autoplay ---------- */
 (function(){
@@ -214,7 +215,6 @@ if(!$('#lessonApp')){
   };
   jump();
   window.addEventListener('hashchange', jump);
-  return;
 }
 
 /* ---------- concept list + slides ---------- */
@@ -322,8 +322,8 @@ function refreshAndRedraw(){
   const s=currentSlide();
   if(s) redrawSlide(s);
 }
-$('#prevSlide').addEventListener('click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)-1, 'back'); });
-$('#nextSlide').addEventListener('click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)+1, 'fwd'); });
+onEl('#prevSlide','click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)-1, 'back'); });
+onEl('#nextSlide','click',()=>{ const c=store.current; showSlide(c, (store.slide[c]||0)+1, 'fwd'); });
 document.addEventListener('keydown',e=>{
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(e.key==='Escape') closeDrawers();
@@ -331,12 +331,12 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft') $('#prevSlide').click();
 });
 if($('#conceptsBtn')){
-  $('#conceptsBtn').addEventListener('click',()=>{ const on=!$('#conceptsDrawer').classList.contains('on'); closeDrawers(); setDrawer('concepts',on); });
-  $('#conceptsBack').addEventListener('click',()=>setDrawer('concepts',false));
+  onEl('#conceptsBtn','click',()=>{ const on=!$('#conceptsDrawer').classList.contains('on'); closeDrawers(); setDrawer('concepts',on); });
+  onEl('#conceptsBack','click',()=>setDrawer('concepts',false));
 }
 if($('#tutorBtn')){
-  $('#tutorBtn').addEventListener('click',()=>{ const on=!$('#tutorDrawer').classList.contains('on'); closeDrawers(); setDrawer('tutor',on); });
-  $('#tutorBack').addEventListener('click',()=>setDrawer('tutor',false));
+  onEl('#tutorBtn','click',()=>{ const on=!$('#tutorDrawer').classList.contains('on'); closeDrawers(); setDrawer('tutor',on); });
+  onEl('#tutorBack','click',()=>setDrawer('tutor',false));
 }
 window.addEventListener('hashchange',()=>{
   const r=readRoute();
@@ -350,9 +350,9 @@ function openTrig(on){
   ['trigBack','trigPanel'].forEach(id=>{ const el=$('#'+id); if(!el) return; el.hidden=!on; el.classList.toggle('on',on); });
   if(on) drawTrig();
 }
-$('#trigBtn').addEventListener('click',()=>openTrig(true));
-$('#trigClose').addEventListener('click',()=>openTrig(false));
-$('#trigBack').addEventListener('click',()=>openTrig(false));
+onEl('#trigBtn','click',()=>openTrig(true));
+onEl('#trigClose','click',()=>openTrig(false));
+onEl('#trigBack','click',()=>openTrig(false));
 function drawTrig(){
   trig.th=+$('#trigSl').value;
   $('#trigA').textContent=trig.th;
@@ -369,9 +369,9 @@ function drawTrig(){
   const F=100;
   $('#trigEx').innerHTML=`Example: a ${F} N force at ${trig.th}° has an x-part of ${(F*Math.cos(th)).toFixed(1)} N and a y-part of ${(F*Math.sin(th)).toFixed(1)} N.`;
 }
-$('#trigSl').addEventListener('input',drawTrig);
+onEl('#trigSl','input',drawTrig);
 (function(){
-  const svg=$('#trigSvg'); let drag=false;
+  const svg=$('#trigSvg'); if(!svg) return; let drag=false;
   svg.addEventListener('pointerdown',e=>{ drag=true; svg.setPointerCapture(e.pointerId); move(e); e.preventDefault(); });
   svg.addEventListener('pointermove',e=>{ if(drag) move(e); });
   svg.addEventListener('pointerup',()=>drag=false);
@@ -432,19 +432,22 @@ function drawRope(){
       <path fill="#f3f4ff" stroke="#1a1f38" stroke-width="1.1" stroke-linejoin="round" d="M7.2 2.4c.9 0 1.5.7 1.5 1.6V12c.3-.4.8-.9 1.6-.9.9 0 1.5.7 1.5 1.5v2.2c.3-.3.8-.7 1.5-.7.9 0 1.5.7 1.5 1.6v1.6c.3-.2.8-.5 1.5-.5.9 0 1.5.8 1.5 1.7v4.4c0 3.2-2.3 5.8-6.4 5.8h-1.2c-3.3 0-5.7-2.1-7.1-4.9L1.6 14.7c-.5-.9.2-1.9 1.2-1.9.4 0 .8.2 1 .6L6.2 17V4c0-.9.6-1.6 1-1.6z"/>
     </g>
     <text x="30" y="232" fill="#5c6390" font-size="13">floor</text>`;
-  $('#ropeFloor').textContent=fx.toFixed(0)+' of 100';
-  $('#ropeLift').textContent=fy.toFixed(0)+' of 100';
+  const setTxt=(sel,val)=>{ const el=$(sel); if(el) el.textContent=val; };
+  setTxt('#ropeFloor', fx.toFixed(0)+' of 100');
+  setTxt('#ropeLift', fy.toFixed(0)+' of 100');
   const share=Math.abs(fx)+Math.abs(fy)||1;
-  $('#ropeFloorBar').style.width=(Math.abs(fx)/share*100)+'%';
-  $('#ropeLiftBar').style.width=(Math.abs(fy)/share*100)+'%';
-  $('#ropeHint').textContent = th<25 ? 'A flatter rope pulls more along the floor.' : 'A steeper rope lifts more, and pulls the box along the floor less.';
+  const fb=$('#ropeFloorBar'), lb=$('#ropeLiftBar');
+  if(fb) fb.style.width=(Math.abs(fx)/share*100)+'%';
+  if(lb) lb.style.width=(Math.abs(fy)/share*100)+'%';
+  setTxt('#ropeHint', th<25 ? 'A flatter rope pulls more along the floor.' : 'A steeper rope lifts more, and pulls the box along the floor less.');
   svg.querySelectorAll('[data-tap]').forEach(el=>el.addEventListener('click',()=>{
     const n={box:'The box is what you are trying to move.',rope:'The rope can only pull — it is in tension. Because it is angled, only part of that pull goes along the floor.',floor:'The floor is our reference. Angles here are measured up from the floor.'};
-    $('#ropeHint').textContent=n[el.getAttribute('data-tap')];
+    setTxt('#ropeHint', n[el.getAttribute('data-tap')]);
   }));
 }
 (function(){
-  const svg=$('#ropeSvg'); let mode=null, grabDX=0;
+  const svg=$('#ropeSvg'); if(!svg) return;
+  let mode=null, grabDX=0;
   function isBoxTarget(t){
     if(!t || !t.id) return false;
     return t.id==='ropeBox' || t.id==='ropeBoxHit';
@@ -508,6 +511,7 @@ function drawSplit(){
   $('#splitY').textContent=Math.abs(one.y).toFixed(0)+' N';
 }
 function bindOne(svg, handleId, after){
+  if(!svg) return;
   let drag=false;
   svg.addEventListener('pointerdown',e=>{ if(e.target.id===handleId){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{
@@ -521,8 +525,8 @@ function bindOne(svg, handleId, after){
 }
 bindOne($('#oneSvg'),'oneH',drawOne);
 bindOne($('#splitSvg'),'splitH',drawSplit);
-$('#showFloor').addEventListener('change',drawSplit);
-$('#showLift').addEventListener('change',drawSplit);
+onEl('#showFloor','change',drawSplit);
+onEl('#showLift','change',drawSplit);
 
 /* ---------- C1: triangle + formula build ---------- */
 const tri={th:30, step:0};
@@ -567,9 +571,9 @@ function drawTri(){
   $('#triNext').disabled=tri.step>=4;
   $('#triNext').textContent=tri.step>=4?'All pieces shown':'Next piece';
 }
-$('#triNext').addEventListener('click',()=>{ if(tri.step<4){ tri.step++; drawTri(); } });
+onEl('#triNext','click',()=>{ if(tri.step<4){ tri.step++; drawTri(); } });
 (function(){
-  const svg=$('#triSvg'); let drag=false;
+  const svg=$('#triSvg'); if(!svg) return; let drag=false;
   svg.addEventListener('pointerdown',e=>{ if(e.target.id==='triH'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{
     if(!drag) return;
@@ -583,7 +587,7 @@ $('#triNext').addEventListener('click',()=>{ if(tri.step<4){ tri.step++; drawTri
 const K=2; const st={ f1:{x:150*Math.cos(rad(30)),y:150*Math.sin(rad(30))}, f2:{x:-100,y:120} };
 (function(){ let h=''; for(let x=-300;x<=300;x+=50) h+=`<line x1="${x}" y1="-230" x2="${x}" y2="230" stroke="${x===0?'#3d4680':'#1b2040'}"/>`;
   for(let y=-200;y<=200;y+=50) h+=`<line x1="-300" y1="${y}" x2="300" y2="${y}" stroke="${y===0?'#3d4680':'#1b2040'}"/>`;
-  $('#grid').innerHTML = h+'<text x="285" y="-6" fill="#5c6390" font-size="12">x</text><text x="6" y="-215" fill="#5c6390" font-size="12">y</text>'; })();
+  const grid=$('#grid'); if(grid) grid.innerHTML = h+'<text x="285" y="-6" fill="#5c6390" font-size="12">x</text><text x="6" y="-215" fill="#5c6390" font-size="12">y</text>'; })();
 const setL=(id,x1,y1,x2,y2)=>{ const l=$(id); l.setAttribute('x1',x1); l.setAttribute('y1',-y1); l.setAttribute('x2',x2); l.setAttribute('y2',-y2); };
 const fmtF=v=>`${(K*Math.hypot(v.x,v.y)).toFixed(1)} N ∠ ${deg(Math.atan2(v.y,v.x)).toFixed(1)}°`;
 function drawVec(){
@@ -595,13 +599,13 @@ function drawVec(){
   $('#r1').textContent=fmtF(f1); $('#r2').textContent=fmtF(f2); $('#rr').textContent=fmtF(R);
   if(window.katex) katex.render(`\\begin{aligned}R_x&=${(K*f1.x).toFixed(1)}+(${(K*f2.x).toFixed(1)})=${(K*R.x).toFixed(1)}\\,\\text{N}\\\\ R_y&=${(K*f1.y).toFixed(1)}+(${(K*f2.y).toFixed(1)})=${(K*R.y).toFixed(1)}\\,\\text{N}\\end{aligned}`,$('#rmath'),{displayMode:true,throwOnError:false});
 }
-(function(){ const svg=$('#vec'); let cur=null;
+(function(){ const svg=$('#vec'); if(!svg) return; let cur=null;
   const grab=k=>e=>{ cur=k; svg.setPointerCapture(e.pointerId); e.preventDefault(); };
-  $('#d1').addEventListener('pointerdown',grab('f1')); $('#d2').addEventListener('pointerdown',grab('f2'));
+  onEl('#d1','pointerdown',grab('f1')); onEl('#d2','pointerdown',grab('f2'));
   svg.addEventListener('pointermove',e=>{ if(!cur) return; const q=svgPt(svg,e); st[cur]={x:Math.max(-290,Math.min(290,Math.round(q.x/5)*5)),y:Math.max(-220,Math.min(220,Math.round(-q.y/5)*5))}; drawVec(); });
   svg.addEventListener('pointerup',()=>cur=null); svg.addEventListener('pointercancel',()=>cur=null);
-  $('#showc').addEventListener('change',drawVec);
-  $('#preset').addEventListener('click',()=>{ st.f1={x:125*Math.cos(rad(40)),y:125*Math.sin(rad(40))}; st.f2={x:200*Math.cos(rad(150)),y:200*Math.sin(rad(150))}; drawVec();
+  onEl('#showc','change',drawVec);
+  onEl('#preset','click',()=>{ st.f1={x:125*Math.cos(rad(40)),y:125*Math.sin(rad(40))}; st.f2={x:200*Math.cos(rad(150)),y:200*Math.sin(rad(150))}; drawVec();
     say('Example loaded: 250 N at 40° and 400 N at 150°. Before you look at the readout, predict which quadrant R lands in. Then check yourself.'); });
 })();
 
@@ -768,11 +772,11 @@ function drawEq(){
   $('#eT1').textContent=hide?'? (predict)':T1.toFixed(1)+' N'; $('#eT2').textContent=hide?'? (predict)':T2.toFixed(1)+' N';
   const h=$('#ringH'); if(h) h.addEventListener('pointerdown',e=>{ eqDrag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); });
 }
-(function(){ const svg=$('#eq');
+(function(){ const svg=$('#eq'); if(!svg) return;
   svg.addEventListener('pointerdown',e=>{ if(e.target.id==='ringH'){ eqDrag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{ if(!eqDrag) return; const q=svgPt(svg,e); EQ.ring={x:Math.max(-200,Math.min(200,Math.round(q.x))), y:Math.max(15,Math.min(250,Math.round(q.y)))}; drawEq(); });
   svg.addEventListener('pointerup',()=>eqDrag=false); svg.addEventListener('pointercancel',()=>eqDrag=false);
-  $('#mass').addEventListener('input',drawEq); $('#predict').addEventListener('change',drawEq);
+  onEl('#mass','input',drawEq); onEl('#predict','change',drawEq);
 })();
 
 /* ---------- C4: seesaw, wrench, angled moment ---------- */
@@ -792,7 +796,7 @@ function drawSee(){
   if($('#seeD')) $('#seeD').textContent=Math.abs(d/100).toFixed(2)+' m '+(d>=0?'to the right':'to the left');
   if($('#seeM')) $('#seeM').textContent=Math.abs(M).toFixed(2)+' N·m';
 }
-(function(){ const svg=$('#seeSvg'); let drag=false;
+(function(){ const svg=$('#seeSvg'); if(!svg) return; let drag=false;
   svg.addEventListener('pointerdown',e=>{ if(e.target.id==='seeH'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{ if(!drag) return; const q=svgPt(svg,e); see.x=Math.max(-180,Math.min(180,q.x-260)); drawSee(); });
   svg.addEventListener('pointerup',()=>drag=false); svg.addEventListener('pointercancel',()=>drag=false);
@@ -814,9 +818,9 @@ function drawWr(){
     <text x="${ox+L+8}" y="${oy+fy/2}" fill="#ff8a65" font-size="13">${F.toFixed(0)} N</text>
     <text x="${ox+L/2}" y="${oy-14}" fill="#9aa3c7" font-size="13" text-anchor="middle">${d.toFixed(2)} m</text>`;
 }
-$('#wrFsl').addEventListener('input',drawWr);
-$('#wrDsl').addEventListener('input',drawWr);
-(function(){ const svg=$('#wrSvg'); let mode=null;
+onEl('#wrFsl','input',drawWr);
+onEl('#wrDsl','input',drawWr);
+(function(){ const svg=$('#wrSvg'); if(!svg) return; let mode=null;
   svg.addEventListener('pointerdown',e=>{
     if(e.target.id==='wrFh'||e.target.id==='wrDh'){ mode=e.target.id; svg.setPointerCapture(e.pointerId); e.preventDefault(); }
   });
@@ -847,8 +851,8 @@ function drawAng(){
     <text x="${ox+L+48}" y="${oy+18}" fill="#ffd54f" font-size="13">θ</text>
     ${hitHandle("angH",endx,endy,"#ff8a65")}`;
 }
-$('#angSl').addEventListener('input',drawAng);
-(function(){ const svg=$('#angSvg'); let drag=false;
+onEl('#angSl','input',drawAng);
+(function(){ const svg=$('#angSvg'); if(!svg) return; let drag=false;
   svg.addEventListener('pointerdown',e=>{ if(e.target.id==='angH'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{
     if(!drag) return;
@@ -875,7 +879,7 @@ function drawPlank(){
   if($('#plL')) $('#plL').textContent=Ay.toFixed(2)+' kN';
   if($('#plR')) $('#plR').textContent=By.toFixed(2)+' kN';
 }
-(function(){ const svg=$('#plankSvg'); let drag=false;
+(function(){ const svg=$('#plankSvg'); if(!svg) return; let drag=false;
   svg.addEventListener('pointerdown',e=>{ if(e.target.id==='plBox'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{
     if(!drag) return;
@@ -922,8 +926,8 @@ function drawBeam(){
     else sum.innerHTML=`<div>${fy}</div><div>${ma}</div>`;
   }
 }
-$('#bmPsl').addEventListener('input',drawBeam);
-(function(){ const svg=$('#beamSvg'); let drag=false;
+onEl('#bmPsl','input',drawBeam);
+(function(){ const svg=$('#beamSvg'); if(!svg) return; let drag=false;
   svg.addEventListener('pointerdown',e=>{ if(e.target.id==='bmH'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{
     if(!drag) return;
@@ -1417,7 +1421,7 @@ function bindChecks(){
   });
 }
 
-$('#reset').addEventListener('click',e=>{ e.preventDefault(); if(confirm('Reset all saved progress on this device?')){ localStorage.removeItem(KEY); location.reload(); } });
+onEl('#reset','click',e=>{ e.preventDefault(); if(confirm('Reset all saved progress on this device?')){ localStorage.removeItem(KEY); location.reload(); } });
 
 /* ---------- scripted tutor ---------- */
 function reply(t){ t=t.toLowerCase();
@@ -1429,8 +1433,8 @@ function reply(t){ t=t.toLowerCase();
   if(/reaction|support|roller|pin/.test(t)) return 'Ask which motions the support prevents. A roller stops one, a pin stops two, a fixed support stops two plus a spin.';
   if(/grok|real tutor|ai/.test(t)) return 'Tap “Copy tutor prompt for Grok” below, paste it into Grok, and say “start”. That tutor runs this whole unit.';
   return 'Good question. In this demo my replies are scripted. For a real conversation, copy the tutor prompt into Grok. Meanwhile, what have you tried so far?'; }
-$('#csend').onclick=()=>{ const v=$('#cin').value.trim(); if(!v) return; say(v.replace(/[<&]/g,c=>c==='<'?'&lt;':'&amp;'),'s'); $('#cin').value=''; setTimeout(()=>say(reply(v)),250); };
-$('#cin').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#csend').click(); });
+if($('#csend')) $('#csend').onclick=()=>{ const v=$('#cin').value.trim(); if(!v) return; say(v.replace(/[<&]/g,c=>c==='<'?'&lt;':'&amp;'),'s'); $('#cin').value=''; setTimeout(()=>say(reply(v)),250); };
+onEl('#cin','keydown',e=>{ if(e.key==='Enter') $('#csend').click(); });
 
 function isTextField(el){
   if(!el || !el.tagName) return false;
@@ -1676,7 +1680,12 @@ function prepareThumbLayout(scope){
     root.appendChild(layout);
     root.classList.add('thumb-ready');
   }
-  rootEl.querySelectorAll('.slide, .card, #trigPanel').forEach(structure);
+  const thumbSel='.slide, .card, #trigPanel, .home-demo';
+  const roots=[];
+  if(rootEl.matches && rootEl.matches(thumbSel)) roots.push(rootEl);
+  if(rootEl.querySelectorAll) roots.push(...rootEl.querySelectorAll(thumbSel));
+  [...new Set(roots)].forEach(structure);
+
   // trig panel is a special root itself
   if(rootEl.id==='trigPanel' || (rootEl.querySelector && rootEl.querySelector('#trigPanel'))){
     const pan=rootEl.id==='trigPanel'?rootEl:rootEl.querySelector('#trigPanel');
@@ -1693,7 +1702,26 @@ function prepareThumbLayout(scope){
   }
 }
 /* ---------- boot ---------- */
+function bootHome(){
+  const root=document.getElementById('homeDemo');
+  if(!root) return;
+  prepareThumbLayout(root);
+  drawRope();
+  const pin=function(){ resetPageScroll(); };
+  root.addEventListener('pointerdown', pin);
+  root.addEventListener('pointermove', pin);
+  root.addEventListener('pointerup', pin);
+  root.addEventListener('pointercancel', pin);
+  document.addEventListener('touchend', function(e){
+    if(e.target && root.contains(e.target)) requestAnimationFrame(resetPageScroll);
+  }, {passive:true});
+}
 function boot(){
+  if(document.getElementById('homeDemo') || document.documentElement.classList.contains('home')){
+    bootHome();
+    return;
+  }
+  if(!document.querySelector('html.lesson-page, #lessonApp')) return;
   prepareThumbLayout();
   wireKeyboard();
 
@@ -1709,5 +1737,5 @@ function boot(){
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
-try{ window.GrokeversityQuiz={prepareThumbLayout:prepareThumbLayout,applyKeyboardInset:applyKeyboardInset,clearKeyboardInset:clearKeyboardInset,resetPageScroll:resetPageScroll,parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
+try{ window.GrokeversityQuiz={prepareThumbLayout:prepareThumbLayout,bootHome:bootHome,drawRope:drawRope,applyKeyboardInset:applyKeyboardInset,clearKeyboardInset:clearKeyboardInset,resetPageScroll:resetPageScroll,parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
 })();

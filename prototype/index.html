@@ -26,14 +26,14 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="app.css?v=048348e5">
+<link rel="stylesheet" href="app.css?v=643cfb67">
 <script>
 (function(){
   function go(){
     var h=(location.hash||'').replace(/^#/,'').toLowerCase();
     if(h==='learn' || h.indexOf('learn')===0 || /^c[1-5]/.test(h)){
       var c=(h.match(/c([1-5])/)||[])[1]||'1';
-      location.replace('statics/unit-1.html?v=048348e5&c='+c);
+      location.replace('statics/unit-1.html?v=643cfb67&c='+c);
     }
   }
   go();
@@ -47,17 +47,28 @@
   <nav>
     <a href="about.html">About</a>
     <a href="https://github.com/ANKELA/grokeversity" rel="noopener noreferrer">GitHub</a>
-    <a class="btn sm" href="statics/unit-1.html?v=048348e5">Start Statics</a>
+    <a class="btn sm" href="statics/unit-1.html?v=643cfb67">Start Statics</a>
   </nav>
 </header>
 
 <main class="home-main">
-  <h1>University-level curricula,<br>one concept at a time.</h1>
-  <p class="lead">A free, open-source, degree-level curriculum. Learn at your own pace with interactive lessons and strict quizzes.</p>
-  <p class="home-cta"><a class="btn btn-lg" href="statics/unit-1.html?v=048348e5">Start Statics</a></p>
+  <h1>University-level curricula, one concept at a time.</h1>
+  <p class="lead">A free, open-source, degree-level curriculum. Try a live lesson, then start Statics.</p>
+  <div class="card home-demo" id="homeDemo">
+    <div class="viz">
+      <svg class="diagram" id="ropeSvg" viewBox="0 0 520 260" role="img" aria-label="A box you can drag, pulled by a rope"></svg>
+      <div class="readout">
+        <div class="row"><span>Along the floor</span><span id="ropeFloor"></span></div>
+        <div class="row"><span>Lifting up</span><span id="ropeLift"></span></div>
+        <div class="share"><div class="bar"><i id="ropeFloorBar" style="background:#ff8a65"></i><i id="ropeLiftBar" style="background:#4dd0e1"></i></div></div>
+        <p class="sub" id="ropeHint">A steeper rope lifts more, and pulls the box along the floor less.</p>
+      </div>
+    </div>
+  </div>
+  <p class="home-cta"><a class="btn btn-lg" href="statics/unit-1.html?v=643cfb67">Start Statics</a></p>
   <ul class="course-list">
     <li>
-      <a class="course-card is-live" href="statics/unit-1.html?v=048348e5" id="card-me">
+      <a class="course-card is-live" href="statics/unit-1.html?v=643cfb67" id="card-me">
         <span class="badge">Play now</span>
         <h2>ME 201 Statics</h2>
         <p>Forces, free-body diagrams, and equilibrium.</p>
@@ -79,5 +90,6 @@
   <div class="disc">Not an accredited degree. Community project, not affiliated with xAI.</div>
   <div>Code: MIT License · Course content: CC BY-SA 4.0 · Prototype v0.2</div>
 </footer>
+<script src="app.js?v=643cfb67"></script>
 </body>
 </html>
