@@ -328,3 +328,117 @@ html.kb-open .lesson-page .slide-nav, html.kb-open .slide-nav{
   .fun-bar{padding:4px 8px;gap:6px;font-size:11px}
   .fun-daily{display:none}
 }
+
+.inrow label{min-width:0;max-width:100%}
+.unit-field{display:flex;align-items:stretch;gap:6px;width:100%;max-width:min(320px,100%);min-width:0}
+.unit-field input{
+  flex:1 1 6em;
+  min-width:0;
+  min-height:44px;
+  width:auto !important;
+  max-width:100%;
+  font-size:16px;
+  padding:8px 10px;
+  border-radius:8px;
+}
+.unit-field .unit-select, select.unit-select{
+  flex:0 1 auto;
+  min-width:4.6em;
+  max-width:8.5em;
+  min-height:44px;
+  padding:8px 8px;
+  font:inherit;
+  font-size:16px;
+  font-weight:600;
+  color:var(--ink);
+  background:#0c0f1d;
+  border:1px solid var(--line);
+  border-radius:8px;
+  appearance:auto;
+  -webkit-appearance:menulist;
+  touch-action:manipulation;
+}
+@media (max-width:700px){
+  .inrow label{flex:1 1 100%}
+  .unit-field{max-width:100%}
+  .unit-field input, .unit-field .unit-select, select.unit-select{min-height:46px}
+}
+
+/* compact home page */
+html.home, body.home{min-height:100dvh;overflow-x:hidden}
+body.home{display:flex;flex-direction:column;margin:0}
+body.home .top{padding:8px 20px}
+body.home .home-main{
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  width:100%;
+  max-width:720px;
+  margin:0 auto;
+  padding:16px 20px 12px;
+  text-align:center;
+  min-width:0;
+}
+body.home h1{
+  font-size:clamp(26px,4.2vw,40px);
+  line-height:1.12;
+  margin:0 0 10px;
+  letter-spacing:-.4px;
+}
+body.home .lead{
+  margin:0 auto 16px;
+  max-width:36em;
+  color:#c5cae9;
+  font-size:16px;
+}
+body.home .home-cta{margin:0 0 18px}
+body.home .btn-lg{font-size:18px;padding:14px 28px;min-height:48px}
+.course-list{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  list-style:none;
+  padding:0;
+  margin:0 0 16px;
+  text-align:left;
+}
+.course-card{
+  display:block;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px 16px;
+  text-decoration:none;
+  color:inherit;
+  min-width:0;
+  min-height:100%;
+}
+.course-card.is-live{border-color:var(--acc)}
+.course-card.is-live:hover{background:#1d2550}
+.course-card h2{margin:8px 0 4px;font-size:18px}
+.course-card p{margin:0;color:var(--mute);font-size:13.5px}
+.course-card .badge{display:inline-block}
+.course-card.is-soon{
+  opacity:.55;
+  filter:grayscale(.7);
+  cursor:default;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.cert-note{color:var(--mute);font-size:13px;margin:0 0 8px;line-height:1.45}
+.home-links{font-size:14px;margin:0;color:var(--mute)}
+body.home footer{padding:12px 20px 16px}
+body.home .disc{max-width:720px;padding:10px 14px;margin:0 auto 8px}
+@media (max-width:640px){
+  .course-list{grid-template-columns:1fr}
+  body.home .top, body.about .top{padding:8px 14px}
+  body.home header.top nav a:not(.btn),
+  body.about header.top nav a:not(.btn){display:inline}
+  body.home header.top nav,
+  body.about header.top nav{gap:10px;font-size:13px;flex-wrap:wrap;justify-content:flex-end}
+  body.home .home-main{padding:10px 16px 8px;justify-content:flex-start}
+  body.home h1{font-size:26px}
+  body.home .lead{font-size:15px;margin-bottom:12px}
+}

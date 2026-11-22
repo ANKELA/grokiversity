@@ -225,14 +225,41 @@ with sync_playwright() as p:
     href = pg.get_attribute("a[href*='statics/unit-1.html']", "href")
     print("Start Statics href:", href); assert href and "statics/unit-1.html" in href
     assert "Start Statics" in pg.inner_text("body")
-    assert pg.locator("#introAudio").count() == 1
+    assert pg.locator("#introAudio").count() == 0
     requested = pg.evaluate("performance.getEntriesByType('resource').map(e=>e.name).join('\\n')")
     assert "intro.mp3" not in requested, "intro.mp3 must not autoplay or preload"
-    href = pg.get_attribute("#card-ai", "href"); print("AI card href:", href); assert href and "intro-ai.html" in href
-    assert "Play now" in pg.inner_text("#aiGrid")
+    ai = pg.locator("#card-ai")
+    assert ai.count() == 1
+    tag, href_ai, aria, pe, cur, text = ai.evaluate("""el => [
+      el.tagName, el.getAttribute('href'), el.getAttribute('aria-disabled'),
+      getComputedStyle(el).pointerEvents, getComputedStyle(el).cursor, el.innerText
+    ]""")
+    print("AI card:", tag, href_ai, aria, pe, cur)
+    assert tag != "A" and not href_ai, f"AI card should not be a link: {tag} {href_ai}"
+    assert aria == "true"
+    assert pe == "none"
+    assert cur in ("default", "auto")
+    assert "Coming soon" in text and "Introduction to AI" in text
+    home_hrefs = pg.evaluate("[...document.querySelectorAll('a')].map(a => a.getAttribute('href') || '')")
+    joined = " ".join(home_hrefs)
+    assert all("intro-ai.html" not in (h or "") for h in home_hrefs), f"home still links to intro-ai.html: {home_hrefs}"
+    assert "github.com/ANKELA/grokeversity" in joined
+    assert "about.html" in joined
+    body = pg.inner_text("body")
+    assert "Not an accredited degree" in body and "not affiliated with xAI" in body
+    assert "completion certificate" in body.lower() or "completion certificates" in body.lower()
+    hdesk = pg.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
+    print("home desktop scrollHeight:", hdesk)
+    assert hdesk <= 850, f"home should fit ~1 desktop screen (800px), got {hdesk}"
     pg.screenshot(path=str(SHOTS / "desktop_01_landing.png"))
+    pg.goto(f"http://127.0.0.1:{port}/about.html"); pg.wait_for_load_state("networkidle")
+    assert "Play now" in pg.inner_text("#trackGrid")
+    assert "Coming soon" in pg.inner_text("#aiGrid")
+    about_hrefs = pg.evaluate("[...document.querySelectorAll('a')].map(a => a.getAttribute('href') || '')")
+    assert all("intro-ai.html" not in (h or "") for h in about_hrefs), f"about still links to intro-ai.html: {about_hrefs}"
     pg.locator("#tracks").scroll_into_view_if_needed(); pg.screenshot(path=str(SHOTS / "desktop_09_track_cards.png"))
     pg.locator("#track").scroll_into_view_if_needed(); pg.screenshot(path=str(SHOTS / "desktop_02_track_map.png"))
+    pg.goto(URL); pg.wait_for_load_state("networkidle")
 
     pg.goto(URL + "#learn"); pg.wait_for_url("**/statics/unit-1.html**", timeout=8000); pg.wait_for_load_state("networkidle")
     print("Redirect #learn ->", pg.url); assert "statics/unit-1.html" in pg.url
@@ -263,7 +290,7 @@ with sync_playwright() as p:
     pg.screenshot(path=str(SHOTS / "desktop_03_concept1_vectors.png"))
 
     goto_slide(pg, "quiz-q1-1")
-    fb = answer(pg, "q1.1", ["512", "100.5 deg"]); print("no-units:", fb); assert "units" in fb
+    fb = answer(pg, "q1.1", ["512", "100.5 deg"]); print("default-unit menu:", fb); assert "Correct" in fb
     pg.locator("#Qq1_1 button").nth(1).click()
     fb = answer(pg, "q1.1", ["0.5122 kN", "100.5 deg"]); print("kN accepted:", fb); assert "Correct" in fb
     fb = answer(pg, "q1.1", ["512 N", "101 deg"]); print("integer round:", fb); assert "Correct" in fb
@@ -418,6 +445,9 @@ with sync_playwright() as p:
     mL = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True).new_page(); watch(mL)
     mL.goto(URL); mL.wait_for_load_state("networkidle")
     sw = mL.evaluate("document.documentElement.scrollWidth"); print("Mobile landing scrollWidth:", sw); assert sw <= 392, "horizontal overflow on mobile landing"
+    hmob = mL.evaluate("Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)")
+    print("home iPhone scrollHeight:", hmob)
+    assert hmob <= 1266, f"home should fit ~1.5 iPhone screens (1266px), got {hmob}"
     mL.screenshot(path=str(SHOTS / "mobile_01_landing.png"))
     mL.locator("footer").scroll_into_view_if_needed(); mL.screenshot(path=str(SHOTS / "mobile_04_footer.png"))
 
@@ -427,7 +457,7 @@ with sync_playwright() as p:
     pg2.screenshot(path=str(SHOTS / "desktop_10_ai_c1.png"))
     before = pg2.inner_text("#tTot"); pg2.fill("#dRange", "7"); pg2.locator("#dRange").evaluate("el => { el.value = 7; el.dispatchEvent(new Event('input',{bubbles:true})); }")
     after = pg2.inner_text("#tTot"); print("Tree nodes:", before, "->", after); assert before != after
-    fb = answer(pg2, "q1.4", ["60", "75"]); print("q1.4 no-units:", fb); assert "units" in fb.lower() or "%" in fb
+    fb = answer(pg2, "q1.4", ["60", "75"]); print("q1.4 default % menu:", fb); assert "Correct" in fb
     pg2.locator("#Qq1_4 button").nth(1).click()
     assert "Correct" in answer(pg2, "q1.1", ["7", "6.8", "6.5"])
     assert "Correct" in answer(pg2, "q1.2", ["1365"])

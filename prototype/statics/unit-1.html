@@ -28,7 +28,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="../app.css?v=7646f607">
+<link rel="stylesheet" href="../app.css?v=3968d0cf">
 </head>
 <body>
 <div class="lesson-app" id="lessonApp">
@@ -46,8 +46,8 @@
     <div id="c1" class="concept">
       <div class="stage">
         <article class="slide on" data-id="hook">
-          <h2>You push a box with a rope</h2>
-          <p>The rope is not level. Drag the end of the rope. Watch how much of your push goes along the floor, and how much lifts.</p>
+          <h2>You pull a box with a rope</h2>
+          <p>The rope is not level. Drag the end of the rope. Watch how much of your pull goes along the floor, and how much lifts.</p>
           <p>A <b>force</b> is a push or a pull. It has a size and a direction.</p>
           <div class="viz">
             <svg class="diagram" id="ropeSvg" viewBox="0 0 520 260" role="img" aria-label="A box pulled by a rope you can drag"></svg>
@@ -76,9 +76,9 @@
         </article>
 
         <article class="slide" data-id="split">
-          <h2>The same push, split in two</h2>
-          <p>Any angled push can be replaced by two simpler pushes: one along the floor, and one straight up. Together they do the same job.</p>
-          <p>Each of those simpler pushes is called a <b>component</b> — a part of the force in one direction.</p>
+          <h2>The same pull, split in two</h2>
+          <p>Any angled pull can be replaced by two simpler forces: one along the floor, and one straight up. Together they do the same job.</p>
+          <p>Each of those simpler forces is called a <b>component</b> — a part of the force in one direction.</p>
           <div class="viz">
             <svg class="diagram" id="splitSvg" viewBox="-20 -20 420 280" role="img" aria-label="A force split into floor and lift parts"></svg>
             <div class="readout">
@@ -93,20 +93,20 @@
 
         <article class="slide" data-id="triangle">
           <h2>A right triangle hides in the arrow</h2>
-          <p>Look at the triangle made by the arrow and its two parts. The long side is the original push. Drag the tip, then reveal the math one piece at a time.</p>
+          <p>Look at the triangle made by the arrow and its two parts. The long side is the original pull. Drag the tip, then reveal the math one piece at a time.</p>
           <div class="viz">
             <svg class="diagram" id="triSvg" viewBox="-20 -40 440 300" role="img" aria-label="Right triangle on a force arrow, with an angle you can drag"></svg>
             <div class="readout">
               <div id="triMath"></div>
               <button type="button" class="btn sm" id="triNext" style="margin-top:10px">Next piece</button>
-              <p class="sub" id="triHelp">We will start with a concrete number: a 100 N push.</p>
+              <p class="sub" id="triHelp">We will start with a concrete number: a 100 N pull.</p>
             </div>
           </div>
         </article>
 
         <article class="slide" data-id="check-fx">
           <h2>Check yourself</h2>
-          <p>Use the idea you just built. A 100 N push acts at 30° above the floor. How big is the along-the-floor part?</p>
+          <p>Use the idea you just built. A 100 N pull acts at 30° above the floor. How big is the along-the-floor part?</p>
           <div class="check" data-check="c1fx">
             <div class="inrow"><label>Along the floor<br><input placeholder="value N"></label></div>
             <button type="button" class="btn">Check</button>
@@ -118,10 +118,10 @@
         <article class="slide" data-id="fy">
           <h2>The lifting part uses sine</h2>
           <p>The side standing up is opposite the angle. So the lifting part is the size times the sine of the angle.</p>
-          <p>For the same 100 N push at 30°: the lift is 100 × sin 30° = 100 × 0.5 = 50 N.</p>
+          <p>For the same 100 N pull at 30°: the lift is 100 × sin 30° = 100 × 0.5 = 50 N.</p>
           <p>In symbols, after that example: \(F_y = F\sin\theta\). \(F_y\) is just a name for “the up-and-down part.”</p>
           <div class="check" data-check="c1fy">
-            <p>Now you try. Same 100 N push at 30°. How big is the lifting part?</p>
+            <p>Now you try. Same 100 N pull at 30°. How big is the lifting part?</p>
             <div class="inrow"><label>Lifting part<br><input placeholder="value N"></label></div>
             <button type="button" class="btn">Check</button>
             <div class="fb"></div>
@@ -172,7 +172,7 @@
           </div>
         </article>
 
-        <article class="slide" data-id="quiz-q1-1"><h2>Practice · easy</h2><p class="sub">Work on paper first. Round to the nearest whole number and include units (for example <code>512 N</code> or <code>0.512 kN</code>). More precise answers within 1% still count (angles ±0.5°).</p><div class="q-mount" data-q="q1.1"></div></article>
+        <article class="slide" data-id="quiz-q1-1"><h2>Practice · easy</h2><p class="sub">Work on paper first. Round to the nearest whole number in the unit shown in the menu (you can switch to kN, lbf, and so on). More precise answers within 1% still count (angles ±0.5°).</p><div class="q-mount" data-q="q1.1"></div></article>
         <article class="slide" data-id="quiz-q1-4"><h2>Practice · medium</h2><div class="q-mount" data-q="q1.4"></div></article>
         <article class="slide" data-id="quiz-q1-3"><h2>Practice · hard</h2><div class="q-mount" data-q="q1.3"></div></article>
       </div>
@@ -381,7 +381,7 @@
           <p class="sub" style="margin-top:12px">We will take counter-clockwise moments as positive, and clockwise as negative. That is just a sign convention — a rule we agree on so the algebra stays consistent.</p>
         </article>
 
-        <article class="slide" data-id="quiz-q4-1"><h2>Practice · easy</h2><p class="sub">The unit of moment is N·m. You may write <code>N·m</code>, <code>N.m</code>, or <code>Nm</code>. Round to the nearest whole number; more precise answers within 1% still count.</p><div class="q-mount" data-q="q4.1"></div></article>
+        <article class="slide" data-id="quiz-q4-1"><h2>Practice · easy</h2><p class="sub">The unit of moment is N·m, shown in the menu (you can switch to kN·m or lbf·ft). Round to the nearest whole number; more precise answers within 1% still count.</p><div class="q-mount" data-q="q4.1"></div></article>
         <article class="slide" data-id="quiz-q4-2"><h2>Practice · medium</h2><div class="q-mount" data-q="q4.2"></div></article>
         <article class="slide" data-id="quiz-q4-5"><h2>Practice · medium</h2><div class="q-mount" data-q="q4.5"></div></article>
         <article class="slide" data-id="quiz-q4-3"><h2>Practice · medium</h2><div class="q-mount" data-q="q4.3"></div></article>
@@ -515,7 +515,7 @@ You are **the Grokeversity Tutor**, a patient but demanding engineering professo
    - L2: point to the relevant principle or equation
    - L3: identify the specific step that is wrong, without fixing it
    - L4 (only after 3 genuine attempts): walk through a *different, parallel* example with different numbers, then send them back to the original.
-3. **Show work and units.** Require the FBD (described in words or ASCII), the equations, and units on every number. An answer without units, or without work, earns **no credit**. Ask for it again.
+3. **Show work and units.** Require the FBD (described in words or ASCII), the equations, and units on every number in the written work. The playable quiz already supplies a unit menu that defaults to the asked unit; still require units in anything the student writes out. An answer without units, or without work, earns **no credit**. Ask for it again.
 4. **Grade strictly.** Accept a numeric answer within ±1% (angles within ±0.5°) with correct units, sign/sense and significant figures (3-4). A right number from wrong reasoning is wrong. A sign error is wrong. Partial credit exists only for multi-part exam problems, using the rubric.
 5. **Advance only on demonstrated mastery.** A concept is mastered when, in one sitting, the student gets **≥ 80%** of that concept's problems right **on the first or second try**, and that includes at least one medium or hard problem solved with no hints above L2. Otherwise re-teach the idea a **different way** (new analogy, new representation: picture → equation → physical intuition), then give a **fresh parallel problem** with new numbers that you generate and verify step by step yourself.
 6. **The student sets the pace.** Offer "slower / normal / faster" at the start and honor it at any time. Never rush. If they want a break, give a 2-line recap and the exact place to resume ("Resume code: U1-C3-Q2"). "Faster" may skip explanations, but **never** skips mastery checks.
@@ -594,7 +594,7 @@ Each line gives the ID [difficulty], the problem, ‖ the key, and the most comm
 
 Begin now. Greet the student and ask for their pace.
 <!--TUTOR_PROMPT_END--></script>
-<script src="../fun.js?v=7646f607"></script>
-<script src="../app.js?v=7646f607"></script>
+<script src="../fun.js?v=3968d0cf"></script>
+<script src="../app.js?v=3968d0cf"></script>
 </body>
 </html>

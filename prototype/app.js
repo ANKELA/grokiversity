@@ -170,9 +170,7 @@ const AI_TRACK = {
   'Responsibility': ['Ethics, Safety & Limits','Capstone Project']
 };
 if($('#aiGrid')){
-  $('#aiGrid').innerHTML = Object.entries(AI_TRACK).map(([y,cs])=>`<div class="year"><h4>${y}</h4>${cs.map(c=> c.includes('Unit 1')
-    ? `<a class="course live" href="intro-ai.html"><span>AI 101 · ${c}</span><span class="badge">Play now</span></a>`
-    : `<div class="course"><span>${c}</span><span class="badge">Coming soon</span></div>`).join('')}</div>`).join('');
+  $('#aiGrid').innerHTML = Object.entries(AI_TRACK).map(([y,cs])=>`<div class="year"><h4>${y}</h4>${cs.map(c=> `<div class="course"><span>${c.includes('Unit 1')?'AI 101 · '+c:c}</span><span class="badge">Coming soon</span></div>`).join('')}</div>`).join('');
 }
 
 /* ---------- copy tutor prompt ---------- */
@@ -387,9 +385,10 @@ function drawRope(){
   const box={x:200,y:170,w:110,h:70}, hx=box.x+box.w, hy=box.y+20;
   const L=170, tx=hx+L*Math.cos(th), ty=hy-L*Math.sin(th);
   const svg=$('#ropeSvg');
-  svg.innerHTML=`<line x1="20" y1="240" x2="500" y2="240" stroke="#3d4680" stroke-width="6" data-tap="floor"/>
+  svg.innerHTML=`<defs><marker id="ropeArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#ff8a65"/></marker></defs>
+    <line x1="20" y1="240" x2="500" y2="240" stroke="#3d4680" stroke-width="6" data-tap="floor"/>
     <rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="6" fill="#3a4170" stroke="#7c86c9" stroke-width="2" data-tap="box"/>
-    <line x1="${hx}" y1="${hy}" x2="${tx}" y2="${ty}" stroke="#ff8a65" stroke-width="5" stroke-linecap="round" data-tap="rope"/>
+    <line x1="${hx}" y1="${hy}" x2="${tx}" y2="${ty}" stroke="#ff8a65" stroke-width="5" stroke-linecap="round" marker-end="url(#ropeArrow)" data-tap="rope"/>
     ${hitHandle("ropeH",tx,ty,"#ff8a65")}
     <text x="30" y="232" fill="#5c6390" font-size="13">floor</text>`;
   $('#ropeFloor').textContent=fx.toFixed(0)+' of 100';
@@ -399,7 +398,7 @@ function drawRope(){
   $('#ropeLiftBar').style.width=(Math.abs(fy)/share*100)+'%';
   $('#ropeHint').textContent = rope.th<25 ? 'A flatter rope pulls more along the floor.' : 'A steeper rope lifts more, and pulls the box along the floor less.';
   svg.querySelectorAll('[data-tap]').forEach(el=>el.addEventListener('click',()=>{
-    const n={box:'The box is what you are trying to move.',rope:'The rope carries your push. Because it is angled, only part of that push goes along the floor.',floor:'The floor is our reference. Angles here are measured up from the floor.'};
+    const n={box:'The box is what you are trying to move.',rope:'The rope can only pull — it is in tension. Because it is angled, only part of that pull goes along the floor.',floor:'The floor is our reference. Angles here are measured up from the floor.'};
     $('#ropeHint').textContent=n[el.getAttribute('data-tap')];
   }));
 }
@@ -467,7 +466,7 @@ $('#showLift').addEventListener('change',drawSplit);
 /* ---------- C1: triangle + formula build ---------- */
 const tri={th:30, step:0};
 const TRI_HELP=[
-  'The long side is the original 100 N push — the hypotenuse.',
+  'The long side is the original 100 N pull — the hypotenuse.',
   'Cosine is adjacent over hypotenuse. The adjacent side is the along-the-floor part.',
   'A concrete number: 100 N at 30° gives 100 × cos 30° = 86.6 N along the floor.',
   'Now the general rule. F_x is a name for the along-x part: F_x = F cos θ.'
@@ -503,7 +502,7 @@ function drawTri(){
     const nodes=$$('#triMath .term');
     nodes.forEach((n,i)=>{ n.classList.toggle('hot', i===tri.step-1); if(window.katex) katex.render(bits[i], n, {displayMode:true,throwOnError:false}); });
   }
-  $('#triHelp').textContent=TRI_HELP[Math.max(0,tri.step-1)] || 'We will start with a concrete number: a 100 N push. Drag the tip to change the angle first if you like.';
+  $('#triHelp').textContent=TRI_HELP[Math.max(0,tri.step-1)] || 'We will start with a concrete number: a 100 N pull. Drag the tip to change the angle first if you like.';
   $('#triNext').disabled=tri.step>=4;
   $('#triNext').textContent=tri.step>=4?'All pieces shown':'Next piece';
 }
@@ -889,17 +888,36 @@ function tidyText(str){
 function normU(u){
   return tidyText(u).replace(/\s+/g,'').replace(/⋅|•/g,'·').replace(/-/g,'·');
 }
-const UNITS={N:1,kN:1000,m:1,mm:0.001,cm:0.01,'N·m':1,'N.m':1,Nm:1,'kN·m':1000,'kN.m':1000,kNm:1000};
+const UNITS={
+  N:1, kN:1000, lbf:4.4482216152605,
+  m:1, mm:0.001, cm:0.01, in:0.0254, ft:0.3048,
+  'N·m':1, 'N.m':1, Nm:1, 'kN·m':1000, 'kN.m':1000, kNm:1000, 'lbf·ft':1.3558179483314004,
+  deg:1, '°':1, rad:180/Math.PI,
+  '%':1
+};
 const UNIT_ALIAS={
   n:'N', newton:'N', newtons:'N',
   kn:'kN', kilonewton:'kN', kilonewtons:'kN',
+  lbf:'lbf', lb:'lbf', lbs:'lbf', pound:'lbf', pounds:'lbf', poundforce:'lbf',
   m:'m', meter:'m', meters:'m', metre:'m', metres:'m',
   mm:'mm', millimeter:'mm', millimeters:'mm', millimetre:'mm', millimetres:'mm',
   cm:'cm', centimeter:'cm', centimeters:'cm', centimetre:'cm', centimetres:'cm',
+  in:'in', inch:'in', inches:'in',
+  ft:'ft', foot:'ft', feet:'ft',
   'n·m':'N·m','n.m':'N·m',nm:'N·m',newtonmeter:'N·m',newtonmetre:'N·m',newtonmeters:'N·m',newtonmetres:'N·m',
   'kn·m':'kN·m','kn.m':'kN·m',knm:'kN·m',kilonewtonmeter:'kN·m',
-  deg:'deg', degree:'deg', degrees:'deg', '°':'deg',
+  'lbf·ft':'lbf·ft', lbfft:'lbf·ft', 'lb·ft':'lbf·ft', lbft:'lbf·ft', 'ft·lbf':'lbf·ft',
+  poundfoot:'lbf·ft', poundfeet:'lbf·ft',
+  deg:'deg', degree:'deg', degrees:'deg', '°':'°',
+  rad:'rad', radian:'rad', radians:'rad',
   '%':'%', percent:'%', pct:'%'
+};
+const UNIT_MENUS={
+  F:['N','kN','lbf'],
+  M:['N·m','kN·m','lbf·ft'],
+  L:['mm','cm','m','in','ft'],
+  A:['°','rad'],
+  P:['%']
 };
 function canonUnit(u){
   const n=normU(u);
@@ -918,22 +936,43 @@ function canonUnit(u){
 }
 function unitKind(u){
   u=canonUnit(u)||normU(u);
-  if(/^(deg|°|degree|degrees)$/i.test(u) || u==='deg') return 'A';
-  if(u==='N'||u==='kN') return 'F';
-  if(u==='m'||u==='mm'||u==='cm') return 'L';
-  if(u==='N·m'||u==='N.m'||u==='Nm'||u==='kN·m'||u==='kN.m'||u==='kNm') return 'M';
+  if(/^(deg|°|degree|degrees|rad|radian|radians)$/i.test(u) || u==='deg' || u==='°' || u==='rad') return 'A';
+  if(u==='N'||u==='kN'||u==='lbf') return 'F';
+  if(u==='m'||u==='mm'||u==='cm'||u==='in'||u==='ft') return 'L';
+  if(u==='N·m'||u==='N.m'||u==='Nm'||u==='kN·m'||u==='kN.m'||u==='kNm'||u==='lbf·ft') return 'M';
+  if(u==='%') return 'P';
   return '';
 }
+function menuKind(u){ return unitKind(u); }
+function unitMenu(u){
+  const k=menuKind(u);
+  return k && UNIT_MENUS[k] ? UNIT_MENUS[k] : null;
+}
+function selectDefault(u){
+  const c=canonUnit(u)||u;
+  if(c==='deg') return '°';
+  if(c==='N.m'||c==='Nm') return 'N·m';
+  if(c==='kN.m'||c==='kNm') return 'kN·m';
+  return c;
+}
+function convertToWanted(v, from, want){
+  const f=canonUnit(from)||from, t=canonUnit(want)||want;
+  if(v==null || !isFinite(v)) return {err:'Enter a number.'};
+  if(!f || f===t) return {v:v};
+  if(!(f in UNITS) || !(t in UNITS)) return {err:'Unknown unit “'+(from||want)+'”.'};
+  if(unitKind(f)!==unitKind(t)) return {err:'Wrong kind of unit: expected '+unitHint(want)+'.'};
+  return {v:v*UNITS[f]/UNITS[t], from:f};
+}
 function unitHint(unit){
-  if(unit==='N·m'||unit==='N.m'||unit==='Nm') return 'N·m (you can type Nm, N.m, or N-m)';
-  if(unit==='deg') return 'deg or °';
+  if(unit==='N·m'||unit==='N.m'||unit==='Nm') return 'N·m';
+  if(unit==='deg') return '°';
   if(unit==='kN') return 'kN';
   if(unit==='%') return '%';
   return unit;
 }
 function formatExact(a){
   if(a.u==='count' || a.u==='1') return String(a.v);
-  if(a.u==='deg') return a.v+' deg';
+  if(a.u==='deg') return a.v+'°';
   if(a.u==='%') return a.v+' %';
   return a.v+' '+a.u;
 }
@@ -965,59 +1004,138 @@ function formatAns(a, short){
   if(!usesIntRound(a)) return formatExact(a);
   const ts=intTargets(a.v);
   const body=ts.length===2?(ts[0]+' or '+ts[1]):String(ts[0]);
-  const unit=(a.u==='deg')?' deg':(a.u==='1'?'':(a.u==='%'?' %':(' '+a.u)));
+  const unit=(a.u==='deg')?'°':(a.u==='1'?'':(a.u==='%'?' %':(' '+a.u)));
   const shown=body+unit;
   if(short || (ts.length===1 && Math.abs(ts[0]-a.v)<1e-9)) return shown;
   return shown+' (exact '+formatExact(a)+')';
 }
 function ansPlaceholder(a){
   if(a.u==='count') return 'whole number';
-  if(usesIntRound(a)) return 'whole '+a.u;
-  if(a.u==='1') return 'number (unit 1 optional)';
-  return 'value '+a.u;
+  if(a.u==='1') return 'number';
+  if(usesIntRound(a)) return 'whole number';
+  return 'number';
 }
 function quizRoundHint(q){
   const any=(q.ans||[]).some(usesIntRound);
   const allCount=(q.ans||[]).every(function(a){ return a.u==='count'; });
+  const anyMenu=(q.ans||[]).some(function(a){ return !!unitMenu(a.u); });
   if(allCount) return '<p class="sub q-round-hint">Enter a whole number. No units needed.</p>';
-  if(any) return '<p class="sub q-round-hint">Round to the nearest whole number (in the unit asked — for example 512 N, or 0.512 kN). More precise answers within 1% still count (angles ±0.5°).</p>';
-  return '<p class="sub q-round-hint">Enter a precise value. Small-magnitude answers count within 1% (or the stated tolerance) — do not round these to 0 or 1.</p>';
+  const unitBit=anyMenu?' Pick a unit from the menu if you want a different one (for example kN instead of N).':'';
+  if(any) return '<p class="sub q-round-hint">Round to the nearest whole number in the unit shown.'+unitBit+' More precise answers within 1% still count (angles ±0.5°).</p>';
+  return '<p class="sub q-round-hint">Enter a precise value. Small-magnitude answers count within 1% (or the stated tolerance) — do not round these to 0 or 1.'+unitBit+'</p>';
 }
 
-function parseQty(str,unit){
+function parseQty(str, unit, fromUnit){
   const raw=tidyText(str);
-  if(!raw) return {err:'Enter a number'+(unit && unit!=='count' && unit!=='1'?' and its unit ('+unitHint(unit)+')':'')+'.'};
+  if(!raw) return {err:'Enter a number.'};
   let s=raw;
   if(/^[+-]?\d+,\d+/.test(s) && s.indexOf('.')===-1) s=s.replace(',','.');
   const m=s.match(/^([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*(.*)$/);
-  if(!m) return {err:'Enter a number, then the unit (for example 12.5 '+unitHint(unit||'N')+').'};
+  if(!m) return {err:'Enter a number.'};
   const v=parseFloat(m[1]);
-  if(!isFinite(v)) return {err:'Enter a number, then the unit (for example 12.5 '+unitHint(unit||'N')+').'};
-  let u=tidyText(m[2]||'').replace(/[.,;:]+$/,'');
+  if(!isFinite(v)) return {err:'Enter a number.'};
+  const numText=m[1];
+  let typed=tidyText(m[2]||'').replace(/[.,;:]+$/,'');
   if(unit==='count'){
-    if(u && !/^(count|qty)?$/i.test(u)) return {err:'This is a count — no unit needed.'};
-    return {v};
+    if(typed && !/^(count|qty|nodes)?$/i.test(typed)) return {err:'This is a count — no unit needed.', numText:numText};
+    return {v:v, numText:numText};
   }
   if(unit==='1'){
-    if(!u || u==='1') return {v};
-    if(canonUnit(u)==='%' || u==='%') return {v:v/100};
-    return {err:'This quantity is a bare number (no unit, or unit 1).'};
+    if(!typed || canonUnit(typed)==='1') return {v:v, numText:numText};
+    if(canonUnit(typed)==='%') return {v:v/100, numText:numText, syncedUnit:'%'};
+    return {err:'This quantity is a bare number (no unit).', numText:numText};
+  }
+  const fallback=fromUnit || '';
+  const source=typed ? typed : fallback;
+  if(!source){
+    // Bare number is in the asked unit (the menu default).
+    return {v:v, numText:numText};
   }
   if(unit==='%'){
-    const cu=canonUnit(u);
-    if(!u) return {v:v, missingUnit:true};
-    if(cu==='%') return {v};
-    if(cu==='1' || u==='1') return {v:v*100};
-    return {err:'Use % (for example 60 %).'};
+    const cu=canonUnit(source);
+    if(cu==='%' || source==='%') return {v:v, numText:numText, syncedUnit: typed? '%': undefined};
+    if(cu==='1' || source==='1') return {v:v*100, numText:numText};
+    return {err:'Use % .', numText:numText};
   }
-  if(!u) return {v:v, missingUnit:true};
-  const nu=canonUnit(u), want=canonUnit(unit)||normU(unit);
-  if(unit==='deg' || want==='deg'){
-    return (nu==='deg' || /^(deg|°|degrees?)$/i.test(u)) ? {v} : {err:'Angle units should be degrees (deg or °).'};
+  const conv=convertToWanted(v, source, unit);
+  if(conv.err) return {err:conv.err, numText:numText};
+  const out={v:conv.v, numText:numText};
+  if(typed){
+    const cu=canonUnit(typed);
+    out.syncedUnit = (cu==='deg') ? '°' : selectDefault(cu||typed);
   }
-  if(!(nu in UNITS) || !(want in UNITS)) return {err:'Unknown unit “'+(u||unit)+'”. Expected '+unitHint(unit)+'.'};
-  if(unitKind(nu)!==unitKind(want)) return {err:'Wrong kind of unit: expected '+unitHint(unit)+'.'};
-  return {v:v*UNITS[nu]/UNITS[want]};
+  return out;
+}
+function gradeAns(a, raw, fromUnit){
+  const p=parseQty(raw,a.u, fromUnit);
+  if(p.err) return {ok:false, err:p.err, syncedUnit:p.syncedUnit, numText:p.numText};
+  if(!nearly(a,p.v)) return {ok:false, err:"isn't right yet.", syncedUnit:p.syncedUnit, numText:p.numText};
+  return {ok:true, syncedUnit:p.syncedUnit, numText:p.numText};
+}
+function unitSelectHTML(a, i){
+  const menu=unitMenu(a.u);
+  if(!menu) return '';
+  const def=selectDefault(a.u);
+  return '<select class="unit-select" data-i="'+i+'" data-want="'+a.u+'" aria-label="Unit for '+(a.q||'answer')+'">'+
+    menu.map(function(u){ return '<option value="'+u+'"'+(u===def?' selected':'')+'>'+u+'</option>'; }).join('')+
+    '</select>';
+}
+function fieldHTML(a, i, inpAttrs){
+  const inp='<input data-i="'+i+'" '+inpAttrs+' placeholder="'+ansPlaceholder(a)+'">';
+  const sel=unitSelectHTML(a,i);
+  if(!sel) return '<label>'+a.q+'<br>'+inp+'</label>';
+  return '<label>'+a.q+'<br><span class="unit-field">'+inp+sel+'</span></label>';
+}
+function syncTypedUnit(inp, sel, want){
+  if(!inp || !sel) return;
+  const p=parseQty(inp.value, want, sel.value);
+  if(p.syncedUnit){
+    const opts=[].slice.call(sel.options);
+    for(let i=0;i<opts.length;i++){
+      if(opts[i].value===p.syncedUnit || canonUnit(opts[i].value)===canonUnit(p.syncedUnit)){
+        sel.value=opts[i].value;
+        break;
+      }
+    }
+    if(p.numText!=null && /[A-Za-z°%]/.test(inp.value)) inp.value=p.numText;
+  }
+}
+function attachUnitField(inp, want){
+  if(!inp || inp.dataset.unitReady) return null;
+  inp.dataset.unitReady='1';
+  inp.setAttribute('type','text');
+  inp.setAttribute('inputmode','decimal');
+  inp.setAttribute('enterkeyhint','go');
+  inp.setAttribute('autocomplete','off');
+  inp.setAttribute('autocapitalize','off');
+  inp.setAttribute('autocorrect','off');
+  inp.setAttribute('spellcheck','false');
+  const menu=unitMenu(want);
+  if(!menu) return null;
+  let sel=inp.parentElement && inp.parentElement.classList.contains('unit-field') ? inp.parentElement.querySelector('select') : null;
+  if(!sel){
+    const wrap=document.createElement('span');
+    wrap.className='unit-field';
+    inp.replaceWith(wrap);
+    wrap.appendChild(inp);
+    sel=document.createElement('select');
+    sel.className='unit-select';
+    if(inp.dataset.i!=null) sel.dataset.i=inp.dataset.i;
+    sel.dataset.want=want;
+    sel.setAttribute('aria-label','Unit');
+    const def=selectDefault(want);
+    menu.forEach(function(u){
+      const o=document.createElement('option'); o.value=u; o.textContent=u;
+      if(u===def) o.selected=true;
+      sel.appendChild(o);
+    });
+    wrap.appendChild(sel);
+  }
+  const sync=function(){ syncTypedUnit(inp, sel, want); };
+  inp.addEventListener('input', sync);
+  inp.addEventListener('change', sync);
+  inp.addEventListener('blur', sync);
+  return sel;
 }
 
 const Q={
@@ -1089,26 +1207,14 @@ function nearly(a,v){
   if(usesIntRound(a) && closeInt(v, intTargets(a.v))) return true;
   return false;
 }
-function gradeAns(a, raw){
-  const p=parseQty(raw,a.u);
-  if(p.missingUnit){
-    if(nearly(a,p.v) || (usesIntRound(a) && closeInt(p.v, intTargets(a.v)))) return {ok:false, err:'The number is right, but this course requires units. Add “'+unitHint(a.u)+'” (for example '+formatAns(a,true)+').'};
-    return {ok:false, err:'Please include the unit ('+unitHint(a.u)+').'};
-  }
-  if(p.err) return {ok:false, err:p.err};
-  if(!nearly(a,p.v)) return {ok:false, err:"isn't right yet."};
-  return {ok:true};
-}
-
-
 function buildQuiz(q){
   const box=document.querySelector('.q-mount[data-q="'+q.id+'"]');
   if(!box) return;
   const c=+q.id[1];
   const d=document.createElement('div'); d.className='q'; d.id='Q'+q.id.replace('.','_');
-  const inpAttrs='type="text" inputmode="text" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
+  const inpAttrs='type="text" inputmode="decimal" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"';
   d.innerHTML=`<div><b>${q.id}</b><span class="tag">${q.diff}</span></div><p>${q.text}</p>${quizRoundHint(q)}
-    <div class="inrow">${q.ans.map((a,i)=>`<label>${a.q}<br><input data-i="${i}" ${inpAttrs} placeholder="${ansPlaceholder(a)}"></label>`).join('')}</div>
+    <div class="inrow">${q.ans.map((a,i)=>fieldHTML(a,i,inpAttrs)).join('')}</div>
     <div class="q-actions">
       <button type="button" class="btn" data-act="check">Check</button>
       <button type="button" class="btn ghost" data-act="hint">Hint</button>
@@ -1138,7 +1244,10 @@ function buildQuiz(q){
   });
   chk.addEventListener('click',()=>{
     tries++; let all=true; const msgs=[];
-    q.ans.forEach((a,i)=>{ const inp=d.querySelector('input[data-i="'+i+'"]'), g=gradeAns(a,inp.value);
+    q.ans.forEach((a,i)=>{ const inp=d.querySelector('input[data-i="'+i+'"]'), sel=d.querySelector('select[data-i="'+i+'"]');
+      if(sel) syncTypedUnit(inp, sel, a.u);
+      const g=gradeAns(a, inp.value, sel?sel.value:undefined);
+      if(g.syncedUnit && sel){ const cu=canonUnit(g.syncedUnit); [].forEach.call(sel.options,function(o){ if(o.value===g.syncedUnit || canonUnit(o.value)===cu) sel.value=o.value; }); }
       if(g.err){ all=false; msgs.push(a.q+': '+g.err); inp.style.borderColor='var(--bad)'; return; }
       inp.style.borderColor=g.ok?'var(--ok)':'var(--bad)'; if(!g.ok){ all=false; msgs.push(a.q+" isn't right yet."); } });
     d.classList.toggle('correct',all); d.classList.toggle('wrong',!all); fb.className='fb '+(all?'ok':'no');
@@ -1156,6 +1265,9 @@ function buildQuiz(q){
     try{ if(window.GrokeFun){ if(all) window.GrokeFun.report('correct',{first:first,tries:tries,qid:q.id,concept:c,mastered:mastered}); else window.GrokeFun.report('wrong',{qid:q.id}); } }catch(e){}
   });
   d.querySelectorAll('input').forEach(function(inp){
+    const i=inp.getAttribute('data-i');
+    const a=i!=null?q.ans[+i]:null;
+    if(a) attachUnitField(inp, a.u);
     inp.addEventListener('keydown',function(e){ if(e.key==='Enter' || e.keyCode===13){ e.preventDefault(); chk.click(); } });
     inp.addEventListener('focus',function(){ revealQuizControls(inp); });
   });
@@ -1176,14 +1288,17 @@ const MICRO_MC={c2pull:'push', c3tight:'right'};
 function bindChecks(){
   $$('.check').forEach(box=>{
     const key=box.dataset.check;
-    box.querySelectorAll('input').forEach(function(inp){
-      inp.setAttribute('type','text');
-      inp.setAttribute('inputmode','text');
-      inp.setAttribute('enterkeyhint','go');
-      inp.setAttribute('autocomplete','off');
-      inp.setAttribute('autocapitalize','off');
-      inp.setAttribute('autocorrect','off');
-      inp.setAttribute('spellcheck','false');
+    box.querySelectorAll('input:not([type="checkbox"]):not([type="range"])').forEach(function(inp,i){
+      if(MICRO[key] && MICRO[key][i]) attachUnitField(inp, MICRO[key][i].u);
+      else {
+        inp.setAttribute('type','text');
+        inp.setAttribute('inputmode','decimal');
+        inp.setAttribute('enterkeyhint','go');
+        inp.setAttribute('autocomplete','off');
+        inp.setAttribute('autocapitalize','off');
+        inp.setAttribute('autocorrect','off');
+        inp.setAttribute('spellcheck','false');
+      }
     });
     if(MICRO[key]){
       let btn=box.querySelector('button.btn');
@@ -1209,11 +1324,14 @@ function bindChecks(){
         });
       }
       btn.addEventListener('click',()=>{
-        const ins=[...box.querySelectorAll('input')];
+        const ins=[...box.querySelectorAll('.unit-field input, .inrow input')];
         let all=true, msgs=[];
         MICRO[key].forEach((a,i)=>{
-          const g=gradeAns(a, ins[i]?ins[i].value:'');
-          if(ins[i]) ins[i].style.borderColor=(g.ok)?'var(--ok)':'var(--bad)';
+          const inp=ins[i];
+          const sel=inp && (inp.parentElement && inp.parentElement.querySelector('select'));
+          if(inp && sel) syncTypedUnit(inp, sel, a.u);
+          const g=gradeAns(a, inp?inp.value:'', sel?sel.value:undefined);
+          if(inp) inp.style.borderColor=(g.ok)?'var(--ok)':'var(--bad)';
           if(!g.ok){ all=false; msgs.push(g.err||'Not quite.'); }
         });
         fb.className='fb '+(all?'ok':'no');
@@ -1359,5 +1477,5 @@ function boot(){
 }
 if(document.readyState==='complete') boot(); else window.addEventListener('load',boot);
 
-try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly}; }catch(e){}
+try{ window.GrokeversityQuiz={parseQty:parseQty,gradeAns:gradeAns,Q:Q,MICRO:MICRO,formatAns:formatAns,formatExact:formatExact,tidyText:tidyText,usesIntRound:usesIntRound,intTargets:intTargets,nearly:nearly,unitMenu:unitMenu,selectDefault:selectDefault,convertToWanted:convertToWanted,UNITS:UNITS}; }catch(e){}
 })();

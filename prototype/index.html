@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="home">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -26,17 +26,14 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="app.css?v=7646f607">
+<link rel="stylesheet" href="app.css?v=3968d0cf">
 <script>
 (function(){
   function go(){
     var h=(location.hash||'').replace(/^#/,'').toLowerCase();
     if(h==='learn' || h.indexOf('learn')===0 || /^c[1-5]/.test(h)){
       var c=(h.match(/c([1-5])/)||[])[1]||'1';
-      location.replace('statics/unit-1.html?v=7646f607&c='+c);
+      location.replace('statics/unit-1.html?v=3968d0cf&c='+c);
     }
   }
   go();
@@ -44,59 +41,43 @@
 })();
 </script>
 </head>
-<body>
+<body class="home">
 <header class="top">
-  <a class="logo" href="#top"><img src="assets/favicon.svg" alt=""><span>Grok<b>e</b>versity</span></a>
-  <nav><a href="#how">How it works</a><a href="#tracks">Tracks</a><a href="statics/unit-1.html?v=7646f607">Statics</a><a href="intro-ai.html?v=7646f607">Intro to AI</a><button type="button" class="btn ghost sm" id="introAudio" title="Play a short intro theme, if it has been uploaded">♪ Intro</button><a class="btn sm" href="#tracks">Start learning</a></nav>
+  <a class="logo" href="./"><img src="assets/favicon.svg" alt=""><span>Grok<b>e</b>versity</span></a>
+  <nav>
+    <a href="about.html">About</a>
+    <a href="https://github.com/ANKELA/grokeversity" rel="noopener noreferrer">GitHub</a>
+    <a class="btn sm" href="statics/unit-1.html?v=3968d0cf">Start Statics</a>
+  </nav>
 </header>
 
-<a id="top"></a>
-<section class="hero">
+<main class="home-main">
   <h1>University-level curricula,<br>one concept at a time.</h1>
-  <p class="lead">Grokeversity is a free, open-source, mastery-based course of study. Start with <b>Mechanical Engineering</b> or <b>Introduction to AI</b>. You learn with interactive diagrams and real math, pass strict quizzes at your own pace, and use an AI tutor (like Grok) that gives hints instead of answers.</p>
-  <div class="ctas"><a class="btn" href="statics/unit-1.html?v=7646f607">Start Statics</a><a class="btn ghost" href="intro-ai.html?v=7646f607">Try Intro to AI, Unit 1 →</a></div>
-  <div class="pills"><span class="pill">Two tracks</span><span class="pill">≥ 80% mastery to advance</span><span class="pill">Textbook-level problems</span><span class="pill">No account needed</span><span class="pill">Progress saved on this device</span></div>
-</section>
-
-<div class="wrap">
-  <h2 class="sec-title" id="how">How it works</h2>
-  <div class="how">
-    <div class="card"><h3>1 · Learn visually</h3><p>Interactive slides build the math one piece at a time. You drag diagrams, and each new symbol lights up the part it names.</p></div>
-    <div class="card"><h3>2 · Prove mastery</h3><p>Numeric problems need correct values <i>and units</i> (±1%). You advance only at ≥ 80%.</p></div>
-    <div class="card"><h3>3 · Tutor, not cheat sheet</h3><p>Paste our tutor prompt into Grok. It uses Socratic hints, makes you show your work, and grades strictly.</p></div>
-    <div class="card"><h3>4 · Your pace</h3><p>Nothing in the lessons is timed. Unit exams and finals are timed, like a real course.</p></div>
-  </div>
-
-  <h2 class="sec-title" id="tracks">Choose a track</h2>
-  <p class="sec-sub">Each track is a university-level curriculum, not an accredited degree. Unit 1 of the first course is playable now.</p>
-  <div class="track-cards">
-    <a class="track-card" href="statics/unit-1.html?v=7646f607" id="card-me">
-      <span class="badge">Play now</span>
-      <h3>Mechanical Engineering</h3>
-      <p>A degree-equivalent ME curriculum modeled on ABET-style programs. Start with Statics Unit 1: forces, free-body diagrams and equilibrium.</p>
-    </a>
-    <a class="track-card" href="intro-ai.html?v=7646f607" id="card-ai">
-      <span class="badge">Play now</span>
-      <h3>Introduction to AI</h3>
-      <p>A university-level intro mapped to Stanford CS221/CS229, MIT 6.034/6.036 and Berkeley CS188. Start with Unit 1: agents, loss, gradient descent and attention.</p>
-    </a>
-  </div>
-
-  <h2 class="sec-title" id="track">The Mechanical Engineering track</h2>
-  <p class="sec-sub">Modeled on ABET-style ME programs and MIT's Course 2 core. Statics is live; every other course is coming soon, and contributors are welcome.</p>
-  <div class="track" id="trackGrid"></div>
-
-  <h2 class="sec-title" id="track-ai">The Introduction to AI track</h2>
-  <p class="sec-sub">Mapped to Stanford CS221 and CS229, MIT 6.034 and 6.036, and Berkeley CS188. Unit 1 is live; later units are coming soon.</p>
-  <div class="track" id="aiGrid"></div>
-</div>
+  <p class="lead">A free, open-source, degree-level curriculum. Learn at your own pace with interactive lessons and strict quizzes.</p>
+  <p class="home-cta"><a class="btn btn-lg" href="statics/unit-1.html?v=3968d0cf">Start Statics</a></p>
+  <ul class="course-list">
+    <li>
+      <a class="course-card is-live" href="statics/unit-1.html?v=3968d0cf" id="card-me">
+        <span class="badge">Play now</span>
+        <h2>ME 201 Statics</h2>
+        <p>Forces, free-body diagrams, and equilibrium.</p>
+      </a>
+    </li>
+    <li>
+      <div class="course-card is-soon" id="card-ai" aria-disabled="true">
+        <span class="badge">Coming soon</span>
+        <h2>Introduction to AI</h2>
+        <p>Agents, loss, gradient descent, and attention.</p>
+      </div>
+    </li>
+  </ul>
+  <p class="cert-note">Finish a unit and you can earn a completion certificate. Certificates are not degrees and do not confer academic credit.</p>
+  <p class="home-links"><a href="about.html">About the curriculum</a> · <a href="https://github.com/ANKELA/grokeversity" rel="noopener noreferrer">GitHub</a></p>
+</main>
 
 <footer>
-  <div class="disc"><b>Honest disclaimer:</b> Grokeversity is an independent, open-source community project. It is <b>not affiliated with, sponsored by or endorsed by xAI</b> or any university. It is <b>not an accredited institution</b> and does not award degrees or academic credit. The ME and Introduction to AI tracks are degree-equivalent <i>curricula</i>, and completion certificates are not degrees. Lab and hands-on work can't be fully replaced online.</div>
-  <div>Code: MIT License · Course content: CC BY-SA 4.0 · Equations by KaTeX · Prototype v0.2</div>
+  <div class="disc">Not an accredited degree. Community project, not affiliated with xAI.</div>
+  <div>Code: MIT License · Course content: CC BY-SA 4.0 · Prototype v0.2</div>
 </footer>
-<div class="toast" id="toast"></div>
-
-<script src="app.js?v=7646f607"></script>
 </body>
 </html>

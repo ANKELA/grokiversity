@@ -114,5 +114,7 @@ for c in data["concepts"]:
                 exempt.append((q["id"], a["quantity"], v, a["unit"]))
                 print(f"  EXEMPT {q['id']:5} {a['quantity']:<22} exact={v} {a['unit']}  (small non-integer; keep ±tol)")
 print(f"Exempted ({len(exempt)}): "+", ".join(f"{i} {q}" for i,q,_,_ in exempt))
+
+print("Playable quiz: percent answers use a % unit menu (default %). Unitless utilities, losses, and counts have no dropdown.")
 print(f"\n{nans-bad}/{nans} answers verified"); sys.exit(1 if bad else 0)
 

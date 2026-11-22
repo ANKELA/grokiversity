@@ -9,7 +9,7 @@ status: draft-needs-human-review
 estimated_hours: 30          # ~1/4 of a 120-150 h, 3-credit statics course
 mastery_threshold: 0.80
 conventions:
-  units: SI (N, kN, m, N·m). g = 9.81 m/s². Angles measured counter-clockwise from +x unless stated.
+  units: SI (N, kN, m, N·m). g = 9.81 m/s². Angles measured counter-clockwise from +x unless stated. The playable quiz presents a unit menu that defaults to the unit asked; students may switch to kN, lbf, lbf·ft, mm/cm/in/ft, or radians, which are converted into the asked unit before grading.
   significant_figures: "Report 3-4 significant figures. Answers within ±1% (or the stated tolerance) are accepted."
   sign_convention: "Counter-clockwise moments positive (2D). Right-hand rule for 3D."
 references:

@@ -53,7 +53,7 @@ def stamp_assets(html_path, ver):
     html=re.sub(r'(href=")(intro-ai\.html)(?:\?v=[^"]*)?(")', rf'\1\2?v={ver}\3', html)
     html_path.write_text(html)
 _ver=asset_ver()
-for _p in (SITE/'statics'/'unit-1.html', SITE/'index.html', SITE/'intro-ai.html'):
+for _p in (SITE/'statics'/'unit-1.html', SITE/'index.html', SITE/'intro-ai.html', SITE/'about.html'):
     stamp_assets(_p, _ver)
 
 

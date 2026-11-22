@@ -118,5 +118,30 @@ for c in data["concepts"]:
             ts=int_targets(v)
             print(f"  {q['id']:5} {a['quantity']:<26} exact={v} {u}  accepts {ts} {u} (and ±tol)")
 
+
+# Playable quiz unit-menu conversions (app.js UNITS table)
+LBF_N = 4.4482216152605
+LBFFT_NM = 1.3558179483314004
+IN_M = 0.0254
+FT_M = 0.3048
+import math
+conv_bad = 0
+checks = [
+    ("1 kN → N", 1*1000, 1000, 0),
+    ("115.15 lbf → N", 115.15*LBF_N, 512.2, 1),          # 1%
+    ("1 lbf·ft → N·m", 1*LBFFT_NM, 1.3558179483314004, 0),
+    ("π/2 rad → deg", (math.pi/2)*(180/math.pi), 90, 0),
+    ("12 in → m", 12*IN_M, 0.3048, 0),
+    ("1 ft → m", 1*FT_M, 0.3048, 0),
+    ("170 mm → m", 170*0.001, 0.170, 0),
+]
+for name, got, exp, tp in checks:
+    tol = (tp/100)*abs(exp) if tp else 1e-12
+    good = abs(got-exp) <= max(tol, 1e-12)
+    conv_bad += not good
+    print(f"{'PASS' if good else 'FAIL'}  unit {name:<22} got={got:.8g} expected={exp}")
+n += len(checks)
+bad += conv_bad
+
 print(f"\n{n-bad}/{n} answers verified (including micro-checks)"); sys.exit(1 if bad else 0)
 

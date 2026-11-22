@@ -82,13 +82,13 @@ PARSE_JS = r"""() => {
     }
     if (u === '%'){
       add(n + ' %'); add(n + '%'); add(n + ' percent'); add(n + ' %.'); add(n + '\u00a0%'); add(n + ' Pct');
-      add(n, false, 'missing-unit');
+      add(n, true, 'bare');
       return out;
     }
     if (u === 'deg'){
       add(n + ' deg'); add(n + 'deg'); add(n + '°'); add(n + ' degrees'); add(n + ' Deg');
       add(n + '\u00a0deg'); add(n + ' deg.'); add(uminus(absn) + ' deg'); add(endash(absn) + ' deg');
-      add(n, false, 'missing-unit');
+      add(n, true, 'bare');
       return out;
     }
     const isMom = /N·m|N\.m|Nm|kN·m|kNm/i.test(u);
@@ -120,7 +120,7 @@ PARSE_JS = r"""() => {
       if (base === 'N'){ add(n + ' newton meters'); add(n + ' newton-meters'); add(num(v/1000) + ' kN·m'); }
       if (base === 'kN'){ add(num(v*1000) + ' N·m'); add(n + ' kilonewton meters'); }
     }
-    add(n, false, 'missing-unit');
+    add(n, true, 'bare');
     return out;
   }
   const fails = [];
@@ -234,6 +234,26 @@ def typography_pass(pg, label):
 
 def statics_dom_pass(pg, label, shots=False):
     typography_pass(pg, label)
+    hook = pg.evaluate("""() => {
+      const art = document.querySelector('[data-id="hook"]');
+      const h2 = art && art.querySelector('h2');
+      const p = art && art.querySelector('p');
+      const svg = document.getElementById('ropeSvg');
+      const line = svg && svg.querySelector('line[data-tap="rope"]');
+      return {
+        title: h2 ? h2.textContent : '',
+        lead: p ? p.textContent : '',
+        marker: line ? (line.getAttribute('marker-end') || '') : '',
+        x1: line && +line.getAttribute('x1'),
+        x2: line && +line.getAttribute('x2'),
+        aria: svg && svg.getAttribute('aria-label')
+      };
+    }""")
+    assert "pull a box with a rope" in hook["title"].lower(), f"{label} hook title: {hook}"
+    assert "push" not in hook["title"].lower(), f"{label} hook still says push: {hook['title']}"
+    assert "your pull" in hook["lead"].lower(), f"{label} hook lead: {hook['lead']}"
+    assert hook["marker"] and "url(" in hook["marker"], f"{label} rope missing outward arrow: {hook}"
+    assert hook["x2"] is not None and hook["x2"] > hook["x1"], f"{label} rope tip should be away from the box: {hook}"
     rounding_pass(pg, label, "statics")
     # Controls always present
     goto_concept(pg, 1)
@@ -251,12 +271,41 @@ def statics_dom_pass(pg, label, shots=False):
         inp.click()
     focused = pg.evaluate("() => document.activeElement && document.activeElement.tagName")
     assert focused == "INPUT", f"{label}: input did not receive focus (active={focused})"
-    # Missing units: number right, clear hint, not accepted
+    # Bare numbers use the default unit in the dropdown (asked unit)
+    sels = box.locator("select.unit-select, .unit-field select")
+    assert sels.count() == 2, f"{label}: expected 2 unit menus on q1.1, got {sels.count()}"
+    assert box.locator("select").nth(0).input_value() == "N", f"{label}: default force unit should be N, got {box.locator('select').nth(0).input_value()}"
+    assert box.locator("select").nth(1).input_value() == "°", f"{label}: default angle unit should be °, got {box.locator('select').nth(1).input_value()}"
+    # tappable on iPhone
+    for i in range(sels.count()):
+        bb = sels.nth(i).bounding_box()
+        assert bb and bb["height"] >= 44, f"{label}: unit menu {i} height {bb}"
+        im = box.locator("input").nth(i).get_attribute("inputmode")
+        assert im == "decimal", f"{label}: inputmode should be decimal, got {im}"
     fill_forms(box, ["512.2", "100.5"])
     check_click(box)
     fb = box.locator(".fb").inner_text()
-    assert "Correct" not in fb, f"{label}: unitless accepted: {fb}"
-    assert "unit" in fb.lower() and ("right" in fb.lower() or "add" in fb.lower()), f"{label}: missing-unit hint unclear: {fb}"
+    assert "Correct" in fb, f"{label}: bare number with default units should be accepted: {fb}"
+    # Pick kN and type the converted value
+    box.locator("select").nth(0).select_option("kN")
+    fill_forms(box, ["0.512", "100.5"])
+    check_click(box)
+    fb = box.locator(".fb").inner_text()
+    assert "Correct" in fb, f"{label}: 0.512 kN via dropdown rejected: {fb}"
+    # Typed unit in the number box syncs the menu
+    fill_forms(box, ["512 N", "1.754 rad"])  # 100.5 deg ≈ 1.75406 rad
+    check_click(box)
+    fb = box.locator(".fb").inner_text()
+    assert "Correct" in fb, f"{label}: typed unit / radians rejected: {fb}"
+    synced = box.locator("select").nth(0).input_value()
+    assert synced == "N", f"{label}: typing 512 N should sync menu to N, got {synced}"
+    # lbf conversion (512.2 N ≈ 115.15 lbf)
+    box.locator("select").nth(0).select_option("lbf")
+    box.locator("select").nth(1).select_option("°")
+    fill_forms(box, ["115.15", "101"])
+    check_click(box)
+    fb = box.locator(".fb").inner_text()
+    assert "Correct" in fb, f"{label}: 115.15 lbf / 101° rejected: {fb}"
     # Next / Back must work while unanswered (not locked)
     assert not pg.is_disabled("#nextSlide"), f"{label}: Next disabled on mid-concept quiz"
     pg.click("#nextSlide")
@@ -349,6 +398,20 @@ def statics_dom_pass(pg, label, shots=False):
             assert box.locator('[data-act="skip"]').count() == 1, f"{label} {qid} missing Skip"
             assert box.locator('[data-act="sol"]').count() == 1, f"{label} {qid} missing Show solution"
             assert not pg.is_disabled("#nextSlide") or not pg.is_disabled("#prevSlide"), f"{label} {qid}: both Back and Next disabled"
+            info = pg.evaluate("""(qid) => {
+              const api=window.GrokeversityQuiz;
+              const q=Object.values(api.Q).flat().find(x=>x.id===qid);
+              const root=document.getElementById('Q'+qid.replace('.','_'));
+              const expect=(q.ans||[]).map(a => api.unitMenu(a.u) ? api.selectDefault(a.u) : null);
+              const sels=[...root.querySelectorAll('select')].map(s=>s.value);
+              const modes=[...root.querySelectorAll('input')].map(i=>i.getAttribute('inputmode'));
+              return {expect, sels, modes, nSel: sels.length, nExpect: expect.filter(Boolean).length};
+            }""", qid)
+            assert info["nSel"] == info["nExpect"], f"{label} {qid}: unit menus {info['sels']} vs {info['expect']}"
+            got = list(info["sels"])
+            want = [u for u in info["expect"] if u]
+            assert got == want, f"{label} {qid}: default units {got} != {want}"
+            assert all(m=="decimal" for m in info["modes"]), f"{label} {qid}: inputmode {info['modes']}"
             forms = pg.evaluate(form_js, qid)
             fill_forms(box, forms)
             check_click(box)
@@ -365,15 +428,22 @@ def ai_dom_pass(pg, label, shots=False):
     # q1.4 % missing units
     box = qbox(pg, "q1.4")
     box.scroll_into_view_if_needed()
+    assert box.locator("select").count() == 2, f"{label} AI q1.4 should have % menus"
+    assert box.locator("select").nth(0).input_value() == "%"
     fill_forms(box, ["60", "75"])
     check_click(box)
     fb = box.locator(".fb").inner_text()
-    assert "Correct" not in fb and "unit" in fb.lower(), f"{label} AI unitless: {fb}"
+    assert "Correct" in fb, f"{label} AI bare 60/75 with default %: {fb}"
     fill_forms(box, ["60%", "75 percent"])
     box.locator("input").nth(1).press("Enter")
     pg.wait_for_timeout(150)
     fb = box.locator(".fb").inner_text()
     assert "Correct" in fb, f"{label} AI q1.4 60%/75 percent: {fb}"
+    # unitless EU / counts have no unit menu
+    box11 = qbox(pg, "q1.1")
+    assert box11.locator("select").count() == 0, f"{label}: unitless EU fields should have no dropdown"
+    box12 = qbox(pg, "q1.2")
+    assert box12.locator("select").count() == 0, f"{label}: count field should have no dropdown"
     if shots:
         box.screenshot(path=str(SHOTS / "quiz_iphone_ai_q1_4_accepted.png"))
         print("wrote", SHOTS / "quiz_iphone_ai_q1_4_accepted.png")

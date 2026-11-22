@@ -9,7 +9,7 @@ status: draft-needs-human-review
 estimated_hours: 16
 mastery_threshold: 0.80
 conventions:
-  units: "Dimensionless quantities (utilities, probabilities, losses, weights) are reported as a pure number with unit 1, or as a percent with unit %. Counts use unit count. Always state which loss you are using."
+  units: "Dimensionless quantities (utilities, probabilities, losses, weights) are reported as a pure number with unit 1, or as a percent with unit %. Counts use unit count. Always state which loss you are using. The playable quiz shows a % menu on percent fields (default %) and no dropdown on unitless or count fields."
   loss: "Unless a problem says otherwise, mean squared error is MSE = (1/n) Σ_i (y_i − ŷ_i)², not the 1/(2n) variant. Gradients must match this definition."
   probability: "P(A|B) means a conditional probability. Percent and probability forms must be consistent (8.76% = 0.0876)."
   significant_figures: "Report 3-4 significant figures. Answers within ±1% (or the stated absolute tolerance) are accepted."
