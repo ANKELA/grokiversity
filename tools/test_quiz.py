@@ -298,6 +298,36 @@ def statics_dom_pass(pg, label, shots=False):
     assert "your pull" in hook["lead"].lower(), f"{label} hook lead: {hook['lead']}"
     assert hook["marker"] and "url(" in hook["marker"], f"{label} rope missing outward arrow: {hook}"
     assert hook["x2"] is not None and hook["x2"] > hook["x1"], f"{label} rope tip should be away from the box: {hook}"
+    hook_copy = pg.evaluate("""() => {
+      const art = document.querySelector('[data-id="hook"]');
+      const svg = document.getElementById('ropeSvg');
+      const nudge = svg && svg.querySelector('.rope-nudge');
+      return {
+        text: art ? art.innerText : '',
+        hasNudge: !!(nudge),
+        hintClass: svg ? svg.className.baseVal || svg.getAttribute('class') || '' : '',
+        nudgeOp: nudge ? getComputedStyle(nudge).opacity : null
+      };
+    }""")
+    low = hook_copy["text"].lower()
+    assert "tap the box" not in low, f"{label} hook still shows tap-the-box hint: {hook_copy['text']!r}"
+    assert "drag the end" not in low, f"{label} hook still shows drag-the-end hint: {hook_copy['text']!r}"
+    assert "to name them" not in low, f"{label} hook still shows name-them hint: {hook_copy['text']!r}"
+    assert hook_copy["hasNudge"], f"{label} hook should have a static handle cue: {hook_copy}"
+    assert "hint-seen" not in hook_copy["hintClass"], f"{label} handle cue should be visible before first touch: {hook_copy}"
+    pg.locator("#ropeSvg").evaluate("""el => el.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, pointerId:1, pointerType:'touch'}))""")
+    pg.locator("#ropeSvg").evaluate("""el => el.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, cancelable:true, pointerId:1, pointerType:'touch'}))""")
+    pg.wait_for_timeout(650)
+    after = pg.evaluate("""() => {
+      const svg = document.getElementById('ropeSvg');
+      const nudge = svg && svg.querySelector('.rope-nudge');
+      return {
+        hintClass: svg ? svg.className.baseVal || svg.getAttribute('class') || '' : '',
+        nudgeOp: nudge ? getComputedStyle(nudge).opacity : null
+      };
+    }""")
+    assert "hint-seen" in after["hintClass"], f"{label} first touch should dismiss the handle cue: {after}"
+    assert after["nudgeOp"] is not None and float(after["nudgeOp"]) <= 0.05, f"{label} handle cue should fade after first touch: {after}"
     assert_header_pinned(pg, label + " hook")
     recover_from_simulated_shift(pg, label + " hook shift")
     rounding_pass(pg, label, "statics")

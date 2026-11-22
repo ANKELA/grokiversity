@@ -565,3 +565,17 @@ body.home .disc{max-width:720px;padding:10px 14px;margin:0 auto 8px}
 @media (max-width:700px){
   .lesson-page .slide.thumb-ready svg.diagram:not(.is-output){max-height:none}
 }
+
+/* Hook slide: static handle cue, fades after first touch (no pulse) */
+#ropeSvg .rope-nudge,
+#ropeSvg .rope-nudge-glow{
+  opacity:1;
+  transition:opacity .55s ease;
+}
+#ropeSvg.hint-seen .rope-nudge,
+#ropeSvg.hint-seen .rope-nudge-glow{opacity:0}
+#signLabel:empty{display:none}
+@media (prefers-reduced-motion:reduce){
+  #ropeSvg .rope-nudge,
+  #ropeSvg .rope-nudge-glow{transition:none}
+}

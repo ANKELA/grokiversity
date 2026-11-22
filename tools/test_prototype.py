@@ -365,7 +365,11 @@ with sync_playwright() as p:
     assert "ME 201 Statics › Unit 1 › Concept 1" in pg.inner_text("#crumb")
     assert_fits(pg, "desktop lesson hook")
     assert pg.locator('.slide[data-id="hook"]').evaluate("el => el.classList.contains('on')")
+    hook_txt = pg.evaluate("() => (document.querySelector('[data-id=hook]')?.innerText || '').toLowerCase()")
+    assert "tap the box" not in hook_txt and "drag the end" not in hook_txt and "to name them" not in hook_txt, hook_txt
+    assert pg.locator("#ropeSvg .rope-nudge").count() == 1
     drag(pg, "#ropeH", -20, -80)
+    assert "hint-seen" in (pg.locator("#ropeSvg").get_attribute("class") or "")
     pg.screenshot(path=str(SHOTS / "desktop_03b_hook_rope.png"))
     assert_header_pinned(pg, "desktop after rope drag")
     recover_from_simulated_shift(pg, "desktop after rope drag shift")

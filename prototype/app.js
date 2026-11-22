@@ -390,6 +390,10 @@ function drawRope(){
     <rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="6" fill="#3a4170" stroke="#7c86c9" stroke-width="2" data-tap="box"/>
     <line x1="${hx}" y1="${hy}" x2="${tx}" y2="${ty}" stroke="#ff8a65" stroke-width="5" stroke-linecap="round" marker-end="url(#ropeArrow)" data-tap="rope"/>
     ${hitHandle("ropeH",tx,ty,"#ff8a65")}
+    <circle class="rope-nudge-glow" cx="${tx}" cy="${ty}" r="20" fill="#ff8a65" fill-opacity=".22" stroke="#ffccbc" stroke-width="2" pointer-events="none"/>
+    <g class="rope-nudge" pointer-events="none" transform="translate(${tx+16},${ty+10}) rotate(18)">
+      <path fill="#f3f4ff" stroke="#1a1f38" stroke-width="1.1" stroke-linejoin="round" d="M7.2 2.4c.9 0 1.5.7 1.5 1.6V12c.3-.4.8-.9 1.6-.9.9 0 1.5.7 1.5 1.5v2.2c.3-.3.8-.7 1.5-.7.9 0 1.5.7 1.5 1.6v1.6c.3-.2.8-.5 1.5-.5.9 0 1.5.8 1.5 1.7v4.4c0 3.2-2.3 5.8-6.4 5.8h-1.2c-3.3 0-5.7-2.1-7.1-4.9L1.6 14.7c-.5-.9.2-1.9 1.2-1.9.4 0 .8.2 1 .6L6.2 17V4c0-.9.6-1.6 1-1.6z"/>
+    </g>
     <text x="30" y="232" fill="#5c6390" font-size="13">floor</text>`;
   $('#ropeFloor').textContent=fx.toFixed(0)+' of 100';
   $('#ropeLift').textContent=fy.toFixed(0)+' of 100';
@@ -404,7 +408,7 @@ function drawRope(){
 }
 (function(){
   const svg=$('#ropeSvg'); let drag=false;
-  svg.addEventListener('pointerdown',e=>{ if(e.target.id==='ropeH'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
+  svg.addEventListener('pointerdown',e=>{ svg.classList.add('hint-seen'); if(e.target.id==='ropeH'){ drag=true; svg.setPointerCapture(e.pointerId); e.preventDefault(); }});
   svg.addEventListener('pointermove',e=>{
     if(!drag) return;
     const q=svgPt(svg,e), hx=310, hy=190;
